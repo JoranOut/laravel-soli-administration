@@ -10,8 +10,16 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type PermissionResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'financieel' | 'users';
+export type PermissionAction = 'view' | 'create' | 'edit' | 'delete';
+export type Permission = `${PermissionResource}.${PermissionAction}`;
+export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'member';
+
 export type Auth = {
     user: User;
+    permissions: Permission[];
+    roles: Role[];
+    relatie_id: number | null;
 };
 
 export type TwoFactorSetupData = {

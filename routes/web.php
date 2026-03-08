@@ -1,14 +1,29 @@
 <?php
 
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', function () {
+    return redirect()->route(auth()->check() ? 'dashboard' : 'login');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::inertia('dashboard', 'dashboard')->name('dashboard');
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('contact', [ContactController::class, 'index'])->name('contact');
 });
 
+Route::post('locale/{locale}', function (string $locale) {
+    if (in_array($locale, ['nl', 'en'])) {
+        session()->put('locale', $locale);
+
+        if ($user = auth()->user()) {
+            $user->update(['locale' => $locale]);
+        }
+    }
+
+    return back();
+})->name('locale.switch');
+
 require __DIR__.'/settings.php';
+require __DIR__.'/admin.php';

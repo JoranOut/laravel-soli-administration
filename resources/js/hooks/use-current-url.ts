@@ -28,15 +28,18 @@ export type UseCurrentUrlReturn = {
 
 export function useCurrentUrl(): UseCurrentUrlReturn {
     const page = usePage();
-    const currentUrlPath = new URL(page.url, window?.location.origin).pathname;
+    const currentParsed = new URL(page.url, window?.location.origin);
+    const currentUrlPath = currentParsed.pathname;
+    const currentUrlFull = currentParsed.pathname + currentParsed.search;
 
     const isCurrentUrl: IsCurrentUrlFn = (
         urlToCheck: NonNullable<InertiaLinkProps['href']>,
         currentUrl?: string,
         startsWith: boolean = false,
     ) => {
-        const urlToCompare = currentUrl ?? currentUrlPath;
         const urlString = toUrl(urlToCheck);
+        const hasQuery = urlString.includes('?');
+        const urlToCompare = currentUrl ?? (hasQuery ? currentUrlFull : currentUrlPath);
 
         const comparePath = (path: string): boolean =>
             startsWith ? urlToCompare.startsWith(path) : path === urlToCompare;
@@ -47,7 +50,8 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
 
         try {
             const absoluteUrl = new URL(urlString);
-            return comparePath(absoluteUrl.pathname);
+            const absPath = hasQuery ? absoluteUrl.pathname + absoluteUrl.search : absoluteUrl.pathname;
+            return comparePath(absPath);
         } catch {
             return false;
         }

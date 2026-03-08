@@ -1,9 +1,12 @@
-import { Link } from '@inertiajs/react';
-import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';
+import { Link, usePage } from '@inertiajs/react';
+import { BookOpen, Coins, FolderGit2, Guitar, LayoutGrid, Mail, Music, Shield, User, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
+import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
+import { usePermissions } from '@/hooks/use-permissions';
+import { useTranslation } from '@/hooks/use-translation';
 import {
     Sidebar,
     SidebarContent,
@@ -16,28 +19,98 @@ import {
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
-const mainNavItems: NavItem[] = [
-    {
-        title: 'Dashboard',
-        href: dashboard(),
-        icon: LayoutGrid,
-    },
-];
-
-const footerNavItems: NavItem[] = [
-    {
-        title: 'Repository',
-        href: 'https://github.com/laravel/react-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#react',
-        icon: BookOpen,
-    },
-];
-
 export function AppSidebar() {
+    const { canAny, hasRole } = usePermissions();
+    const { t } = useTranslation();
+    const { sidebarRelatieTypes, auth } = usePage().props;
+    const isMember = hasRole('member') && !hasRole('admin') && !hasRole('bestuur') && !hasRole('ledenadministratie');
+
+    const mainNavItems: NavItem[] = [];
+
+    if (isMember) {
+        mainNavItems.push({
+            title: t('My data'),
+            href: dashboard(),
+            icon: User,
+        });
+    } else if (!isMember) {
+        mainNavItems.push({
+            title: t('Overview'),
+            href: dashboard(),
+            icon: LayoutGrid,
+        });
+    }
+
+    mainNavItems.push({
+        title: t('Contact'),
+        href: '/contact',
+        icon: Mail,
+    });
+
+    const footerNavItems: NavItem[] = [
+        {
+            title: t('Repository'),
+            href: 'https://github.com/JoranOut/laravel-soli-administration',
+            icon: FolderGit2,
+        },
+        {
+            title: t('Documentation'),
+            href: 'https://soli.nl',
+            icon: BookOpen,
+        },
+    ];
+
+    const dataNavItems: NavItem[] = [];
+
+    if (canAny(['relaties.view']) && !isMember) {
+        const typeChildren: NavItem[] = (sidebarRelatieTypes ?? []).map((type) => ({
+            title: type.naam.charAt(0).toUpperCase() + type.naam.slice(1),
+            href: `/admin/relaties?type=${type.naam}`,
+        }));
+
+        dataNavItems.push({
+            title: t('Relations'),
+            href: '/admin/relaties',
+            icon: Users,
+            children: typeChildren,
+            allLabel: t('All relations'),
+        });
+    }
+
+    if (canAny(['onderdelen.view'])) {
+        dataNavItems.push({
+            title: t('Sections'),
+            href: '/admin/onderdelen',
+            icon: Music,
+        });
+    }
+
+    if (canAny(['instrumenten.view'])) {
+        dataNavItems.push({
+            title: t('Instruments'),
+            href: '/admin/instrumenten',
+            icon: Guitar,
+        });
+    }
+
+    if (canAny(['financieel.view'])) {
+        dataNavItems.push({
+            title: t('Financial'),
+            href: '/admin/financieel/tariefgroepen',
+            icon: Coins,
+        });
+    }
+
+    const adminNavItems: NavItem[] = [];
+
+    if (hasRole('admin')) {
+        adminNavItems.push({
+            title: t('Authentication'),
+            href: '/admin/roles',
+            icon: Shield,
+        });
+    }
+
     return (
         <Sidebar collapsible="icon" variant="inset">
             <SidebarHeader>
@@ -53,11 +126,14 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain items={mainNavItems} label={t('Platform')} />
+                {dataNavItems.length > 0 && <NavMain items={dataNavItems} label={t('Management')} />}
+                {adminNavItems.length > 0 && <NavMain items={adminNavItems} label={t('System')} />}
             </SidebarContent>
 
             <SidebarFooter>
                 <NavFooter items={footerNavItems} className="mt-auto" />
+                <LocaleSwitcher />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>

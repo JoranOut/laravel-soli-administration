@@ -1,0 +1,103 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, pdo, pdo_mysql
+          tools: composer:v2
+
+      - name: Install PHP dependencies
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.HETZNER_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.HETZNER_SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to staging
+        run: |
+          rsync -azr --delete \
+            --exclude='.env' \
+            --exclude='storage' \
+            --exclude='.git/' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            --exclude='.github/' \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            ./ ${{ secrets.HETZNER_SSH_USER }}@${{ secrets.HETZNER_SSH_HOST }}:/var/www/admin.soli.nl/staging/
+
+      - name: Run deploy script
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.HETZNER_SSH_USER }}@${{ secrets.HETZNER_SSH_HOST }} bash -s << 'DEPLOY_SCRIPT'
+          set -e
+
+          APP_DIR=/var/www/admin.soli.nl
+          STAGING="$APP_DIR/staging"
+          SHARED="$APP_DIR/shared"
+
+          # Symlink shared .env and storage into staging
+          ln -sfn "$SHARED/.env" "$STAGING/.env"
+          ln -sfn "$SHARED/storage" "$STAGING/storage"
+
+          # Run migrations on staging (abort on failure)
+          cd "$STAGING"
+          if ! php artisan migrate --force; then
+            echo "Migration failed — aborting deploy"
+            rm -rf "$STAGING"
+            exit 1
+          fi
+
+          # Atomic swap: save previous release, go live
+          cd "$APP_DIR"
+          if [ -d current ] && [ ! -L current ]; then
+            rm -rf previous
+            mv current previous
+          fi
+          mv "$STAGING" current
+
+          # Warm caches
+          cd current
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+
+          # Health check — rollback if site is broken
+          sleep 2
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://admin.soli.nl || echo "000")
+          if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 500 ]; then
+            echo "Health check failed (HTTP $HTTP_STATUS) — rolling back"
+            cd "$APP_DIR"
+            mv current failed
+            mv previous current
+            echo "Rollback complete. Failed release saved in $APP_DIR/failed"
+            exit 1
+          fi
+
+          echo "Deploy complete (HTTP $HTTP_STATUS)"
+          DEPLOY_SCRIPT

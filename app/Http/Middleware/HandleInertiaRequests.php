@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\RelatieType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -40,8 +42,36 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => $request->user()?->getAllPermissions()->pluck('name')->toArray() ?? [],
+                'roles' => $request->user()?->getRoleNames()->toArray() ?? [],
+                'relatie_id' => $request->user()?->relatie?->id,
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'locale' => app()->getLocale(),
+            'translations' => fn () => $this->getTranslations(),
+            'sidebarRelatieTypes' => RelatieType::all(),
         ];
+    }
+
+    private function getTranslations(): array
+    {
+        $locale = app()->getLocale();
+
+        if (app()->isProduction()) {
+            return Cache::rememberForever("translations.{$locale}", fn () => $this->loadTranslations($locale));
+        }
+
+        return $this->loadTranslations($locale);
+    }
+
+    private function loadTranslations(string $locale): array
+    {
+        $path = lang_path("{$locale}.json");
+
+        if (! file_exists($path)) {
+            return [];
+        }
+
+        return json_decode(file_get_contents($path), true) ?? [];
     }
 }

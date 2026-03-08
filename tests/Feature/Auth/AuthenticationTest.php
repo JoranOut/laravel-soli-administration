@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Relatie;
 use App\Models\User;
+use Database\Seeders\RelatieTypeSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Fortify\Features;
 
@@ -68,6 +71,22 @@ test('users can logout', function () {
 
     $this->assertGuest();
     $response->assertRedirect(route('home'));
+});
+
+test('member with linked relatie is redirected to dashboard after login', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(RelatieTypeSeeder::class);
+
+    $member = User::factory()->create()->assignRole('member');
+    Relatie::factory()->create(['user_id' => $member->id]);
+
+    $response = $this->post(route('login.store'), [
+        'email' => $member->email,
+        'password' => 'password',
+    ]);
+
+    $this->assertAuthenticated();
+    $response->assertRedirect(route('dashboard', absolute: false));
 });
 
 test('users are rate limited', function () {

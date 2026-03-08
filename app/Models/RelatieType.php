@@ -1,0 +1,20 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+
+class RelatieType extends Model
+{
+    protected $table = 'soli_relatie_types';
+
+    protected $fillable = ['naam'];
+
+    public function relaties(): BelongsToMany
+    {
+        return $this->belongsToMany(Relatie::class, 'soli_relatie_relatie_type')
+            ->withPivot(['van', 'tot'])
+            ->withTimestamps();
+    }
+}
