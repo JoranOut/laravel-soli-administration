@@ -22,7 +22,7 @@ import type { NavItem } from '@/types';
 export function AppSidebar() {
     const { canAny, hasRole } = usePermissions();
     const { t } = useTranslation();
-    const { sidebarRelatieTypes, auth } = usePage().props;
+    const { sidebarRelatieTypes } = usePage().props;
     const isMember = hasRole('member') && !hasRole('admin') && !hasRole('bestuur') && !hasRole('ledenadministratie');
 
     const mainNavItems: NavItem[] = [];

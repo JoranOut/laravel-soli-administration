@@ -27,7 +27,7 @@ type Props = {
 
 export default function RelatieShow({ relatie, relatieTypes, onderdelen }: Props) {
     const [activeTab, setActiveTab] = useState('overview');
-    const { can, hasRole } = usePermissions();
+    const { hasRole } = usePermissions();
     const { t } = useTranslation();
 
     const tabs: Tab[] = [

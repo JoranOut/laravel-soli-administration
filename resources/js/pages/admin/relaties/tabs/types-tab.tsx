@@ -119,7 +119,7 @@ export default function RelatieTypesTab({ relatie, relatieTypes }: Props) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, reset } = useForm({
         relatie_type_id: '',
         van: new Date().toISOString().split('T')[0],
         tot: '',
