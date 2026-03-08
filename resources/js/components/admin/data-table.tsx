@@ -1,4 +1,3 @@
-import { router } from '@inertiajs/react';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
