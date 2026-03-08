@@ -85,7 +85,7 @@ export default function InstrumentenIndex({ instrumenten, filters }: Props) {
         },
     ];
 
-    const { data, setData, post, processing, reset, errors } = useForm({
+    const { data, setData, post, processing, reset } = useForm({
         nummer: '',
         soort: '',
         merk: '',
