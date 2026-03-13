@@ -1,6 +1,15 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import Heading from '@/components/heading';
 import {
     Select,
@@ -10,7 +19,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import AdminLayout from '@/layouts/admin/layout';
 import { useTranslation } from '@/hooks/use-translation';
 import type { BreadcrumbItem } from '@/types';
 
@@ -45,6 +53,8 @@ function UserRow({
 }) {
     const [selectedRelatieId, setSelectedRelatieId] = useState<string>('');
 
+    const [deleting, setDeleting] = useState(false);
+
     function link() {
         if (!selectedRelatieId) return;
         router.post(
@@ -52,6 +62,14 @@ function UserRow({
             { user_id: user.id, relatie_id: Number(selectedRelatieId) },
             { preserveScroll: true },
         );
+    }
+
+    function deleteUser() {
+        setDeleting(true);
+        router.delete(`/admin/koppelingen/users/${user.id}`, {
+            preserveScroll: true,
+            onFinish: () => setDeleting(false),
+        });
     }
 
     return (
@@ -75,6 +93,27 @@ function UserRow({
                     <Button size="sm" onClick={link} disabled={!selectedRelatieId}>
                         {t('Link')}
                     </Button>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button size="sm" variant="destructive">
+                                {t('Delete')}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogTitle>{t('Delete user account')}</DialogTitle>
+                            <DialogDescription>
+                                {t('Are you sure you want to delete the account for :name?', { name: user.name })}
+                            </DialogDescription>
+                            <DialogFooter className="gap-2">
+                                <DialogClose asChild>
+                                    <Button variant="secondary">{t('Cancel')}</Button>
+                                </DialogClose>
+                                <Button variant="destructive" disabled={deleting} onClick={deleteUser}>
+                                    {t('Delete')}
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </div>
             </td>
         </tr>
@@ -142,10 +181,9 @@ export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) 
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('User-relation links')} />
 
-            <AdminLayout>
+            <div className="space-y-12 p-4">
                 <div className="space-y-6">
                     <Heading
-                        variant="small"
                         title={t('Users without a relation')}
                         description={t('These users do not have a linked relation record')}
                     />
@@ -159,7 +197,7 @@ export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) 
                                     <tr className="border-b">
                                         <th className="py-3 pr-4 text-left font-medium">{t('Name')}</th>
                                         <th className="px-4 py-3 text-left font-medium">{t('E-mail')}</th>
-                                        <th className="px-4 py-3 text-left font-medium">{t('Link to relation')}</th>
+                                        <th className="px-4 py-3 text-left font-medium">{t('Actions')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -174,7 +212,6 @@ export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) 
 
                 <div className="space-y-6">
                     <Heading
-                        variant="small"
                         title={t('Relations without a user')}
                         description={t('These active relations do not have a linked user account')}
                     />
@@ -200,7 +237,7 @@ export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) 
                         )}
                     </div>
                 </div>
-            </AdminLayout>
+            </div>
         </AppLayout>
     );
 }

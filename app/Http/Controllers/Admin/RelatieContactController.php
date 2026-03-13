@@ -67,17 +67,35 @@ class RelatieContactController extends Controller
 
     public function updateEmail(Request $request, Relatie $relatie, Email $email): RedirectResponse
     {
+        $oldEmail = $email->email;
+        $isLoginEmail = $relatie->user && $relatie->user->email === $oldEmail;
+
+        $uniqueRule = 'unique:users,email';
+        if ($isLoginEmail) {
+            $uniqueRule .= ',' . $relatie->user->id;
+        }
+
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', $uniqueRule],
         ]);
 
         $email->update($validated);
+
+        if ($isLoginEmail) {
+            $relatie->user->email = $validated['email'];
+            $relatie->user->email_verified_at = null;
+            $relatie->user->save();
+        }
 
         return back()->with('success', __('Email updated.'));
     }
 
     public function destroyEmail(Relatie $relatie, Email $email): RedirectResponse
     {
+        if ($relatie->user && $relatie->user->email === $email->email) {
+            return back()->with('error', __('This email is used as the login email and cannot be deleted.'));
+        }
+
         $email->delete();
 
         return back()->with('success', __('Email deleted.'));

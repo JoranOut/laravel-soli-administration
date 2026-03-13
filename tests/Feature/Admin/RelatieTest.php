@@ -11,6 +11,7 @@ use Database\Seeders\RelatieTypeSeeder;
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
+    $this->withoutVite();
 });
 
 test('admin can view relaties index', function () {

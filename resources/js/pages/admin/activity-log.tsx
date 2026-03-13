@@ -3,7 +3,6 @@ import Heading from '@/components/heading';
 import { Pagination } from '@/components/admin/pagination';
 import { Card, CardContent } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
-import AdminLayout from '@/layouts/admin/layout';
 import { useTranslation } from '@/hooks/use-translation';
 import type { BreadcrumbItem } from '@/types';
 import type { PaginatedResponse } from '@/types/admin';
@@ -32,7 +31,7 @@ export default function ActivityLog({
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('Activity log')} />
-            <AdminLayout>
+            <div className="space-y-6 p-4">
                 <Heading
                     title={t('Activity log')}
                     description={t('All changes are logged for audit purposes.')}
@@ -64,7 +63,7 @@ export default function ActivityLog({
                 ) : (
                     <p className="text-muted-foreground text-sm">{t('No activity recorded.')}</p>
                 )}
-            </AdminLayout>
+            </div>
         </AppLayout>
     );
 }

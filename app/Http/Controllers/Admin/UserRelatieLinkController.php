@@ -14,7 +14,7 @@ class UserRelatieLinkController extends Controller
 {
     public function index(): Response
     {
-        $unlinkedUsers = User::whereDoesntHave('relatie')
+        $unlinkedUsers = User::whereDoesntHave('relaties')
             ->orderBy('name')
             ->get(['id', 'name', 'email']);
 
@@ -39,10 +39,6 @@ class UserRelatieLinkController extends Controller
         $user = User::findOrFail($validated['user_id']);
         $relatie = Relatie::findOrFail($validated['relatie_id']);
 
-        if ($user->relatie()->exists()) {
-            return back()->withErrors(['user_id' => __('This user is already linked to a relation.')]);
-        }
-
         if ($relatie->user_id !== null) {
             return back()->withErrors(['relatie_id' => __('This relation is already linked to a user.')]);
         }
@@ -57,5 +53,16 @@ class UserRelatieLinkController extends Controller
         $relatie->update(['user_id' => null]);
 
         return back();
+    }
+
+    public function destroyUser(User $user): RedirectResponse
+    {
+        if ($user->relaties()->exists()) {
+            return back()->withErrors(['user_id' => __('This user is still linked to a relation.')]);
+        }
+
+        $user->delete();
+
+        return back()->with('success', __('User account deleted.'));
     }
 }

@@ -44,7 +44,7 @@ test('admin can link a user to a relatie', function () {
     expect($relatie->user_id)->toBe($user->id);
 });
 
-test('cannot link an already-linked user', function () {
+test('can link a user that is already linked to another relatie', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -58,10 +58,12 @@ test('cannot link an already-linked user', function () {
             'relatie_id' => $newRelatie->id,
         ])
         ->assertRedirect()
-        ->assertSessionHasErrors('user_id');
+        ->assertSessionHasNoErrors();
 
     $newRelatie->refresh();
-    expect($newRelatie->user_id)->toBeNull();
+    $existingRelatie->refresh();
+    expect($newRelatie->user_id)->toBe($user->id);
+    expect($existingRelatie->user_id)->toBe($user->id);
 });
 
 test('cannot link an already-linked relatie', function () {
@@ -97,6 +99,35 @@ test('admin can unlink a relatie', function () {
 
     $relatie->refresh();
     expect($relatie->user_id)->toBeNull();
+});
+
+test('admin can delete an unlinked user', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $unlinkedUser = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->delete("/admin/koppelingen/users/{$unlinkedUser->id}")
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    expect(User::find($unlinkedUser->id))->toBeNull();
+});
+
+test('cannot delete a user that is linked to a relatie', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $linkedUser = User::factory()->create();
+    Relatie::factory()->create(['user_id' => $linkedUser->id]);
+
+    $this->actingAs($admin)
+        ->delete("/admin/koppelingen/users/{$linkedUser->id}")
+        ->assertRedirect()
+        ->assertSessionHasErrors('user_id');
+
+    expect(User::find($linkedUser->id))->not->toBeNull();
 });
 
 test('non-admin gets 403 on koppelingen page', function () {

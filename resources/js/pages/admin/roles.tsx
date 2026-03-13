@@ -2,7 +2,6 @@ import { Head, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
-import AdminLayout from '@/layouts/admin/layout';
 import { useTranslation } from '@/hooks/use-translation';
 import type { BreadcrumbItem } from '@/types';
 
@@ -57,13 +56,11 @@ export default function Roles({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('Roles & permissions')} />
 
-            <AdminLayout>
-                <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title={t('Permission matrix')}
-                        description={t('Toggle permissions per role')}
-                    />
+            <div className="space-y-6 p-4">
+                <Heading
+                    title={t('Permission matrix')}
+                    description={t('Toggle permissions per role')}
+                />
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -128,8 +125,7 @@ export default function Roles({
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </AdminLayout>
+            </div>
         </AppLayout>
     );
 }

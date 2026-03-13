@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Coins, FolderGit2, Guitar, LayoutGrid, Mail, Music, Shield, User, Users } from 'lucide-react';
+import { BookOpen, Coins, FolderGit2, Guitar, LayoutGrid, Link2, Mail, Music, ScrollText, Shield, User, UserCog, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
@@ -108,6 +108,12 @@ export function AppSidebar() {
             title: t('Authentication'),
             href: '/admin/roles',
             icon: Shield,
+            allLabel: t('Roles & permissions'),
+            children: [
+                { title: t('Users'), href: '/admin/users' },
+                { title: t('Links'), href: '/admin/koppelingen' },
+                { title: t('Activity log'), href: '/admin/activity-log' },
+            ],
         });
     }
 
