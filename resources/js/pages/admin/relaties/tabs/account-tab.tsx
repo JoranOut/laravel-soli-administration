@@ -101,7 +101,7 @@ function PasswordResetSection({ relatieId, t }: { relatieId: number; t: (key: st
 export default function RelatieAccountTab({ relatie, users }: Props) {
     const { t } = useTranslation();
     const { delete: destroy, processing } = useForm({});
-    const { post, processing: linking } = useForm({});
+    const { processing: linking } = useForm({});
     const [search, setSearch] = useState('');
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 

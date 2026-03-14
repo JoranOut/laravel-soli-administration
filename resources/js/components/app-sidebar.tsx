@@ -1,12 +1,10 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Coins, FolderGit2, Guitar, LayoutGrid, Link2, Mail, Music, ScrollText, Shield, User, UserCog, Users } from 'lucide-react';
+import { BookOpen, Coins, FolderGit2, Guitar, LayoutGrid, Mail, Music, Shield, User, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { usePermissions } from '@/hooks/use-permissions';
-import { useTranslation } from '@/hooks/use-translation';
 import {
     Sidebar,
     SidebarContent,
@@ -16,6 +14,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermissions } from '@/hooks/use-permissions';
+import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
