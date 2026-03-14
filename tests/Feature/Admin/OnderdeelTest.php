@@ -116,6 +116,98 @@ test('ledenadministratie can create onderdelen', function () {
     $this->assertDatabaseHas('soli_onderdelen', ['naam' => 'Ledenadmin Orkest']);
 });
 
+test('admin can create onderdeel with afkorting', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $response = $this->actingAs($admin)->post('/admin/onderdelen', [
+        'naam' => 'Harmonie',
+        'afkorting' => 'HA',
+        'type' => 'orkest',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('soli_onderdelen', [
+        'naam' => 'Harmonie',
+        'afkorting' => 'HA',
+    ]);
+});
+
+test('admin can create onderdeel without afkorting', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $response = $this->actingAs($admin)->post('/admin/onderdelen', [
+        'naam' => 'Commissie X',
+        'type' => 'commissie',
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('soli_onderdelen', [
+        'naam' => 'Commissie X',
+        'afkorting' => null,
+    ]);
+});
+
+test('admin can update onderdeel afkorting', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $onderdeel = Onderdeel::factory()->create();
+
+    $response = $this->actingAs($admin)->put("/admin/onderdelen/{$onderdeel->id}", [
+        'naam' => $onderdeel->naam,
+        'afkorting' => 'KO',
+        'type' => $onderdeel->type,
+    ]);
+
+    $response->assertRedirect();
+    $this->assertDatabaseHas('soli_onderdelen', [
+        'id' => $onderdeel->id,
+        'afkorting' => 'KO',
+    ]);
+});
+
+test('afkorting must be unique on create', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    Onderdeel::factory()->create(['afkorting' => 'HA']);
+
+    $response = $this->actingAs($admin)->post('/admin/onderdelen', [
+        'naam' => 'Duplicate',
+        'afkorting' => 'HA',
+        'type' => 'orkest',
+    ]);
+
+    $response->assertSessionHasErrors('afkorting');
+});
+
+test('updating onderdeel can keep its own afkorting', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $onderdeel = Onderdeel::factory()->create(['afkorting' => 'MO']);
+
+    $response = $this->actingAs($admin)->put("/admin/onderdelen/{$onderdeel->id}", [
+        'naam' => 'Updated Name',
+        'afkorting' => 'MO',
+        'type' => $onderdeel->type,
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionDoesntHaveErrors('afkorting');
+    $this->assertDatabaseHas('soli_onderdelen', [
+        'id' => $onderdeel->id,
+        'naam' => 'Updated Name',
+        'afkorting' => 'MO',
+    ]);
+});
+
+test('afkorting cannot exceed 10 characters', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $response = $this->actingAs($admin)->post('/admin/onderdelen', [
+        'naam' => 'Long Afkorting',
+        'afkorting' => 'ABCDEFGHIJK',
+        'type' => 'orkest',
+    ]);
+
+    $response->assertSessionHasErrors('afkorting');
+});
+
 test('guest is redirected to login', function () {
     $response = $this->get('/admin/onderdelen');
     $response->assertRedirect('/login');

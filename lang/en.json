@@ -513,5 +513,16 @@
     "Edit player": "Edit player",
     "Player updated.": "Player updated.",
     "Login email updated.": "Login email updated.",
-    "The selected email is not one of this relation's email addresses.": "The selected email is not one of this relation's email addresses."
+    "The selected email is not one of this relation's email addresses.": "The selected email is not one of this relation's email addresses.",
+    "orkest": "Orchestra",
+    "opleidingsgroep": "Training group",
+    "ensemble": "Ensemble",
+    "commissie": "Committee",
+    "bestuur": "Board",
+    "staff": "Staff",
+    "overig": "Other",
+    "Delete section": "Delete section",
+    "Are you sure you want to delete :name?": "Are you sure you want to delete :name?",
+    "Cannot delete a section with active members.": "Cannot delete a section with active members.",
+    "Cannot delete a fee group with linked contributions.": "Cannot delete a fee group with linked contributions."
 }

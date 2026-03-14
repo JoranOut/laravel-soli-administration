@@ -516,5 +516,16 @@
     "Edit player": "Bespeler bewerken",
     "Player updated.": "Bespeler bijgewerkt.",
     "Login email updated.": "Login e-mail bijgewerkt.",
-    "The selected email is not one of this relation's email addresses.": "Het geselecteerde e-mailadres hoort niet bij deze relatie."
+    "The selected email is not one of this relation's email addresses.": "Het geselecteerde e-mailadres hoort niet bij deze relatie.",
+    "orkest": "Orkest",
+    "opleidingsgroep": "Opleidingsgroep",
+    "ensemble": "Ensemble",
+    "commissie": "Commissie",
+    "bestuur": "Bestuur",
+    "staff": "Staff",
+    "overig": "Overig",
+    "Delete section": "Onderdeel verwijderen",
+    "Are you sure you want to delete :name?": "Weet je zeker dat je :name wilt verwijderen?",
+    "Cannot delete a section with active members.": "Kan onderdeel met actieve leden niet verwijderen.",
+    "Cannot delete a fee group with linked contributions.": "Kan tariefgroep met gekoppelde contributies niet verwijderen."
 }

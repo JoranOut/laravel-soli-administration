@@ -148,7 +148,7 @@ Route::middleware(['auth', 'verified', 'permission:financieel.view'])->group(fun
 
     Route::get('admin/financieel/contributies', [ContributieController::class, 'index'])->name('admin.financieel.contributies');
     Route::post('admin/financieel/contributies', [ContributieController::class, 'store'])->name('admin.financieel.contributies.store')
-        ->middleware('permission:financieel.edit');
+        ->middleware('permission:financieel.create');
     Route::delete('admin/financieel/contributies/{contributie}', [ContributieController::class, 'destroy'])->name('admin.financieel.contributies.destroy')
         ->middleware('permission:financieel.delete');
 

@@ -11,20 +11,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable, type Column } from '@/components/admin/data-table';
+import { SearchInput } from '@/components/admin/search-input';
+import InputError from '@/components/input-error';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
+import { ONDERDEEL_TYPES } from '@/constants/onderdeel';
 import type { Onderdeel } from '@/types/admin';
 import { Link } from '@inertiajs/react';
 
 type Props = {
     onderdelen: Onderdeel[];
     filters: {
+        search?: string;
         type?: string;
         show_inactive?: string;
     };
 };
-
-const typeOptions = ['orkest', 'opleidingsgroep', 'ensemble', 'commissie', 'bestuur', 'staff', 'overig'];
 
 export default function OnderdelenIndex({ onderdelen, filters }: Props) {
     const { can } = usePermissions();
@@ -42,9 +44,14 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
             ),
         },
         {
+            key: 'afkorting',
+            label: t('Abbreviation'),
+            render: (o) => o.afkorting ?? '—',
+        },
+        {
             key: 'type',
             label: t('Type'),
-            render: (o) => <Badge variant="outline">{o.type}</Badge>,
+            render: (o) => <Badge variant="outline">{t(o.type)}</Badge>,
         },
         {
             key: 'actieve_relaties_count',
@@ -58,8 +65,9 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
         },
     ];
 
-    const { data, setData, post, processing, reset } = useForm({
+    const { data, setData, post, processing, reset, errors } = useForm({
         naam: '',
+        afkorting: '',
         type: 'orkest',
         beschrijving: '',
     });
@@ -73,6 +81,7 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
 
     const handleTypeFilter = (type: string) => {
         const params: Record<string, string> = {};
+        if (filters.search) params.search = filters.search;
         if (filters.show_inactive) params.show_inactive = filters.show_inactive;
         if (type !== 'all') params.type = type;
         router.get('/admin/onderdelen', params, { preserveState: true });
@@ -93,23 +102,31 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
                                     <DialogHeader><DialogTitle>{t("New section")}</DialogTitle></DialogHeader>
                                     <form onSubmit={handleSubmit} className="space-y-4">
                                         <div className="space-y-2">
-                                            <Label>{t("Name")}</Label>
-                                            <Input value={data.naam} onChange={(e) => setData('naam', e.target.value)} required />
+                                            <Label htmlFor="create-naam">{t("Name")}</Label>
+                                            <Input id="create-naam" value={data.naam} onChange={(e) => setData('naam', e.target.value)} required />
+                                            <InputError message={errors.naam} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{t("Type")}</Label>
+                                            <Label htmlFor="create-afkorting">{t("Abbreviation")}</Label>
+                                            <Input id="create-afkorting" value={data.afkorting} onChange={(e) => setData('afkorting', e.target.value)} maxLength={10} />
+                                            <InputError message={errors.afkorting} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="create-type">{t("Type")}</Label>
                                             <Select value={data.type} onValueChange={(v) => setData('type', v)}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <SelectTrigger id="create-type"><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    {typeOptions.map((tp) => (
-                                                        <SelectItem key={tp} value={tp}>{tp}</SelectItem>
+                                                    {ONDERDEEL_TYPES.map((tp) => (
+                                                        <SelectItem key={tp} value={tp}>{t(tp)}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
+                                            <InputError message={errors.type} />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label>{t("Description")}</Label>
-                                            <Input value={data.beschrijving} onChange={(e) => setData('beschrijving', e.target.value)} />
+                                            <Label htmlFor="create-beschrijving">{t("Description")}</Label>
+                                            <Input id="create-beschrijving" value={data.beschrijving} onChange={(e) => setData('beschrijving', e.target.value)} />
+                                            <InputError message={errors.beschrijving} />
                                         </div>
                                         <Button type="submit" disabled={processing}>{t("Save")}</Button>
                                     </form>
@@ -119,14 +136,26 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <div className="w-full sm:w-64">
+                            <SearchInput
+                                value={filters.search}
+                                placeholder={t('Search...')}
+                                routeName="/admin/onderdelen"
+                                queryParams={{
+                                    type: filters.type,
+                                    show_inactive: filters.show_inactive,
+                                }}
+                            />
+                        </div>
+
                         <Select value={filters.type ?? 'all'} onValueChange={handleTypeFilter}>
                             <SelectTrigger className="w-40">
                                 <SelectValue placeholder={t("All types")} />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">{t("All types")}</SelectItem>
-                                {typeOptions.map((tp) => (
-                                    <SelectItem key={tp} value={tp}>{tp}</SelectItem>
+                                {ONDERDEEL_TYPES.map((tp) => (
+                                    <SelectItem key={tp} value={tp}>{t(tp)}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -137,6 +166,7 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
                                 checked={filters.show_inactive === '1'}
                                 onCheckedChange={(checked) => {
                                     const params: Record<string, string> = {};
+                                    if (filters.search) params.search = filters.search;
                                     if (filters.type) params.type = filters.type;
                                     if (checked) params.show_inactive = '1';
                                     router.get('/admin/onderdelen', params, { preserveState: true });

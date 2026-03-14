@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreOnderdeelRequest;
+use App\Http\Requests\UpdateOnderdeelRequest;
 use App\Models\Onderdeel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +16,12 @@ class OnderdeelController extends Controller
     public function index(Request $request): Response
     {
         $onderdelen = Onderdeel::query()
+            ->when($request->input('search'), function ($q, $search) {
+                $q->where(function ($q2) use ($search) {
+                    $q2->where('naam', 'like', "%{$search}%")
+                        ->orWhere('afkorting', 'like', "%{$search}%");
+                });
+            })
             ->when($request->input('type'), fn ($q, $type) => $q->where('type', $type))
             ->when(! $request->boolean('show_inactive'), fn ($q) => $q->actief())
             ->withCount(['relaties as actieve_relaties_count' => function ($q) {
@@ -27,7 +35,7 @@ class OnderdeelController extends Controller
 
         return Inertia::render('admin/onderdelen/index', [
             'onderdelen' => $onderdelen,
-            'filters' => $request->only(['type', 'show_inactive']),
+            'filters' => $request->only(['type', 'show_inactive', 'search']),
         ]);
     }
 
@@ -46,35 +54,28 @@ class OnderdeelController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreOnderdeelRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'naam' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:orkest,opleidingsgroep,ensemble,commissie,bestuur,staff,overig'],
-            'beschrijving' => ['nullable', 'string'],
-        ]);
+        $onderdeel = Onderdeel::create($request->validated());
 
-        Onderdeel::create($validated);
-
-        return back()->with('success', __('Section created.'));
+        return redirect()->route('admin.onderdelen.show', $onderdeel)->with('success', __('Section created.'));
     }
 
-    public function update(Request $request, Onderdeel $onderdeel): RedirectResponse
+    public function update(UpdateOnderdeelRequest $request, Onderdeel $onderdeel): RedirectResponse
     {
-        $validated = $request->validate([
-            'naam' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'in:orkest,opleidingsgroep,ensemble,commissie,bestuur,staff,overig'],
-            'beschrijving' => ['nullable', 'string'],
-            'actief' => ['boolean'],
-        ]);
-
-        $onderdeel->update($validated);
+        $onderdeel->update($request->validated());
 
         return back()->with('success', __('Section updated.'));
     }
 
     public function destroy(Onderdeel $onderdeel): RedirectResponse
     {
+        $activeCount = $onderdeel->actieveRelaties()->count();
+
+        if ($activeCount > 0) {
+            return back()->with('error', __('Cannot delete a section with active members.'));
+        }
+
         $onderdeel->delete();
 
         return redirect()->route('admin.onderdelen.index')->with('success', __('Section deleted.'));

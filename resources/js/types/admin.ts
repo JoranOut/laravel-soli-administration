@@ -90,6 +90,7 @@ export type RelatieSinds = {
 export type Onderdeel = {
     id: number;
     naam: string;
+    afkorting: string | null;
     type: 'orkest' | 'opleidingsgroep' | 'ensemble' | 'commissie' | 'bestuur' | 'staff' | 'overig';
     beschrijving: string | null;
     actief: boolean;

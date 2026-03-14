@@ -13,10 +13,13 @@ class Onderdeel extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;
 
+    public const TYPES = ['orkest', 'opleidingsgroep', 'ensemble', 'commissie', 'bestuur', 'staff', 'overig'];
+
     protected $table = 'soli_onderdelen';
 
     protected $fillable = [
         'naam',
+        'afkorting',
         'type',
         'beschrijving',
         'actief',
@@ -32,7 +35,7 @@ class Onderdeel extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['naam', 'type', 'beschrijving', 'actief'])
+            ->logOnly(['naam', 'afkorting', 'type', 'beschrijving', 'actief'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(fn (string $eventName) => "Onderdeel {$this->naam} {$eventName}");
     }

@@ -11,37 +11,47 @@ class OnderdeelSeeder extends Seeder
     {
         $onderdelen = [
             // Orkesten
-            ['naam' => 'Harmonie orkest', 'type' => 'orkest'],
-            ['naam' => 'Klein Orkest', 'type' => 'orkest'],
-            ['naam' => 'Bigband', 'type' => 'orkest'],
-            ['naam' => 'Slagwerkgroep', 'type' => 'orkest'],
+            ['naam' => 'Harmonie orkest', 'afkorting' => 'HA', 'type' => 'orkest'],
+            ['naam' => 'Klein Orkest', 'afkorting' => 'KO', 'type' => 'orkest'],
+            ['naam' => 'Bigband', 'afkorting' => 'BB', 'type' => 'orkest'],
+            ['naam' => 'Slagwerkgroep', 'afkorting' => 'SG', 'type' => 'orkest'],
 
             // Ensembles
-            ['naam' => 'Kerstensembles', 'type' => 'ensemble'],
-            ['naam' => 'Pietenband', 'type' => 'ensemble'],
-            ['naam' => 'Marsorkest', 'type' => 'ensemble'],
-            ['naam' => 'Funband', 'type' => 'ensemble'],
-            ['naam' => 'Oud Goud', 'type' => 'ensemble'],
-            ['naam' => 'TwirlTeam', 'type' => 'ensemble'],
-            ['naam' => 'Stil Orkest', 'type' => 'ensemble'],
+            ['naam' => 'Kerstensembles', 'afkorting' => null, 'type' => 'ensemble'],
+            ['naam' => 'Pietenband', 'afkorting' => null, 'type' => 'ensemble'],
+            ['naam' => 'Marsorkest', 'afkorting' => 'MO', 'type' => 'ensemble'],
+            ['naam' => 'Funband', 'afkorting' => 'FB', 'type' => 'ensemble'],
+            ['naam' => 'Oud Goud', 'afkorting' => 'OU', 'type' => 'ensemble'],
+            ['naam' => 'Oude Glorie', 'afkorting' => 'OG', 'type' => 'ensemble'],
+            ['naam' => 'TwirlTeam', 'afkorting' => 'TW', 'type' => 'ensemble'],
+            ['naam' => 'Stil Orkest', 'afkorting' => null, 'type' => 'ensemble'],
 
             // Opleidingsgroepen
-            ['naam' => 'Blokfluitklas', 'type' => 'opleidingsgroep'],
-            ['naam' => 'Slagwerkklas', 'type' => 'opleidingsgroep'],
-            ['naam' => 'Volwassenen opstapklas', 'type' => 'opleidingsgroep'],
-            ['naam' => 'Samenspelklas', 'type' => 'opleidingsgroep'],
-            ['naam' => 'Opleidingsorkest', 'type' => 'opleidingsgroep'],
+            ['naam' => 'Blokfluitklas', 'afkorting' => null, 'type' => 'opleidingsgroep'],
+            ['naam' => 'Slagwerkklas', 'afkorting' => null, 'type' => 'opleidingsgroep'],
+            ['naam' => 'Volwassenen opstapklas', 'afkorting' => 'SV', 'type' => 'opleidingsgroep'],
+            ['naam' => 'Samenspelklas', 'afkorting' => 'SA', 'type' => 'opleidingsgroep'],
+            ['naam' => 'Opleidingsorkest', 'afkorting' => 'OL', 'type' => 'opleidingsgroep'],
+            ['naam' => 'Opstapklas', 'afkorting' => 'OK', 'type' => 'opleidingsgroep'],
 
             // Bestuur & commissies
-            ['naam' => 'Bestuur', 'type' => 'bestuur'],
-            ['naam' => 'Evenementencommissie', 'type' => 'commissie'],
-            ['naam' => 'Muziekcommissie', 'type' => 'commissie'],
+            ['naam' => 'Bestuur', 'afkorting' => null, 'type' => 'bestuur'],
+            ['naam' => 'Evenementencommissie', 'afkorting' => null, 'type' => 'commissie'],
+            ['naam' => 'Muziekcommissie', 'afkorting' => null, 'type' => 'commissie'],
+
+            // Staff & overig
+            ['naam' => 'Dirigenten', 'afkorting' => null, 'type' => 'staff'],
+            ['naam' => 'Overig', 'afkorting' => null, 'type' => 'overig'],
         ];
 
         foreach ($onderdelen as $onderdeel) {
-            Onderdeel::firstOrCreate(
+            Onderdeel::updateOrCreate(
                 ['naam' => $onderdeel['naam']],
-                ['type' => $onderdeel['type'], 'actief' => true]
+                [
+                    'afkorting' => $onderdeel['afkorting'],
+                    'type' => $onderdeel['type'],
+                    'actief' => true,
+                ]
             );
         }
     }
