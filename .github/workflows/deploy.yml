@@ -67,7 +67,7 @@ jobs:
 
           # Run migrations on staging (abort on failure)
           cd "$STAGING"
-          if ! php artisan migrate --force; then
+          if ! sudo -u www-data php artisan migrate --force; then
             echo "Migration failed — aborting deploy"
             rm -rf "$STAGING"
             exit 1
@@ -81,11 +81,11 @@ jobs:
           fi
           mv "$STAGING" current
 
-          # Warm caches
+          # Warm caches (run as www-data to avoid ownership issues)
           cd current
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
+          sudo -u www-data php artisan config:cache
+          sudo -u www-data php artisan route:cache
+          sudo -u www-data php artisan view:cache
 
           # Health check — rollback if site is broken
           sleep 2

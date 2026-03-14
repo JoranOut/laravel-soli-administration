@@ -293,6 +293,34 @@ For ownership-based access, add:
 4. User can access own resource (200)
 5. User cannot access other's resource without permission (403)
 
+### Deploying to Production
+
+The app is hosted on a Hetzner VPS at `admin.soli.nl`. Deployment uses a GitHub Actions workflow (`deploy.yml`) triggered manually:
+
+```bash
+gh workflow run deploy.yml --ref main
+gh run watch $(gh run list --workflow=deploy.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+```
+
+The workflow:
+1. Builds PHP (composer) and frontend (npm) dependencies
+2. Rsync's the build to the VPS staging directory
+3. Symlinks shared `.env` and `storage`
+4. Runs `php artisan migrate --force`
+5. Swaps `staging` → `current` (previous release kept in `previous/`)
+6. Warms config/route/view caches
+7. Health check — auto-rollback if site returns HTTP 5xx
+
+**VPS structure:**
+```
+/var/www/admin.soli.nl/
+├── current/    ← live (symlinks .env and storage to shared/)
+├── previous/   ← previous release (for manual rollback)
+└── shared/     ← .env, storage (persistent across deploys)
+```
+
+**SSH access:** `ssh -i ~/.ssh/antagonist-ssh root@178.104.30.49`
+
 ### Configuration
 
 - Fortify: registration **disabled**, password reset enabled, 2FA enabled
