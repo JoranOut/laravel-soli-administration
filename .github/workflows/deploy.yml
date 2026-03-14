@@ -81,8 +81,12 @@ jobs:
           fi
           mv "$STAGING" current
 
-          # Warm caches (run as www-data to avoid ownership issues)
+          # Fix bootstrap/cache ownership so www-data can write cached config
           cd current
+          chgrp -R www-data bootstrap/cache
+          chmod -R g+w bootstrap/cache
+
+          # Warm caches (run as www-data to avoid ownership issues)
           sudo -u www-data php artisan config:cache
           sudo -u www-data php artisan route:cache
           sudo -u www-data php artisan view:cache
