@@ -265,6 +265,88 @@ test('bestuur cannot add adres', function () {
     $response->assertForbidden();
 });
 
+// --- Email + login email sync ---
+
+test('updating login email also updates user account email', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+    $email = $relatie->emails()->create(['email' => 'login@example.com']);
+
+    $this->actingAs($admin)
+        ->put("/admin/relaties/{$relatie->id}/emails/{$email->id}", ['email' => 'new-login@example.com'])
+        ->assertRedirect();
+
+    $linkedUser->refresh();
+    expect($linkedUser->email)->toBe('new-login@example.com');
+    expect($linkedUser->email_verified_at)->toBeNull();
+    $this->assertDatabaseHas('soli_emails', ['id' => $email->id, 'email' => 'new-login@example.com']);
+});
+
+test('updating non-login email does not affect user account email', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+    $relatie->emails()->create(['email' => 'login@example.com']);
+    $otherEmail = $relatie->emails()->create(['email' => 'other@example.com']);
+
+    $this->actingAs($admin)
+        ->put("/admin/relaties/{$relatie->id}/emails/{$otherEmail->id}", ['email' => 'changed@example.com'])
+        ->assertRedirect();
+
+    $linkedUser->refresh();
+    expect($linkedUser->email)->toBe('login@example.com');
+});
+
+test('cannot delete email that is the login email', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+    $email = $relatie->emails()->create(['email' => 'login@example.com']);
+
+    $this->actingAs($admin)
+        ->delete("/admin/relaties/{$relatie->id}/emails/{$email->id}")
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    $this->assertDatabaseHas('soli_emails', ['id' => $email->id]);
+});
+
+test('can delete email that is not the login email', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+    $relatie->emails()->create(['email' => 'login@example.com']);
+    $otherEmail = $relatie->emails()->create(['email' => 'other@example.com']);
+
+    $this->actingAs($admin)
+        ->delete("/admin/relaties/{$relatie->id}/emails/{$otherEmail->id}")
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseMissing('soli_emails', ['id' => $otherEmail->id]);
+});
+
+test('updating login email to one already used by another user fails', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    User::factory()->create(['email' => 'taken@example.com']);
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+    $email = $relatie->emails()->create(['email' => 'login@example.com']);
+
+    $this->actingAs($admin)
+        ->put("/admin/relaties/{$relatie->id}/emails/{$email->id}", ['email' => 'taken@example.com'])
+        ->assertSessionHasErrors('email');
+
+    $linkedUser->refresh();
+    expect($linkedUser->email)->toBe('login@example.com');
+});
+
 test('ledenadministratie can add adres', function () {
     $ledenadmin = User::factory()->create()->assignRole('ledenadministratie');
     $relatie = Relatie::factory()->create();

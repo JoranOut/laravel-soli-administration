@@ -30,9 +30,7 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('admin/koppelingen', [UserRelatieLinkController::class, 'index'])->name('admin.koppelingen.index');
     Route::post('admin/koppelingen', [UserRelatieLinkController::class, 'store'])->name('admin.koppelingen.store');
     Route::delete('admin/koppelingen/{relatie}', [UserRelatieLinkController::class, 'destroy'])->name('admin.koppelingen.destroy');
-
-    Route::put('admin/relaties/{relatie}/account', [RelatieController::class, 'updateAccountEmail'])->name('admin.relaties.account.update');
-    Route::delete('admin/relaties/{relatie}/account', [RelatieController::class, 'destroyAccount'])->name('admin.relaties.account.destroy');
+    Route::delete('admin/koppelingen/users/{user}', [UserRelatieLinkController::class, 'destroyUser'])->name('admin.koppelingen.destroy-user');
 
     Route::get('admin/activity-log', [ActivityLogController::class, 'index'])->name('admin.activity-log.index');
 });
@@ -49,6 +47,16 @@ Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(funct
         ->middleware('permission:relaties.edit');
     Route::delete('admin/relaties/{relatie}', [RelatieController::class, 'destroy'])->name('admin.relaties.destroy')
         ->middleware('permission:relaties.delete');
+
+    // Relatie account management
+    Route::post('admin/relaties/{relatie}/account', [RelatieController::class, 'storeAccount'])->name('admin.relaties.account.store')
+        ->middleware('permission:users.edit');
+    Route::put('admin/relaties/{relatie}/account', [RelatieController::class, 'updateAccountEmail'])->name('admin.relaties.account.update')
+        ->middleware('permission:users.edit');
+    Route::put('admin/relaties/{relatie}/account/password', [RelatieController::class, 'resetPassword'])->name('admin.relaties.account.reset-password')
+        ->middleware('permission:users.edit');
+    Route::delete('admin/relaties/{relatie}/account', [RelatieController::class, 'destroyAccount'])->name('admin.relaties.account.destroy')
+        ->middleware('permission:users.edit');
 
     // Relatie sub-resources
     Route::middleware('permission:relaties.edit')->group(function () {
@@ -140,7 +148,7 @@ Route::middleware(['auth', 'verified', 'permission:financieel.view'])->group(fun
 
     Route::get('admin/financieel/contributies', [ContributieController::class, 'index'])->name('admin.financieel.contributies');
     Route::post('admin/financieel/contributies', [ContributieController::class, 'store'])->name('admin.financieel.contributies.store')
-        ->middleware('permission:financieel.edit');
+        ->middleware('permission:financieel.create');
     Route::delete('admin/financieel/contributies/{contributie}', [ContributieController::class, 'destroy'])->name('admin.financieel.contributies.destroy')
         ->middleware('permission:financieel.delete');
 

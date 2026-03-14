@@ -16,10 +16,26 @@ use App\Models\TeBetakenContributie;
 use App\Models\Telefoon;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class SampleDataSeeder extends Seeder
 {
+    private array $usedEmails = [];
+
+    private function generateEmail(string $voornaam, string $achternaam): string
+    {
+        $base = Str::slug($voornaam).'.'.Str::slug($achternaam);
+        $email = $base.'@example.com';
+        $counter = 1;
+        while (in_array($email, $this->usedEmails)) {
+            $email = $base.$counter.'@example.com';
+            $counter++;
+        }
+        $this->usedEmails[] = $email;
+        return $email;
+    }
+
     public function run(): void
     {
         $lidType = RelatieType::where('naam', 'lid')->first();
@@ -49,15 +65,16 @@ class SampleDataSeeder extends Seeder
                 'plaats' => fake()->randomElement(['Driehuis', 'Velsen', 'IJmuiden', 'Santpoort', 'Haarlem']),
             ]);
 
+            $emailAddress = $this->generateEmail($lid->voornaam, $lid->achternaam);
             $email = Email::create([
                 'relatie_id' => $lid->id,
-                'email' => fake()->unique()->safeEmail(),
+                'email' => $emailAddress,
             ]);
 
             $user = User::create([
                 'name' => $lid->voornaam.' '.$lid->achternaam,
-                'email' => $email->email,
-                'password' => Str::random(32),
+                'email' => $emailAddress,
+                'password' => Hash::make('password'),
             ]);
             $user->assignRole('member');
             $lid->update(['user_id' => $user->id]);
@@ -86,15 +103,16 @@ class SampleDataSeeder extends Seeder
                 'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
             ]);
 
+            $emailAddress = $this->generateEmail($donateur->voornaam, $donateur->achternaam);
             $email = Email::create([
                 'relatie_id' => $donateur->id,
-                'email' => fake()->unique()->safeEmail(),
+                'email' => $emailAddress,
             ]);
 
             $user = User::create([
                 'name' => $donateur->voornaam.' '.$donateur->achternaam,
-                'email' => $email->email,
-                'password' => Str::random(32),
+                'email' => $emailAddress,
+                'password' => Hash::make('password'),
             ]);
             $user->assignRole('member');
             $donateur->update(['user_id' => $user->id]);
@@ -107,15 +125,16 @@ class SampleDataSeeder extends Seeder
                 'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
             ]);
 
+            $emailAddress = $this->generateEmail($docent->voornaam, $docent->achternaam);
             $email = Email::create([
                 'relatie_id' => $docent->id,
-                'email' => fake()->unique()->safeEmail(),
+                'email' => $emailAddress,
             ]);
 
             $user = User::create([
                 'name' => $docent->voornaam.' '.$docent->achternaam,
-                'email' => $email->email,
-                'password' => Str::random(32),
+                'email' => $emailAddress,
+                'password' => Hash::make('password'),
             ]);
             $user->assignRole('member');
             $docent->update(['user_id' => $user->id]);

@@ -7,29 +7,38 @@ use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $user = auth()->user();
 
         if ($user->hasRole('member') && !$user->hasRole('admin') && !$user->hasRole('bestuur') && !$user->hasRole('ledenadministratie')) {
-            return $this->memberDashboard($user);
+            return $this->memberDashboard($user, $request);
         }
 
         return $this->statisticsDashboard();
     }
 
-    private function memberDashboard($user): Response
+    private function memberDashboard($user, Request $request): Response
     {
-        $relatie = $user->relatie;
+        $userRelaties = $user->relaties()->orderBy('achternaam')->get(['id', 'voornaam', 'tussenvoegsel', 'achternaam', 'relatie_nummer']);
 
-        if (!$relatie) {
+        if ($userRelaties->isEmpty()) {
             return Inertia::render('admin/relaties/not-linked');
         }
+
+        $relatieId = $request->input('relatie');
+        $relatie = $relatieId
+            ? $userRelaties->firstWhere('id', (int) $relatieId)
+            : null;
+
+        // Fall back to first relatie if invalid or not provided
+        $relatie = $relatie ? Relatie::find($relatie->id) : Relatie::find($userRelaties->first()->id);
 
         $relatie->load([
             'user',
@@ -56,6 +65,7 @@ class DashboardController extends Controller
             'relatie' => $relatie,
             'relatieTypes' => RelatieType::all(),
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
+            'userRelaties' => $userRelaties,
         ]);
     }
 
@@ -77,7 +87,7 @@ class DashboardController extends Controller
 
         if (auth()->user()->hasRole('admin')) {
             $data['alerts'] = [
-                'unlinked_users' => User::whereDoesntHave('relatie')->count(),
+                'unlinked_users' => User::whereDoesntHave('relaties')->count(),
                 'unlinked_relaties' => Relatie::actief()->whereNull('user_id')->count(),
             ];
         }

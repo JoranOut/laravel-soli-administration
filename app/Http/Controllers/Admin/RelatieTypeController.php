@@ -38,8 +38,14 @@ class RelatieTypeController extends Controller
             'email' => ['nullable', 'email', 'max:255'],
         ]);
 
+        $type = $relatie->types()->wherePivot('id', $pivotId)->first();
+
+        if (! $type) {
+            abort(404);
+        }
+
         $relatie->types()->wherePivot('id', $pivotId)->updateExistingPivot(
-            $relatie->types()->wherePivot('id', $pivotId)->first()->id,
+            $type->id,
             $validated
         );
 
@@ -48,7 +54,13 @@ class RelatieTypeController extends Controller
 
     public function destroy(Relatie $relatie, int $pivotId): RedirectResponse
     {
-        \DB::table('soli_relatie_relatie_type')->where('id', $pivotId)->delete();
+        $type = $relatie->types()->wherePivot('id', $pivotId)->first();
+
+        if (! $type) {
+            abort(404);
+        }
+
+        $relatie->types()->wherePivot('id', $pivotId)->detach($type->id);
 
         return back()->with('success', __('Type deleted.'));
     }

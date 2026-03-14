@@ -13,6 +13,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -24,7 +25,7 @@ class RelatieController extends Controller
         $user = auth()->user();
 
         if ($user->hasRole('member')) {
-            if ($relatie = $user->relatie) {
+            if ($relatie = $user->relaties->first()) {
                 return redirect()->route('admin.relaties.show', $relatie);
             }
 
@@ -174,11 +175,27 @@ class RelatieController extends Controller
             'teBetakenContributies.betalingen',
         ]);
 
-        return Inertia::render('admin/relaties/show', [
+        if ($relatie->user) {
+            $relatie->user->loadCount('relaties');
+        }
+
+        $props = [
             'relatie' => $relatie,
             'relatieTypes' => RelatieType::all(),
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
-        ]);
+        ];
+
+        if ($user->can('users.edit')) {
+            $props['users'] = User::orderBy('name')->get(['id', 'name', 'email']);
+        }
+
+        if ($user->hasRole('member') && $relatie->user_id === $user->id) {
+            $props['userRelaties'] = $user->relaties()
+                ->orderBy('achternaam')
+                ->get(['id', 'voornaam', 'tussenvoegsel', 'achternaam', 'relatie_nummer']);
+        }
+
+        return Inertia::render('admin/relaties/show', $props);
     }
 
     public function update(UpdateRelatieRequest $request, Relatie $relatie): RedirectResponse
@@ -238,6 +255,47 @@ class RelatieController extends Controller
             ->with('success', __('Login email updated.'));
     }
 
+    public function storeAccount(Request $request, Relatie $relatie): RedirectResponse
+    {
+        $validated = $request->validate([
+            'user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $user = User::findOrFail($validated['user_id']);
+
+        $relatie->update(['user_id' => $user->id]);
+
+        // Ensure the user's email exists in the relatie's email records
+        if (! $relatie->emails()->where('email', $user->email)->exists()) {
+            $relatie->emails()->create(['email' => $user->email]);
+        }
+
+        return redirect()
+            ->back()
+            ->with('success', __('Account linked.'));
+    }
+
+    public function resetPassword(Request $request, Relatie $relatie): RedirectResponse
+    {
+        if (!$relatie->user_id) {
+            return redirect()
+                ->back()
+                ->with('error', __('No linked user account.'));
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8'],
+        ]);
+
+        $relatie->user->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return redirect()
+            ->back()
+            ->with('success', __('Password has been reset.'));
+    }
+
     public function destroyAccount(Relatie $relatie): RedirectResponse
     {
         if (!$relatie->user_id) {
@@ -246,6 +304,20 @@ class RelatieController extends Controller
                 ->with('error', __('No linked user account.'));
         }
 
+        $otherRelatiesCount = Relatie::where('user_id', $relatie->user_id)
+            ->where('id', '!=', $relatie->id)
+            ->count();
+
+        if ($otherRelatiesCount > 0) {
+            // User is linked to other relaties — just disconnect
+            $relatie->update(['user_id' => null]);
+
+            return redirect()
+                ->back()
+                ->with('success', __('Account disconnected.'));
+        }
+
+        // User is only linked to this relatie — delete the account
         $relatie->user()->delete();
         $relatie->update(['user_id' => null]);
 

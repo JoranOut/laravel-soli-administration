@@ -5,8 +5,6 @@ import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
-import { usePermissions } from '@/hooks/use-permissions';
-import { useTranslation } from '@/hooks/use-translation';
 import {
     Sidebar,
     SidebarContent,
@@ -16,6 +14,8 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { usePermissions } from '@/hooks/use-permissions';
+import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
 
@@ -108,6 +108,12 @@ export function AppSidebar() {
             title: t('Authentication'),
             href: '/admin/roles',
             icon: Shield,
+            allLabel: t('Roles & permissions'),
+            children: [
+                { title: t('Users'), href: '/admin/users' },
+                { title: t('Links'), href: '/admin/koppelingen' },
+                { title: t('Activity log'), href: '/admin/activity-log' },
+            ],
         });
     }
 

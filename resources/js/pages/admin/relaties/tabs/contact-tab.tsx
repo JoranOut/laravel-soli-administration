@@ -1,6 +1,8 @@
 import { router, useForm } from '@inertiajs/react';
-import { Mail, MapPin, Phone, Landmark, Plus, Pencil } from 'lucide-react';
+import { Mail, MapPin, Phone, Landmark, Plus, Pencil, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -178,7 +180,7 @@ function AddEmailDialog({ relatieId }: { relatieId: number }) {
     );
 }
 
-function EditEmailDialog({ relatieId, email }: { relatieId: number; email: EmailRecord }) {
+function EditEmailDialog({ relatieId, email, isLoginEmail }: { relatieId: number; email: EmailRecord; isLoginEmail: boolean }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -207,13 +209,23 @@ function EditEmailDialog({ relatieId, email }: { relatieId: number; email: Email
             <DialogContent>
                 <DialogHeader><DialogTitle>{t('Edit email')}</DialogTitle></DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
+                    {isLoginEmail && (
+                        <Alert className="border-amber-500/50 bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertDescription>
+                                {t('This email is used as the login email. Changing it will also update the login email for the linked user account.')}
+                            </AlertDescription>
+                        </Alert>
+                    )}
                     <div className="space-y-2">
                         <Label>{t('Email')}</Label>
                         <Input type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} required />
                     </div>
                     <div className="flex items-center justify-between border-t pt-4">
                         <div>
-                            {!confirmDelete ? (
+                            {isLoginEmail ? (
+                                <span className="text-muted-foreground text-sm">{t('Cannot delete login email')}</span>
+                            ) : !confirmDelete ? (
                                 <Button type="button" variant="link" size="sm" className="text-destructive p-0 h-auto" onClick={() => setConfirmDelete(true)}>
                                     {t('Delete permanently')}
                                 </Button>
@@ -483,16 +495,22 @@ export default function RelatieContactTab({ relatie }: Props) {
                 <CardContent>
                     {relatie.emails && relatie.emails.length > 0 ? (
                         <div className="space-y-3">
-                            {relatie.emails.map((email) => (
-                                <div key={email.id} className="flex items-center justify-between rounded-md border p-3">
-                                    <div>
-                                        <p className="font-medium">{email.email}</p>
+                            {relatie.emails.map((email) => {
+                                const isLoginEmail = relatie.user?.email === email.email;
+                                return (
+                                    <div key={email.id} className="flex items-center justify-between rounded-md border p-3">
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium">{email.email}</p>
+                                            {isLoginEmail && (
+                                                <Badge variant="secondary" className="text-xs">{t('Login')}</Badge>
+                                            )}
+                                        </div>
+                                        {can('relaties.edit') && (
+                                            <EditEmailDialog relatieId={relatie.id} email={email} isLoginEmail={isLoginEmail} />
+                                        )}
                                     </div>
-                                    {can('relaties.edit') && (
-                                        <EditEmailDialog relatieId={relatie.id} email={email} />
-                                    )}
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <p className="text-muted-foreground text-sm">{t('No emails.')}</p>

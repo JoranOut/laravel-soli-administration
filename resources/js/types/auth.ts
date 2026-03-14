@@ -5,6 +5,7 @@ export type User = {
     avatar?: string;
     email_verified_at: string | null;
     two_factor_enabled?: boolean;
+    relaties_count?: number;
     created_at: string;
     updated_at: string;
     [key: string]: unknown;
@@ -19,7 +20,7 @@ export type Auth = {
     user: User;
     permissions: Permission[];
     roles: Role[];
-    relatie_id: number | null;
+    relatie_ids: number[];
 };
 
 export type TwoFactorSetupData = {

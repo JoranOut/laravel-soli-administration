@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'sync' => [
+        'api_key' => env('SOLI_SYNC_API_KEY'),
+    ],
+
 ];

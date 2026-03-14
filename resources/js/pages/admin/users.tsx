@@ -9,7 +9,6 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
-import AdminLayout from '@/layouts/admin/layout';
 import { useTranslation } from '@/hooks/use-translation';
 import type { BreadcrumbItem } from '@/types';
 
@@ -50,13 +49,11 @@ export default function Users({
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={t('User roles')} />
 
-            <AdminLayout>
-                <div className="space-y-6">
-                    <Heading
-                        variant="small"
-                        title={t('Assign user roles')}
-                        description={t('Assign roles to users')}
-                    />
+            <div className="space-y-6 p-4">
+                <Heading
+                    title={t('Assign user roles')}
+                    description={t('Assign roles to users')}
+                />
 
                     <div className="max-w-sm">
                         <SearchInput
@@ -117,8 +114,7 @@ export default function Users({
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </AdminLayout>
+            </div>
         </AppLayout>
     );
 }

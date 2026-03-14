@@ -26,7 +26,7 @@ export function NavMain({ items = [], label = 'Platform' }: { items: NavItem[]; 
                         <Collapsible
                             key={item.title}
                             asChild
-                            defaultOpen={isCurrentOrParentUrl(item.href)}
+                            defaultOpen={isCurrentOrParentUrl(item.href) || item.children.some((child) => isCurrentUrl(child.href))}
                             className="group/collapsible"
                         >
                             <SidebarMenuItem>

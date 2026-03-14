@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Info } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/app-layout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TabNavigation, type Tab } from '@/components/admin/tab-navigation';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
@@ -18,17 +19,32 @@ import RelatieFinancieelTab from '@/pages/admin/relaties/tabs/financieel-tab';
 import RelatieInstrumentenTab from '@/pages/admin/relaties/tabs/instrumenten-tab';
 import RelatieAccountTab from '@/pages/admin/relaties/tabs/account-tab';
 import type { Onderdeel, Relatie, RelatieType } from '@/types/admin';
+import type { User } from '@/types/auth';
+
+type RelatieSummary = Pick<Relatie, 'id' | 'voornaam' | 'tussenvoegsel' | 'achternaam' | 'relatie_nummer'>;
 
 type Props = {
     relatie: Relatie;
     relatieTypes: RelatieType[];
     onderdelen: Onderdeel[];
+    users?: Pick<User, 'id' | 'name' | 'email'>[];
+    userRelaties?: RelatieSummary[];
 };
 
-export default function RelatieShow({ relatie, relatieTypes, onderdelen }: Props) {
+function formatName(r: RelatieSummary): string {
+    return [r.voornaam, r.tussenvoegsel, r.achternaam].filter(Boolean).join(' ');
+}
+
+export default function RelatieShow({ relatie, relatieTypes, onderdelen, users, userRelaties }: Props) {
     const [activeTab, setActiveTab] = useState('overview');
-    const { hasRole } = usePermissions();
+    const { can, hasRole } = usePermissions();
     const { t } = useTranslation();
+
+    const showSwitcher = userRelaties && userRelaties.length > 1;
+
+    const handleRelatieSwitched = (id: string) => {
+        router.get('/dashboard', { relatie: id }, { preserveState: false });
+    };
 
     const tabs: Tab[] = [
         { key: 'overview', label: t('Overview') },
@@ -38,7 +54,7 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen }: Props
         { key: 'opleiding', label: t('Education') },
         { key: 'financieel', label: t('Financial') },
         { key: 'instrumenten', label: t('Instruments') },
-        ...(hasRole('admin') ? [{ key: 'account', label: t('Account') }] : []),
+        ...(can('users.edit') ? [{ key: 'account', label: t('Account') }] : []),
     ];
 
     return (
@@ -69,9 +85,25 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen }: Props
                             <h2 className="text-2xl font-bold">{relatie.volledige_naam}</h2>
                             <p className="text-muted-foreground">{t('Relation number')}: {relatie.relatie_nummer}</p>
                         </div>
-                        <Badge variant={relatie.actief ? 'default' : 'outline'}>
-                            {relatie.actief ? t('Active') : t('Inactive')}
-                        </Badge>
+                        <div className="flex items-center gap-3">
+                            {showSwitcher && (
+                                <Select value={String(relatie.id)} onValueChange={handleRelatieSwitched}>
+                                    <SelectTrigger className="w-[220px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {userRelaties.map((r) => (
+                                            <SelectItem key={r.id} value={String(r.id)}>
+                                                {formatName(r)}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                            <Badge variant={relatie.actief ? 'default' : 'outline'}>
+                                {relatie.actief ? t('Active') : t('Inactive')}
+                            </Badge>
+                        </div>
                     </div>
 
                     <TabNavigation tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
@@ -98,8 +130,8 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen }: Props
                         {activeTab === 'instrumenten' && (
                             <RelatieInstrumentenTab relatie={relatie} />
                         )}
-                        {activeTab === 'account' && hasRole('admin') && (
-                            <RelatieAccountTab relatie={relatie} />
+                        {activeTab === 'account' && can('users.edit') && (
+                            <RelatieAccountTab relatie={relatie} users={users ?? []} />
                         )}
                     </div>
             </div>

@@ -44,6 +44,10 @@ class TariefgroepController extends Controller
 
     public function destroy(Tariefgroep $tariefgroep): RedirectResponse
     {
+        if ($tariefgroep->contributies()->exists()) {
+            return back()->with('error', __('Cannot delete a fee group with linked contributions.'));
+        }
+
         $tariefgroep->delete();
 
         return back()->with('success', __('Fee group deleted.'));

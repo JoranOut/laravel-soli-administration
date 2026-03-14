@@ -44,7 +44,7 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->toArray() ?? [],
                 'roles' => $request->user()?->getRoleNames()->toArray() ?? [],
-                'relatie_id' => $request->user()?->relatie?->id,
+                'relatie_ids' => $request->user()?->relaties?->pluck('id')->toArray() ?? [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
             'locale' => app()->getLocale(),
