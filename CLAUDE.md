@@ -319,7 +319,7 @@ The workflow:
 └── shared/     ← .env, storage (persistent across deploys)
 ```
 
-**SSH access:** `ssh -i ~/.ssh/antagonist-ssh root@178.104.30.49`
+**SSH access:** Use the SSH key and host configured in GitHub Secrets (`HETZNER_SSH_PRIVATE_KEY`, `HETZNER_SSH_HOST`, `HETZNER_SSH_USER`)
 
 ### Configuration
 
