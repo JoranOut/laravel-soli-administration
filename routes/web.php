@@ -23,7 +23,7 @@ Route::post('locale/{locale}', function (string $locale) {
     }
 
     return back();
-})->name('locale.switch');
+})->middleware('auth')->name('locale.switch');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/admin.php';

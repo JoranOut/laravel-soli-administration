@@ -31,6 +31,8 @@ class InstrumentReparatieController extends Controller
 
     public function update(Request $request, Instrument $instrument, InstrumentReparatie $reparatie): RedirectResponse
     {
+        abort_unless($reparatie->instrument_id === $instrument->id, 404);
+
         $validated = $request->validate([
             'beschrijving' => ['required', 'string'],
             'reparateur' => ['nullable', 'string', 'max:255'],
@@ -46,6 +48,8 @@ class InstrumentReparatieController extends Controller
 
     public function destroy(Instrument $instrument, InstrumentReparatie $reparatie): RedirectResponse
     {
+        abort_unless($reparatie->instrument_id === $instrument->id, 404);
+
         $reparatie->delete();
 
         return back()->with('success', __('Repair deleted.'));

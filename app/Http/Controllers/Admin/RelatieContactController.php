@@ -32,6 +32,8 @@ class RelatieContactController extends Controller
 
     public function updateAdres(Request $request, Relatie $relatie, Adres $adres): RedirectResponse
     {
+        abort_unless($adres->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'straat' => ['required', 'string', 'max:255'],
             'huisnummer' => ['required', 'string', 'max:20'],
@@ -48,6 +50,8 @@ class RelatieContactController extends Controller
 
     public function destroyAdres(Relatie $relatie, Adres $adres): RedirectResponse
     {
+        abort_unless($adres->relatie_id === $relatie->id, 404);
+
         $adres->delete();
 
         return back()->with('success', __('Address deleted.'));
@@ -67,6 +71,8 @@ class RelatieContactController extends Controller
 
     public function updateEmail(Request $request, Relatie $relatie, Email $email): RedirectResponse
     {
+        abort_unless($email->relatie_id === $relatie->id, 404);
+
         $oldEmail = $email->email;
         $isLoginEmail = $relatie->user && $relatie->user->email === $oldEmail;
 
@@ -92,6 +98,8 @@ class RelatieContactController extends Controller
 
     public function destroyEmail(Relatie $relatie, Email $email): RedirectResponse
     {
+        abort_unless($email->relatie_id === $relatie->id, 404);
+
         if ($relatie->user && $relatie->user->email === $email->email) {
             return back()->with('error', __('This email is used as the login email and cannot be deleted.'));
         }
@@ -115,6 +123,8 @@ class RelatieContactController extends Controller
 
     public function updateTelefoon(Request $request, Relatie $relatie, Telefoon $telefoon): RedirectResponse
     {
+        abort_unless($telefoon->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'nummer' => ['required', 'string', 'max:20'],
         ]);
@@ -126,6 +136,8 @@ class RelatieContactController extends Controller
 
     public function destroyTelefoon(Relatie $relatie, Telefoon $telefoon): RedirectResponse
     {
+        abort_unless($telefoon->relatie_id === $relatie->id, 404);
+
         $telefoon->delete();
 
         return back()->with('success', __('Phone number deleted.'));
@@ -148,6 +160,8 @@ class RelatieContactController extends Controller
 
     public function updateGiroGegeven(Request $request, Relatie $relatie, GiroGegeven $giroGegeven): RedirectResponse
     {
+        abort_unless($giroGegeven->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'iban' => ['required', 'string', 'max:34'],
             'bic' => ['nullable', 'string', 'max:11'],
@@ -162,6 +176,8 @@ class RelatieContactController extends Controller
 
     public function destroyGiroGegeven(Relatie $relatie, GiroGegeven $giroGegeven): RedirectResponse
     {
+        abort_unless($giroGegeven->relatie_id === $relatie->id, 404);
+
         $giroGegeven->delete();
 
         return back()->with('success', __('Bank details deleted.'));

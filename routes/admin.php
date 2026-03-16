@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(funct
     Route::put('admin/relaties/{relatie}/account', [RelatieController::class, 'updateAccountEmail'])->name('admin.relaties.account.update')
         ->middleware('permission:users.edit');
     Route::put('admin/relaties/{relatie}/account/password', [RelatieController::class, 'resetPassword'])->name('admin.relaties.account.reset-password')
-        ->middleware('permission:users.edit');
+        ->middleware(['permission:users.edit', 'throttle:6,1']);
     Route::delete('admin/relaties/{relatie}/account', [RelatieController::class, 'destroyAccount'])->name('admin.relaties.account.destroy')
         ->middleware('permission:users.edit');
 

@@ -29,6 +29,8 @@ class RelatieOpleidingController extends Controller
 
     public function update(Request $request, Relatie $relatie, Opleiding $opleiding): RedirectResponse
     {
+        abort_unless($opleiding->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'naam' => ['required', 'string', 'max:255'],
             'instituut' => ['nullable', 'string', 'max:255'],
@@ -46,6 +48,8 @@ class RelatieOpleidingController extends Controller
 
     public function destroy(Relatie $relatie, Opleiding $opleiding): RedirectResponse
     {
+        abort_unless($opleiding->relatie_id === $relatie->id, 404);
+
         $opleiding->delete();
 
         return back()->with('success', __('Training deleted.'));

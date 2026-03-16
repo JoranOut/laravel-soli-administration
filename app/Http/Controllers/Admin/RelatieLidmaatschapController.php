@@ -25,6 +25,8 @@ class RelatieLidmaatschapController extends Controller
 
     public function updateLidmaatschap(Request $request, Relatie $relatie, RelatieSinds $relatieSinds): RedirectResponse
     {
+        abort_unless($relatieSinds->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'lid_sinds' => ['required', 'date'],
             'lid_tot' => ['nullable', 'date', 'after_or_equal:lid_sinds'],
@@ -38,6 +40,8 @@ class RelatieLidmaatschapController extends Controller
 
     public function destroyLidmaatschap(Relatie $relatie, RelatieSinds $relatieSinds): RedirectResponse
     {
+        abort_unless($relatieSinds->relatie_id === $relatie->id, 404);
+
         $relatieSinds->delete();
 
         return back()->with('success', __('Membership period deleted.'));
@@ -69,16 +73,20 @@ class RelatieLidmaatschapController extends Controller
             'tot' => ['nullable', 'date', 'after_or_equal:van'],
         ]);
 
-        \DB::table('soli_relatie_onderdeel')
-            ->where('id', $pivotId)
-            ->update($validated);
+        $onderdeel = $relatie->onderdelen()->wherePivot('id', $pivotId)->first();
+        abort_unless($onderdeel, 404);
+
+        $relatie->onderdelen()->updateExistingPivot($onderdeel->id, $validated);
 
         return back()->with('success', __('Section updated.'));
     }
 
     public function destroyOnderdeel(Relatie $relatie, int $pivotId): RedirectResponse
     {
-        \DB::table('soli_relatie_onderdeel')->where('id', $pivotId)->delete();
+        $onderdeel = $relatie->onderdelen()->wherePivot('id', $pivotId)->first();
+        abort_unless($onderdeel, 404);
+
+        $relatie->onderdelen()->wherePivot('id', $pivotId)->detach();
 
         return back()->with('success', __('Section deleted.'));
     }

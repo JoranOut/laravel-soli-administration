@@ -38,12 +38,23 @@ class UserRoleController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if ($user->id === auth()->id()) {
+            return back()->withErrors(['roles' => __('You cannot edit your own roles.')]);
+        }
+
         $rolesTable = config('permission.table_names.roles');
 
         $validated = $request->validate([
             'roles' => ['present', 'array'],
             'roles.*' => ['string', "exists:{$rolesTable},name"],
         ]);
+
+        if ($user->hasRole('admin') && ! in_array('admin', $validated['roles'])) {
+            $adminCount = User::role('admin')->count();
+            if ($adminCount <= 1) {
+                return back()->withErrors(['roles' => __('Cannot remove the last admin.')]);
+            }
+        }
 
         $user->syncRoles($validated['roles']);
 

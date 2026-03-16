@@ -33,6 +33,8 @@ class InstrumentBespelerController extends Controller
 
     public function update(Request $request, Instrument $instrument, InstrumentBespeler $bespeler): RedirectResponse
     {
+        abort_unless($bespeler->instrument_id === $instrument->id, 404);
+
         $validated = $request->validate([
             'van' => ['required', 'date'],
         ]);
@@ -44,6 +46,8 @@ class InstrumentBespelerController extends Controller
 
     public function destroy(Instrument $instrument, InstrumentBespeler $bespeler): RedirectResponse
     {
+        abort_unless($bespeler->instrument_id === $instrument->id, 404);
+
         $bespeler->update(['tot' => now()->toDateString()]);
 
         // If no active bespelers, set to available

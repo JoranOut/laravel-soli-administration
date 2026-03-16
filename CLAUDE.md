@@ -103,7 +103,7 @@ Models using HasDateRange:
 |----------|-------------|
 | `admin`  | All 20 permissions |
 | `ledenadministratie` | Full CRUD on all resources except users.* |
-| `bestuur`| Full CRUD on relaties, onderdelen, instrumenten + financieel.view |
+| `bestuur`| relaties.view, onderdelen.view, instrumenten.view, financieel.view |
 | `member` | relaties.view only |
 
 Seeded in `database/seeders/RolesAndPermissionsSeeder.php`. When adding new resources or roles, also update `resources/js/types/auth.ts`.

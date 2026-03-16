@@ -21,7 +21,7 @@ class UpdateRelatieRequest extends FormRequest
             'geslacht' => ['required', 'in:M,V,O'],
             'geboortedatum' => ['nullable', 'date'],
             'actief' => ['boolean'],
-            'foto_url' => ['nullable', 'string', 'max:255'],
+            'foto_url' => ['nullable', 'url', 'max:255'],
             'geboorteplaats' => ['nullable', 'string', 'max:255'],
             'nationaliteit' => ['nullable', 'string', 'max:255'],
         ];

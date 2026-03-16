@@ -36,6 +36,10 @@ class RolePermissionController extends Controller
             'permissions.*' => ['string', "exists:{$permissionsTable},name"],
         ]);
 
+        if ($role->name === 'admin' && empty($validated['permissions'])) {
+            return back()->withErrors(['permissions' => __('Cannot remove all permissions from the admin role.')]);
+        }
+
         $role->syncPermissions($validated['permissions']);
 
         return back();
