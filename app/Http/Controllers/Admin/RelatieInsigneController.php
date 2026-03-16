@@ -24,6 +24,8 @@ class RelatieInsigneController extends Controller
 
     public function update(Request $request, Relatie $relatie, Insigne $insigne): RedirectResponse
     {
+        abort_unless($insigne->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'naam' => ['required', 'string', 'max:255'],
             'datum' => ['required', 'date'],
@@ -36,6 +38,8 @@ class RelatieInsigneController extends Controller
 
     public function destroy(Relatie $relatie, Insigne $insigne): RedirectResponse
     {
+        abort_unless($insigne->relatie_id === $relatie->id, 404);
+
         $insigne->delete();
 
         return back()->with('success', __('Badge deleted.'));

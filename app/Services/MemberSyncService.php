@@ -205,7 +205,8 @@ class MemberSyncService
         // Delete linked user account
         if ($relatie->user_id) {
             $relatie->user()->delete();
-            $relatie->update(['user_id' => null]);
+            $relatie->user_id = null;
+            $relatie->save();
         }
 
         // Close active "lid" type assignment
@@ -247,7 +248,8 @@ class MemberSyncService
             $user->assignRole('member');
         }
 
-        $relatie->update(['user_id' => $user->id]);
+        $relatie->user_id = $user->id;
+        $relatie->save();
     }
 
     private function getLidType(): ?RelatieType

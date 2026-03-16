@@ -21,7 +21,6 @@ class Relatie extends Model
 
     protected $fillable = [
         'relatie_nummer',
-        'user_id',
         'voornaam',
         'tussenvoegsel',
         'achternaam',
@@ -29,7 +28,6 @@ class Relatie extends Model
         'geboortedatum',
         'actief',
         'foto_url',
-        'bsn',
         'geboorteplaats',
         'nationaliteit',
     ];
@@ -39,7 +37,6 @@ class Relatie extends Model
         return [
             'geboortedatum' => 'date',
             'actief' => 'boolean',
-            'bsn' => 'encrypted',
         ];
     }
 

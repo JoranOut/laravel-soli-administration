@@ -24,6 +24,8 @@ class RelatieDiplomaController extends Controller
 
     public function update(Request $request, Relatie $relatie, Diploma $diploma): RedirectResponse
     {
+        abort_unless($diploma->relatie_id === $relatie->id, 404);
+
         $validated = $request->validate([
             'naam' => ['required', 'string', 'max:255'],
             'instrument' => ['nullable', 'string', 'max:255'],
@@ -36,6 +38,8 @@ class RelatieDiplomaController extends Controller
 
     public function destroy(Relatie $relatie, Diploma $diploma): RedirectResponse
     {
+        abort_unless($diploma->relatie_id === $relatie->id, 404);
+
         $diploma->delete();
 
         return back()->with('success', __('Diploma deleted.'));

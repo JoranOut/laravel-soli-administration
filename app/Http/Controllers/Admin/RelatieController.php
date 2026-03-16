@@ -15,6 +15,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,12 +33,16 @@ class RelatieController extends Controller
             return Inertia::render('admin/relaties/not-linked');
         }
 
+        $allowedSorts = ['achternaam', 'voornaam', 'relatie_nummer'];
+        $sort = in_array($request->input('sort'), $allowedSorts) ? $request->input('sort') : 'achternaam';
+        $direction = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+
         $relaties = Relatie::query()
             ->search($request->input('search'))
             ->ofType($request->input('type'))
             ->when(! $request->boolean('show_inactive'), fn ($q) => $q->actief())
             ->with(['types' => fn ($q) => $q->wherePivotNull('tot')->orWherePivot('tot', '>=', now()->toDateString())])
-            ->orderBy($request->input('sort', 'achternaam'), $request->input('direction', 'asc'))
+            ->orderBy($sort, $direction)
             ->paginate(25)
             ->withQueryString();
 
@@ -107,7 +112,8 @@ class RelatieController extends Controller
                 'password' => Str::random(32),
             ]);
             $user->assignRole('member');
-            $relatie->update(['user_id' => $user->id]);
+            $relatie->user_id = $user->id;
+            $relatie->save();
 
             // Telefoons
             foreach ($validated['telefoons'] ?? [] as $telefoon) {
@@ -206,7 +212,8 @@ class RelatieController extends Controller
         // Auto-delete linked user account when relatie is set to inactive
         if ($wasActief && !$relatie->actief && $relatie->user_id) {
             $relatie->user()->delete();
-            $relatie->update(['user_id' => null]);
+            $relatie->user_id = null;
+            $relatie->save();
         }
 
         return redirect()
@@ -263,7 +270,8 @@ class RelatieController extends Controller
 
         $user = User::findOrFail($validated['user_id']);
 
-        $relatie->update(['user_id' => $user->id]);
+        $relatie->user_id = $user->id;
+        $relatie->save();
 
         // Ensure the user's email exists in the relatie's email records
         if (! $relatie->emails()->where('email', $user->email)->exists()) {
@@ -284,7 +292,7 @@ class RelatieController extends Controller
         }
 
         $validated = $request->validate([
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', Password::default()],
         ]);
 
         $relatie->user->update([
@@ -310,7 +318,8 @@ class RelatieController extends Controller
 
         if ($otherRelatiesCount > 0) {
             // User is linked to other relaties — just disconnect
-            $relatie->update(['user_id' => null]);
+            $relatie->user_id = null;
+            $relatie->save();
 
             return redirect()
                 ->back()
@@ -319,7 +328,8 @@ class RelatieController extends Controller
 
         // User is only linked to this relatie — delete the account
         $relatie->user()->delete();
-        $relatie->update(['user_id' => null]);
+        $relatie->user_id = null;
+        $relatie->save();
 
         return redirect()
             ->back()

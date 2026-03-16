@@ -7,6 +7,10 @@ type PaginationProps = {
     pagination: PaginatedResponse<unknown>;
 };
 
+function decodeLabel(label: string): string {
+    return label.replace(/&laquo;/g, '\u00AB').replace(/&raquo;/g, '\u00BB').replace(/&amp;/g, '&');
+}
+
 export function Pagination({ pagination }: PaginationProps) {
     const { t } = useTranslation();
 
@@ -31,10 +35,11 @@ export function Pagination({ pagination }: PaginationProps) {
                                 href={link.url}
                                 preserveState
                                 preserveScroll
-                                dangerouslySetInnerHTML={{ __html: link.label }}
-                            />
+                            >
+                                {decodeLabel(link.label)}
+                            </Link>
                         ) : (
-                            <span dangerouslySetInnerHTML={{ __html: link.label }} />
+                            <span>{decodeLabel(link.label)}</span>
                         )}
                     </Button>
                 ))}

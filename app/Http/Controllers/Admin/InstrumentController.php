@@ -14,6 +14,10 @@ class InstrumentController extends Controller
 {
     public function index(Request $request): Response
     {
+        $allowedSorts = ['nummer', 'soort', 'merk', 'status'];
+        $sort = in_array($request->input('sort'), $allowedSorts) ? $request->input('sort') : 'nummer';
+        $direction = $request->input('direction') === 'desc' ? 'desc' : 'asc';
+
         $instrumenten = Instrument::query()
             ->when($request->input('status'), fn ($q, $status) => $q->where('status', $status))
             ->when($request->input('search'), function ($q, $search) {
@@ -24,7 +28,7 @@ class InstrumentController extends Controller
                 });
             })
             ->with('huidigeBespeler.relatie')
-            ->orderBy($request->input('sort', 'nummer'), $request->input('direction', 'asc'))
+            ->orderBy($sort, $direction)
             ->paginate(25)
             ->withQueryString();
 

@@ -43,14 +43,16 @@ class UserRelatieLinkController extends Controller
             return back()->withErrors(['relatie_id' => __('This relation is already linked to a user.')]);
         }
 
-        $relatie->update(['user_id' => $user->id]);
+        $relatie->user_id = $user->id;
+        $relatie->save();
 
         return back();
     }
 
     public function destroy(Relatie $relatie): RedirectResponse
     {
-        $relatie->update(['user_id' => null]);
+        $relatie->user_id = null;
+        $relatie->save();
 
         return back();
     }
