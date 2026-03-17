@@ -78,7 +78,7 @@ class RelatieContactController extends Controller
 
         $uniqueRule = 'unique:users,email';
         if ($isLoginEmail) {
-            $uniqueRule .= ',' . $relatie->user->id;
+            $uniqueRule .= ','.$relatie->user->id;
         }
 
         $validated = $request->validate([

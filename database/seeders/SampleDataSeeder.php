@@ -33,6 +33,7 @@ class SampleDataSeeder extends Seeder
             $counter++;
         }
         $this->usedEmails[] = $email;
+
         return $email;
     }
 

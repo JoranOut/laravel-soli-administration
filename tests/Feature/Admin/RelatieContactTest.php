@@ -1,10 +1,7 @@
 <?php
 
-use App\Models\Adres;
 use App\Models\Email;
-use App\Models\GiroGegeven;
 use App\Models\Relatie;
-use App\Models\Telefoon;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 

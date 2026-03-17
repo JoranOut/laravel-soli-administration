@@ -5,8 +5,8 @@ use App\Models\Relatie;
 use App\Models\RelatieType;
 use App\Models\User;
 use Database\Seeders\OnderdeelSeeder;
-use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\RelatieTypeSeeder;
+use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
+use Laravel\Passport\Passport;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +28,14 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+        $this->configurePassport();
+    }
+
+    protected function configurePassport(): void
+    {
+        Passport::defaultScopes(['openid']);
+
+        Passport::authorizationView(fn (array $params) => inertia('auth/oauth-authorize', $params));
     }
 
     /**

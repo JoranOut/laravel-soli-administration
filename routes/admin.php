@@ -1,21 +1,21 @@
 <?php
 
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\BetalingController;
 use App\Http\Controllers\Admin\ContributieController;
 use App\Http\Controllers\Admin\InstrumentBespelerController;
 use App\Http\Controllers\Admin\InstrumentController;
 use App\Http\Controllers\Admin\InstrumentReparatieController;
 use App\Http\Controllers\Admin\OnderdeelController;
-use App\Http\Controllers\Admin\TariefgroepController;
-use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\RelatieContactController;
 use App\Http\Controllers\Admin\RelatieController;
-use App\Http\Controllers\Admin\RelatieLidmaatschapController;
 use App\Http\Controllers\Admin\RelatieDiplomaController;
 use App\Http\Controllers\Admin\RelatieInsigneController;
+use App\Http\Controllers\Admin\RelatieLidmaatschapController;
 use App\Http\Controllers\Admin\RelatieOpleidingController;
 use App\Http\Controllers\Admin\RelatieTypeController;
 use App\Http\Controllers\Admin\RolePermissionController;
+use App\Http\Controllers\Admin\TariefgroepController;
 use App\Http\Controllers\Admin\UserRelatieLinkController;
 use App\Http\Controllers\Admin\UserRoleController;
 use Illuminate\Support\Facades\Route;

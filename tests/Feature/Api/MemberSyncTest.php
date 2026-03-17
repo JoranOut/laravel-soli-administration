@@ -8,20 +8,38 @@ use App\Models\User;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
-
-const SYNC_API_KEY = 'test-sync-api-key-12345';
+use Laravel\Passport\Client;
+use Laravel\Passport\Passport;
+use League\OAuth2\Server\ResourceServer;
+use Psr\Http\Message\ServerRequestInterface;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
     $this->seed(OnderdeelSeeder::class);
 
-    config(['services.sync.api_key' => SYNC_API_KEY]);
+    // Mock the ResourceServer to accept any bearer token as a valid client credentials token.
+    // We do NOT use Passport::actingAsClient() because it calls shouldUse('api') which
+    // changes the default guard and breaks Spatie role assignment in test setup.
+    $client = Client::factory()->asClientCredentials()->create();
+
+    $mock = Mockery::mock(ResourceServer::class);
+    $mock->shouldReceive('validateAuthenticatedRequest')->andReturnUsing(
+        fn (ServerRequestInterface $request) => $request
+            ->withAttribute('oauth_client_id', $client->getKey())
+            ->withAttribute('oauth_scopes', [])
+            ->withAttribute('oauth_user_id', null)
+    );
+
+    app()->instance(ResourceServer::class, $mock);
 });
 
 // --- Authentication ---
 
-test('rejects request without API key', function () {
+test('rejects request without client credentials', function () {
+    // Replace mock with real ResourceServer (no valid token → 401)
+    app()->forgetInstance(ResourceServer::class);
+
     $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
@@ -31,36 +49,8 @@ test('rejects request without API key', function () {
     $response->assertStatus(401);
 });
 
-test('rejects request with invalid API key', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer wrong-key',
-    ])->putJson('/api/v1/sync/members/1000', [
-        'voornaam' => 'Jan',
-        'achternaam' => 'Jansen',
-        'email' => 'jan@test.nl',
-    ]);
-
-    $response->assertStatus(401);
-});
-
-test('returns 503 when API key is not configured', function () {
-    config(['services.sync.api_key' => null]);
-
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
-        'voornaam' => 'Jan',
-        'achternaam' => 'Jansen',
-        'email' => 'jan@test.nl',
-    ]);
-
-    $response->assertStatus(503);
-});
-
-test('accepts request with valid API key', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+test('accepts request with valid client credentials', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -72,18 +62,14 @@ test('accepts request with valid API key', function () {
 // --- Validation ---
 
 test('returns 422 for missing required fields', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', []);
+    $response = $this->putJson('/api/v1/sync/members/1000', []);
 
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['voornaam', 'achternaam', 'email']);
 });
 
 test('returns 422 for invalid email', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'not-an-email',
@@ -96,9 +82,7 @@ test('returns 422 for invalid email', function () {
 // --- Upsert: Create ---
 
 test('creates new relatie with user account and lid type', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -128,9 +112,7 @@ test('creates new relatie with user account and lid type', function () {
 });
 
 test('creates relatie with tussenvoegsel', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1001', [
+    $response = $this->putJson('/api/v1/sync/members/1001', [
         'voornaam' => 'Jan',
         'tussenvoegsel' => 'van der',
         'achternaam' => 'Berg',
@@ -145,9 +127,7 @@ test('creates relatie with tussenvoegsel', function () {
 });
 
 test('creates relatie with onderdeel assignments', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -164,9 +144,7 @@ test('creates relatie with onderdeel assignments', function () {
 });
 
 test('warns about unknown onderdeel codes', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -185,9 +163,7 @@ test('links existing user to new relatie even when already linked to another rel
     $existingUser = User::factory()->create(['email' => 'jan@test.nl']);
     $existingRelatie = Relatie::factory()->create(['user_id' => $existingUser->id]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/2000', [
+    $response = $this->putJson('/api/v1/sync/members/2000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -207,9 +183,7 @@ test('links existing user to new relatie even when already linked to another rel
 test('links existing unlinked user when creating relatie', function () {
     $existingUser = User::factory()->create(['email' => 'jan@test.nl']);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/2000', [
+    $response = $this->putJson('/api/v1/sync/members/2000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -234,9 +208,7 @@ test('updates existing relatie name fields', function () {
     $user->assignRole('member');
     $relatie->update(['user_id' => $user->id]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Pieter',
         'achternaam' => 'Pietersen',
         'email' => 'jan@test.nl',
@@ -257,9 +229,7 @@ test('adds missing email on update', function () {
     $user->assignRole('member');
     $relatie->update(['user_id' => $user->id]);
 
-    $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'new@test.nl',
@@ -285,9 +255,7 @@ test('syncs onderdelen on update: adds new, closes removed', function () {
     $relatie->onderdelen()->attach($bb->id, ['van' => now()->subYear()->toDateString()]);
 
     // Sync to HA and KO (remove BB, add KO)
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'jan@test.nl',
@@ -311,9 +279,7 @@ test('reactivates inactive relatie on update', function () {
         'actief' => false,
     ]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'jan@test.nl',
@@ -333,9 +299,7 @@ test('creates user account for relatie without one on update', function () {
     ]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'jan@test.nl',
@@ -365,9 +329,7 @@ test('deactivates member and deletes user account', function () {
     $ha = Onderdeel::where('afkorting', 'HA')->first();
     $relatie->onderdelen()->attach($ha->id, ['van' => now()->subYear()->toDateString()]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->deleteJson('/api/v1/sync/members/1000');
+    $response = $this->deleteJson('/api/v1/sync/members/1000');
 
     $response->assertStatus(200);
     $response->assertJson(['status' => 'deactivated']);
@@ -387,9 +349,7 @@ test('deactivates member and deletes user account', function () {
 });
 
 test('returns 404 when deactivating unknown member', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->deleteJson('/api/v1/sync/members/9999');
+    $response = $this->deleteJson('/api/v1/sync/members/9999');
 
     $response->assertStatus(404);
 });
@@ -401,9 +361,7 @@ test('deactivates member without user account gracefully', function () {
         'actief' => true,
     ]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->deleteJson('/api/v1/sync/members/1000');
+    $response = $this->deleteJson('/api/v1/sync/members/1000');
 
     $response->assertStatus(200);
 
@@ -414,9 +372,7 @@ test('deactivates member without user account gracefully', function () {
 // --- Edge Cases ---
 
 test('handles empty onderdeel_codes array', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -430,9 +386,7 @@ test('handles empty onderdeel_codes array', function () {
 });
 
 test('handles missing onderdeel_codes field', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->putJson('/api/v1/sync/members/1000', [
+    $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
@@ -444,7 +398,9 @@ test('handles missing onderdeel_codes field', function () {
     expect($relatie->onderdelen()->wherePivotNull('tot')->count())->toBe(0);
 });
 
-test('delete endpoint also requires API key', function () {
+test('delete endpoint also requires client credentials', function () {
+    app()->forgetInstance(ResourceServer::class);
+
     $response = $this->deleteJson('/api/v1/sync/members/1000');
 
     $response->assertStatus(401);
@@ -466,9 +422,7 @@ test('reconcile deactivates members not in active list', function () {
         Relatie::factory()->create(['relatie_nummer' => $i, 'actief' => true]);
     }
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->postJson('/api/v1/sync/reconcile', [
+    $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000, 1002, 1003, 1004, 1005],
     ]);
 
@@ -493,9 +447,7 @@ test('reconcile does nothing when all members are active', function () {
     Relatie::factory()->create(['relatie_nummer' => 1000, 'actief' => true]);
     Relatie::factory()->create(['relatie_nummer' => 1001, 'actief' => true]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->postJson('/api/v1/sync/reconcile', [
+    $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000, 1001],
     ]);
 
@@ -504,9 +456,7 @@ test('reconcile does nothing when all members are active', function () {
 });
 
 test('reconcile with empty list returns validation error', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->postJson('/api/v1/sync/reconcile', [
+    $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [],
     ]);
 
@@ -521,9 +471,7 @@ test('reconcile aborts when exceeding 20 percent threshold', function () {
     }
 
     // Keep only 3, deactivate 2 of 5 = 40% → should abort
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->postJson('/api/v1/sync/reconcile', [
+    $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000, 1001, 1002],
     ]);
 
@@ -540,9 +488,7 @@ test('reconcile ignores already inactive relaties', function () {
     Relatie::factory()->create(['relatie_nummer' => 1000, 'actief' => false]);
     Relatie::factory()->create(['relatie_nummer' => 1001, 'actief' => true]);
 
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->postJson('/api/v1/sync/reconcile', [
+    $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1001],
     ]);
 
@@ -550,7 +496,9 @@ test('reconcile ignores already inactive relaties', function () {
     $response->assertJson(['deactivated_count' => 0]);
 });
 
-test('reconcile requires API key', function () {
+test('reconcile requires client credentials', function () {
+    app()->forgetInstance(ResourceServer::class);
+
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000],
     ]);
@@ -559,9 +507,7 @@ test('reconcile requires API key', function () {
 });
 
 test('reconcile validates active_lid_ids is required', function () {
-    $response = $this->withHeaders([
-        'Authorization' => 'Bearer ' . SYNC_API_KEY,
-    ])->postJson('/api/v1/sync/reconcile', []);
+    $response = $this->postJson('/api/v1/sync/reconcile', []);
 
     $response->assertStatus(422);
 });

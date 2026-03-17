@@ -1,14 +1,12 @@
 <?php
 
 use App\Models\Onderdeel;
-use App\Models\Opleiding;
 use App\Models\Relatie;
-use App\Models\RelatieSinds;
 use App\Models\RelatieType;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);

@@ -17,7 +17,7 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('member') && !$user->hasRole('admin') && !$user->hasRole('bestuur') && !$user->hasRole('ledenadministratie')) {
+        if ($user->hasRole('member') && ! $user->hasRole('admin') && ! $user->hasRole('bestuur') && ! $user->hasRole('ledenadministratie')) {
             return $this->memberDashboard($user, $request);
         }
 

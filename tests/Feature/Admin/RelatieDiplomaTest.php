@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\Diploma;
 use App\Models\Relatie;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
