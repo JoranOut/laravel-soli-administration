@@ -210,7 +210,7 @@ class RelatieController extends Controller
         $relatie->update($request->validated());
 
         // Auto-delete linked user account when relatie is set to inactive
-        if ($wasActief && !$relatie->actief && $relatie->user_id) {
+        if ($wasActief && ! $relatie->actief && $relatie->user_id) {
             $relatie->user()->delete();
             $relatie->user_id = null;
             $relatie->save();
@@ -232,7 +232,7 @@ class RelatieController extends Controller
 
     public function updateAccountEmail(Request $request, Relatie $relatie): RedirectResponse
     {
-        if (!$relatie->user_id) {
+        if (! $relatie->user_id) {
             return redirect()
                 ->back()
                 ->with('error', __('No linked user account.'));
@@ -245,11 +245,11 @@ class RelatieController extends Controller
                 'required',
                 'email',
                 function (string $attribute, mixed $value, \Closure $fail) use ($relatieEmailAddresses) {
-                    if (!in_array($value, $relatieEmailAddresses)) {
+                    if (! in_array($value, $relatieEmailAddresses)) {
                         $fail(__('The selected email is not one of this relation\'s email addresses.'));
                     }
                 },
-                'unique:users,email,' . $relatie->user->id,
+                'unique:users,email,'.$relatie->user->id,
             ],
         ]);
 
@@ -285,7 +285,7 @@ class RelatieController extends Controller
 
     public function resetPassword(Request $request, Relatie $relatie): RedirectResponse
     {
-        if (!$relatie->user_id) {
+        if (! $relatie->user_id) {
             return redirect()
                 ->back()
                 ->with('error', __('No linked user account.'));
@@ -306,7 +306,7 @@ class RelatieController extends Controller
 
     public function destroyAccount(Relatie $relatie): RedirectResponse
     {
-        if (!$relatie->user_id) {
+        if (! $relatie->user_id) {
             return redirect()
                 ->back()
                 ->with('error', __('No linked user account.'));

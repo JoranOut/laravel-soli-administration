@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Betaling;
 use App\Models\TeBetakenContributie;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

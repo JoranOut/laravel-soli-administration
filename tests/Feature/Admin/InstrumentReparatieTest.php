@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\Instrument;
-use App\Models\InstrumentReparatie;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
