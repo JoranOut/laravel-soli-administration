@@ -1,6 +1,5 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/hooks/use-translation';
 import AuthLayout from '@/layouts/auth-layout';
 
@@ -21,32 +20,11 @@ type Props = {
     request: {
         state: string;
     };
+    csrfToken: string;
 };
 
-export default function OAuthAuthorize({ client, scopes, authToken, request }: Props) {
+export default function OAuthAuthorize({ client, scopes, authToken, request, csrfToken }: Props) {
     const { t } = useTranslation();
-
-    const approveForm = useForm({
-        state: request.state,
-        client_id: client.id,
-        auth_token: authToken,
-    });
-
-    const denyForm = useForm({
-        state: request.state,
-        client_id: client.id,
-        auth_token: authToken,
-    });
-
-    function approve(e: React.FormEvent) {
-        e.preventDefault();
-        approveForm.post('/oauth/authorize');
-    }
-
-    function deny(e: React.FormEvent) {
-        e.preventDefault();
-        denyForm.delete('/oauth/authorize');
-    }
 
     return (
         <AuthLayout
@@ -68,25 +46,23 @@ export default function OAuthAuthorize({ client, scopes, authToken, request }: P
                 )}
 
                 <div className="flex gap-3">
-                    <form onSubmit={approve} className="flex-1">
-                        <Button
-                            type="submit"
-                            className="w-full"
-                            disabled={approveForm.processing}
-                        >
-                            {approveForm.processing && <Spinner />}
+                    <form method="POST" action="/oauth/authorize" className="flex-1">
+                        <input type="hidden" name="_token" value={csrfToken} />
+                        <input type="hidden" name="state" value={request.state} />
+                        <input type="hidden" name="client_id" value={client.id} />
+                        <input type="hidden" name="auth_token" value={authToken} />
+                        <Button type="submit" className="w-full">
                             {t('Authorize')}
                         </Button>
                     </form>
 
-                    <form onSubmit={deny} className="flex-1">
-                        <Button
-                            type="submit"
-                            variant="outline"
-                            className="w-full"
-                            disabled={denyForm.processing}
-                        >
-                            {denyForm.processing && <Spinner />}
+                    <form method="POST" action="/oauth/authorize" className="flex-1">
+                        <input type="hidden" name="_token" value={csrfToken} />
+                        <input type="hidden" name="_method" value="DELETE" />
+                        <input type="hidden" name="state" value={request.state} />
+                        <input type="hidden" name="client_id" value={client.id} />
+                        <input type="hidden" name="auth_token" value={authToken} />
+                        <Button type="submit" variant="outline" className="w-full">
                             {t('Deny')}
                         </Button>
                     </form>
