@@ -51,19 +51,27 @@ function generatePassword(length = 16): string {
 function PasswordResetSection({ relatieId, t }: { relatieId: number; t: (key: string, replacements?: Record<string, string>) => string }) {
     const [password, setPassword] = useState('');
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     const handleGenerate = () => {
         setPassword(generatePassword());
+        setError('');
     };
 
     const handleReset = () => {
         if (!password) return;
         setSaving(true);
+        setError('');
         router.put(`/admin/relaties/${relatieId}/account/password`, { password }, {
             preserveScroll: true,
+            onSuccess: () => {
+                setPassword('');
+            },
+            onError: (errors) => {
+                setError(errors.password ?? t('Something went wrong.'));
+            },
             onFinish: () => {
                 setSaving(false);
-                setPassword('');
             },
         });
     };
@@ -80,7 +88,7 @@ function PasswordResetSection({ relatieId, t }: { relatieId: number; t: (key: st
                 <Input
                     type="text"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
                     placeholder={t('New password')}
                     className="max-w-sm font-mono"
                 />
@@ -93,6 +101,9 @@ function PasswordResetSection({ relatieId, t }: { relatieId: number; t: (key: st
             </div>
             {password.length > 0 && password.length < 8 && (
                 <p className="text-destructive text-sm">{t('Password must be at least :count characters.', { count: '8' })}</p>
+            )}
+            {error && (
+                <p className="text-destructive text-sm">{error}</p>
             )}
         </div>
     );

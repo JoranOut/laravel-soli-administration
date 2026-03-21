@@ -300,6 +300,26 @@ test('admin can reset password for a linked user account', function () {
     expect($linkedUser->password)->not->toBe($oldHash);
 });
 
+test('admin can reset password and user can login with new password', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $linkedUser = User::factory()->create(['email' => 'member@example.com'])->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+
+    $this->actingAs($admin)
+        ->put("/admin/relaties/{$relatie->id}/account/password", ['password' => 'newpassword123'])
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    // Log out admin, then try to log in as the member with the new password
+    $this->post('/logout');
+
+    $this->post('/login', [
+        'email' => 'member@example.com',
+        'password' => 'newpassword123',
+    ])->assertRedirect('/dashboard');
+});
+
 test('password reset requires minimum 8 characters', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
