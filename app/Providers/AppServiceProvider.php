@@ -42,7 +42,9 @@ class AppServiceProvider extends ServiceProvider
 
         Passport::defaultScopes(['openid']);
 
-        Passport::authorizationView(fn (array $params) => inertia('auth/oauth-authorize', $params));
+        Passport::authorizationView(fn (array $params) => inertia('auth/oauth-authorize', array_merge($params, [
+            'csrfToken' => csrf_token(),
+        ])));
     }
 
     /**
