@@ -32,7 +32,9 @@ return [
 
     'signer' => \Lcobucci\JWT\Signer\Rsa\Sha256::class,
 
-    'token_headers' => [],
+    'token_headers' => [
+        'kid' => 'soli-passport-key',
+    ],
 
     'use_microseconds' => true,
 
