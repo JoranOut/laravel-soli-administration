@@ -25,6 +25,7 @@ test('userinfo returns profile claims for profile scope', function () {
     $relatie = Relatie::factory()->create([
         'user_id' => $user->id,
         'voornaam' => 'Jan',
+        'tussenvoegsel' => null,
         'achternaam' => 'Jansen',
     ]);
 
@@ -35,8 +36,28 @@ test('userinfo returns profile claims for profile scope', function () {
     $response->assertOk();
     $response->assertJsonFragment([
         'name' => 'Jan Jansen',
+        'preferred_username' => 'Jan Jansen',
         'given_name' => 'Jan',
         'family_name' => 'Jansen',
+    ]);
+});
+
+test('userinfo returns preferred_username with tussenvoegsel', function () {
+    $user = User::factory()->create(['name' => 'Jan van der Berg']);
+    $relatie = Relatie::factory()->create([
+        'user_id' => $user->id,
+        'voornaam' => 'Jan',
+        'tussenvoegsel' => 'van der',
+        'achternaam' => 'Berg',
+    ]);
+
+    Passport::actingAs($user, ['openid', 'profile']);
+
+    $response = $this->getJson('/api/oauth/userinfo');
+
+    $response->assertOk();
+    $response->assertJsonFragment([
+        'preferred_username' => 'Jan van der Berg',
     ]);
 });
 
