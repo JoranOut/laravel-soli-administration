@@ -8,38 +8,23 @@ use App\Models\User;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
-use Laravel\Passport\Client;
-use Laravel\Passport\Passport;
-use League\OAuth2\Server\ResourceServer;
-use Psr\Http\Message\ServerRequestInterface;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
     $this->seed(OnderdeelSeeder::class);
 
-    // Mock the ResourceServer to accept any bearer token as a valid client credentials token.
-    // We do NOT use Passport::actingAsClient() because it calls shouldUse('api') which
-    // changes the default guard and breaks Spatie role assignment in test setup.
-    $client = Client::factory()->asClientCredentials()->create();
-
-    $mock = Mockery::mock(ResourceServer::class);
-    $mock->shouldReceive('validateAuthenticatedRequest')->andReturnUsing(
-        fn (ServerRequestInterface $request) => $request
-            ->withAttribute('oauth_client_id', $client->getKey())
-            ->withAttribute('oauth_scopes', [])
-            ->withAttribute('oauth_user_id', null)
-    );
-
-    app()->instance(ResourceServer::class, $mock);
+    config(['services.soli_sync.api_key' => 'test-sync-api-key']);
 });
+
+function syncHeaders(): array
+{
+    return ['X-API-Key' => 'test-sync-api-key'];
+}
 
 // --- Authentication ---
 
-test('rejects request without client credentials', function () {
-    // Replace mock with real ResourceServer (no valid token → 401)
-    app()->forgetInstance(ResourceServer::class);
-
+test('rejects request without API key', function () {
     $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
@@ -49,12 +34,22 @@ test('rejects request without client credentials', function () {
     $response->assertStatus(401);
 });
 
-test('accepts request with valid client credentials', function () {
+test('rejects request with invalid API key', function () {
     $response = $this->putJson('/api/v1/sync/members/1000', [
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
-    ]);
+    ], ['X-API-Key' => 'wrong-key']);
+
+    $response->assertStatus(401);
+});
+
+test('accepts request with valid API key', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+    ], syncHeaders());
 
     $response->assertStatus(201);
 });
@@ -62,7 +57,7 @@ test('accepts request with valid client credentials', function () {
 // --- Validation ---
 
 test('returns 422 for missing required fields', function () {
-    $response = $this->putJson('/api/v1/sync/members/1000', []);
+    $response = $this->putJson('/api/v1/sync/members/1000', [], syncHeaders());
 
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['voornaam', 'achternaam', 'email']);
@@ -73,7 +68,7 @@ test('returns 422 for invalid email', function () {
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'not-an-email',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(422);
     $response->assertJsonValidationErrors(['email']);
@@ -86,7 +81,7 @@ test('creates new relatie with user account and lid type', function () {
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
     $response->assertJson(['status' => 'created']);
@@ -117,7 +112,7 @@ test('creates relatie with tussenvoegsel', function () {
         'tussenvoegsel' => 'van der',
         'achternaam' => 'Berg',
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
 
@@ -132,7 +127,7 @@ test('creates relatie with onderdeel assignments', function () {
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
         'onderdeel_codes' => ['HA', 'BB'],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
 
@@ -149,7 +144,7 @@ test('warns about unknown onderdeel codes', function () {
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
         'onderdeel_codes' => ['HA', 'XX'],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
     $response->assertJsonFragment(['Unknown onderdeel code: XX']);
@@ -167,7 +162,7 @@ test('links existing user to new relatie even when already linked to another rel
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
     $response->assertJson(['status' => 'created']);
@@ -187,7 +182,7 @@ test('links existing unlinked user when creating relatie', function () {
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
 
@@ -212,7 +207,7 @@ test('updates existing relatie name fields', function () {
         'voornaam' => 'Pieter',
         'achternaam' => 'Pietersen',
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
     $response->assertJson(['status' => 'updated']);
@@ -233,7 +228,7 @@ test('adds missing email on update', function () {
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'new@test.nl',
-    ]);
+    ], syncHeaders());
 
     expect($relatie->emails()->where('email', 'new@test.nl')->exists())->toBeTrue();
     expect($relatie->emails()->where('email', 'old@test.nl')->exists())->toBeTrue();
@@ -260,7 +255,7 @@ test('syncs onderdelen on update: adds new, closes removed', function () {
         'achternaam' => $relatie->achternaam,
         'email' => 'jan@test.nl',
         'onderdeel_codes' => ['HA', 'KO'],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
 
@@ -283,7 +278,7 @@ test('reactivates inactive relatie on update', function () {
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
 
@@ -303,7 +298,7 @@ test('creates user account for relatie without one on update', function () {
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
 
@@ -329,7 +324,7 @@ test('deactivates member and deletes user account', function () {
     $ha = Onderdeel::where('afkorting', 'HA')->first();
     $relatie->onderdelen()->attach($ha->id, ['van' => now()->subYear()->toDateString()]);
 
-    $response = $this->deleteJson('/api/v1/sync/members/1000');
+    $response = $this->deleteJson('/api/v1/sync/members/1000', [], syncHeaders());
 
     $response->assertStatus(200);
     $response->assertJson(['status' => 'deactivated']);
@@ -349,7 +344,7 @@ test('deactivates member and deletes user account', function () {
 });
 
 test('returns 404 when deactivating unknown member', function () {
-    $response = $this->deleteJson('/api/v1/sync/members/9999');
+    $response = $this->deleteJson('/api/v1/sync/members/9999', [], syncHeaders());
 
     $response->assertStatus(404);
 });
@@ -361,7 +356,7 @@ test('deactivates member without user account gracefully', function () {
         'actief' => true,
     ]);
 
-    $response = $this->deleteJson('/api/v1/sync/members/1000');
+    $response = $this->deleteJson('/api/v1/sync/members/1000', [], syncHeaders());
 
     $response->assertStatus(200);
 
@@ -377,7 +372,7 @@ test('handles empty onderdeel_codes array', function () {
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
         'onderdeel_codes' => [],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
 
@@ -390,7 +385,7 @@ test('handles missing onderdeel_codes field', function () {
         'voornaam' => 'Jan',
         'achternaam' => 'Jansen',
         'email' => 'jan@test.nl',
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(201);
 
@@ -398,9 +393,7 @@ test('handles missing onderdeel_codes field', function () {
     expect($relatie->onderdelen()->wherePivotNull('tot')->count())->toBe(0);
 });
 
-test('delete endpoint also requires client credentials', function () {
-    app()->forgetInstance(ResourceServer::class);
-
+test('delete endpoint also requires API key', function () {
     $response = $this->deleteJson('/api/v1/sync/members/1000');
 
     $response->assertStatus(401);
@@ -424,7 +417,7 @@ test('reconcile deactivates members not in active list', function () {
 
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000, 1002, 1003, 1004, 1005],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
     $response->assertJson([
@@ -449,7 +442,7 @@ test('reconcile does nothing when all members are active', function () {
 
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000, 1001],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
     $response->assertJson(['deactivated_count' => 0]);
@@ -458,7 +451,7 @@ test('reconcile does nothing when all members are active', function () {
 test('reconcile with empty list returns validation error', function () {
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(422);
     $response->assertJsonValidationErrors('active_lid_ids');
@@ -473,7 +466,7 @@ test('reconcile aborts when exceeding 20 percent threshold', function () {
     // Keep only 3, deactivate 2 of 5 = 40% → should abort
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000, 1001, 1002],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(409);
     $response->assertJsonFragment(['message' => 'Reconcile aborted: would deactivate 2 of 5 active members (exceeds 20% threshold).']);
@@ -490,15 +483,13 @@ test('reconcile ignores already inactive relaties', function () {
 
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1001],
-    ]);
+    ], syncHeaders());
 
     $response->assertStatus(200);
     $response->assertJson(['deactivated_count' => 0]);
 });
 
-test('reconcile requires client credentials', function () {
-    app()->forgetInstance(ResourceServer::class);
-
+test('reconcile requires API key', function () {
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000],
     ]);
@@ -507,7 +498,7 @@ test('reconcile requires client credentials', function () {
 });
 
 test('reconcile validates active_lid_ids is required', function () {
-    $response = $this->postJson('/api/v1/sync/reconcile', []);
+    $response = $this->postJson('/api/v1/sync/reconcile', [], syncHeaders());
 
     $response->assertStatus(422);
 });
