@@ -32,6 +32,11 @@ class SoliIdentityEntity implements IdentityEntityInterface
             $relatie = $this->user->relaties()->first();
 
             $claims['name'] = $this->user->name;
+            $claims['preferred_username'] = collect([
+                $relatie?->voornaam,
+                $relatie?->tussenvoegsel,
+                $relatie?->achternaam,
+            ])->filter()->implode(' ');
             $claims['given_name'] = $relatie?->voornaam ?? '';
             $claims['family_name'] = $relatie?->achternaam ?? '';
         }
