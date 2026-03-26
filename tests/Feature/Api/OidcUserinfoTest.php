@@ -25,6 +25,7 @@ test('userinfo returns profile claims for profile scope', function () {
     $relatie = Relatie::factory()->create([
         'user_id' => $user->id,
         'voornaam' => 'Jan',
+        'tussenvoegsel' => null,
         'achternaam' => 'Jansen',
     ]);
 
