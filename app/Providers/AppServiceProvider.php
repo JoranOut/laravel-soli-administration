@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Auth\WordPressUserProvider;
 use App\Http\Responses\LoginResponse;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -29,6 +31,14 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configurePassport();
+        $this->configureAuth();
+    }
+
+    protected function configureAuth(): void
+    {
+        Auth::provider('wordpress-eloquent', function ($app, array $config) {
+            return new WordPressUserProvider($app['hash'], $config['model']);
+        });
     }
 
     protected function configurePassport(): void

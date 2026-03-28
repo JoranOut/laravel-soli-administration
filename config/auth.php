@@ -68,7 +68,7 @@ return [
 
     'providers' => [
         'users' => [
-            'driver' => 'eloquent',
+            'driver' => 'wordpress-eloquent',
             'model' => env('AUTH_MODEL', User::class),
         ],
 
