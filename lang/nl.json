@@ -527,5 +527,11 @@
     "Delete section": "Onderdeel verwijderen",
     "Are you sure you want to delete :name?": "Weet je zeker dat je :name wilt verwijderen?",
     "Cannot delete a section with active members.": "Kan onderdeel met actieve leden niet verwijderen.",
-    "Cannot delete a fee group with linked contributions.": "Kan tariefgroep met gekoppelde contributies niet verwijderen."
+    "Cannot delete a fee group with linked contributions.": "Kan tariefgroep met gekoppelde contributies niet verwijderen.",
+
+    "Sections membership over time": "Onderdelen bezetting over tijd",
+    "joined": "erbij",
+    "left": "vertrokken",
+    "last 12 months": "afgelopen 12 maanden",
+    "Contact ledenadministratie@soli.nl to update your name or email address.": "Neem contact op met ledenadministratie@soli.nl om uw naam of e-mailadres te wijzigen."
 }
