@@ -94,7 +94,7 @@ jobs:
 
           # Health check — rollback if site is broken
           sleep 2
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 https://admin.soli.nl || echo "000")
+          HTTP_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 10 https://admin.soli.nl || echo "000")
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 500 ]; then
             echo "Health check failed (HTTP $HTTP_STATUS) — rolling back"
             cd "$APP_DIR"
