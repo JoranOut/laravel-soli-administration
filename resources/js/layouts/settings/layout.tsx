@@ -8,7 +8,6 @@ import { useTranslation } from '@/hooks/use-translation';
 import { cn, toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
 import { edit } from '@/routes/profile';
-import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import type { NavItem } from '@/types';
 
@@ -25,11 +24,6 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
         {
             title: t('Password'),
             href: editPassword(),
-            icon: null,
-        },
-        {
-            title: t('Two-factor auth'),
-            href: show(),
             icon: null,
         },
         {

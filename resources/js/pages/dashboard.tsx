@@ -1,18 +1,35 @@
 import { Head, Link } from '@inertiajs/react';
+import { useMemo } from 'react';
 import { Music, Users, Wrench, Heart, AlertTriangle } from 'lucide-react';
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, DashboardStats, DashboardAlerts } from '@/types';
+import type { BreadcrumbItem, DashboardStats, DashboardAlerts, OnderdeelHistoryEntry } from '@/types';
 
 type Props = {
     stats: DashboardStats;
     alerts?: DashboardAlerts;
+    onderdeel_history?: OnderdeelHistoryEntry[];
+    onderdeel_names?: string[];
 };
 
-export default function Dashboard({ stats, alerts }: Props) {
+const CHART_COLORS = [
+    'var(--chart-1)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    'var(--chart-5)',
+];
+
+function slugify(name: string): string {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
+export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_names }: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -28,6 +45,14 @@ export default function Dashboard({ stats, alerts }: Props) {
             value: stats.actieve_leden,
             icon: Users,
             description: t('Current active members'),
+            extra: (
+                <p className="text-muted-foreground mt-1 text-xs">
+                    <span className="text-green-600 dark:text-green-400">+{stats.leden_joined_12m}</span>
+                    {' / '}
+                    <span className="text-red-600 dark:text-red-400">-{stats.leden_left_12m}</span>
+                    {' ' + t('last 12 months')}
+                </p>
+            ),
         },
         {
             title: t('Donors'),
@@ -48,6 +73,33 @@ export default function Dashboard({ stats, alerts }: Props) {
             description: t('Instruments in repair'),
         },
     ];
+
+    const { chartConfig, chartData, chartKeys } = useMemo(() => {
+        if (!onderdeel_names?.length || !onderdeel_history?.length) {
+            return { chartConfig: {} as ChartConfig, chartData: [] as OnderdeelHistoryEntry[], chartKeys: [] as string[] };
+        }
+
+        const nameToSlug = new Map(onderdeel_names.map((name) => [name, slugify(name)]));
+        const slugs = onderdeel_names.map((name) => nameToSlug.get(name)!);
+
+        const config = onderdeel_names.reduce<ChartConfig>((acc, name, index) => {
+            acc[nameToSlug.get(name)!] = {
+                label: name,
+                color: CHART_COLORS[index % CHART_COLORS.length],
+            };
+            return acc;
+        }, {});
+
+        const data = onderdeel_history.map((entry) => {
+            const row: OnderdeelHistoryEntry = { month: entry.month };
+            for (const name of onderdeel_names) {
+                row[nameToSlug.get(name)!] = entry[name];
+            }
+            return row;
+        });
+
+        return { chartConfig: config, chartData: data, chartKeys: slugs };
+    }, [onderdeel_names, onderdeel_history]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -88,10 +140,57 @@ export default function Dashboard({ stats, alerts }: Props) {
                             <CardContent>
                                 <div className="text-2xl font-bold">{stat.value}</div>
                                 <p className="text-muted-foreground text-xs">{stat.description}</p>
+                                {'extra' in stat && stat.extra}
                             </CardContent>
                         </Card>
                     ))}
                 </div>
+
+                {chartData.length > 0 && chartKeys.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Sections membership over time')}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={chartConfig} className="aspect-auto h-[350px] w-full">
+                                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="month"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        tickFormatter={(value: string) => {
+                                            const [year, month] = value.split('-');
+                                            return month === '01' ? year : '';
+                                        }}
+                                    />
+                                    <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} scale="sqrt" domain={[0, 'auto']} />
+                                    <ChartTooltip
+                                        content={<ChartTooltipContent />}
+                                        labelFormatter={(label) => {
+                                            const str = String(label);
+                                            const [year, month] = str.split('-');
+                                            const date = new Date(Number(year), Number(month) - 1);
+                                            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+                                        }}
+                                    />
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                    {chartKeys.map((key) => (
+                                        <Line
+                                            key={key}
+                                            type="monotone"
+                                            dataKey={key}
+                                            stroke={`var(--color-${key})`}
+                                            strokeWidth={2}
+                                            dot={false}
+                                        />
+                                    ))}
+                                </LineChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         </AppLayout>
     );

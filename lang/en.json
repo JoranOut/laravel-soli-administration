@@ -524,5 +524,11 @@
     "Delete section": "Delete section",
     "Are you sure you want to delete :name?": "Are you sure you want to delete :name?",
     "Cannot delete a section with active members.": "Cannot delete a section with active members.",
-    "Cannot delete a fee group with linked contributions.": "Cannot delete a fee group with linked contributions."
+    "Cannot delete a fee group with linked contributions.": "Cannot delete a fee group with linked contributions.",
+
+    "Sections membership over time": "Sections membership over time",
+    "joined": "joined",
+    "left": "left",
+    "last 12 months": "last 12 months",
+    "Contact ledenadministratie@soli.nl to update your name or email address.": "Contact ledenadministratie@soli.nl to update your name or email address."
 }

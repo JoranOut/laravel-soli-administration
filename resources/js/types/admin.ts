@@ -273,6 +273,13 @@ export type DashboardStats = {
     donateurs: number;
     instrumenten_in_gebruik: number;
     openstaande_reparaties: number;
+    leden_joined_12m: number;
+    leden_left_12m: number;
+};
+
+export type OnderdeelHistoryEntry = {
+    month: string;
+    [onderdeel: string]: string | number;
 };
 
 export type DashboardAlerts = {
