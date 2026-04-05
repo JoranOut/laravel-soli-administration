@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOnderdeelRequest;
 use App\Http\Requests\UpdateOnderdeelRequest;
 use App\Models\Onderdeel;
+use App\Models\RelatieInstrument;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -47,10 +48,21 @@ class OnderdeelController extends Controller
                     $q2->whereNull('soli_relatie_onderdeel.tot')
                         ->orWhere('soli_relatie_onderdeel.tot', '>=', now()->toDateString());
                 }),
+            'relaties.types' => fn ($q) => $q
+                ->where(function ($q2) {
+                    $q2->whereNull('soli_relatie_relatie_type.tot')
+                        ->orWhere('soli_relatie_relatie_type.tot', '>=', now()->toDateString());
+                }),
         ]);
+
+        $instrumentsByRelatie = RelatieInstrument::where('onderdeel_id', $onderdeel->id)
+            ->get()
+            ->groupBy('relatie_id')
+            ->map(fn ($items) => $items->pluck('instrument_soort')->toArray());
 
         return Inertia::render('admin/onderdelen/show', [
             'onderdeel' => $onderdeel,
+            'instrumentsByRelatie' => $instrumentsByRelatie,
         ]);
     }
 

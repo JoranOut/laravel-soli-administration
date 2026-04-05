@@ -209,6 +209,8 @@
 
     "Add section": "Onderdeel toevoegen",
     "Function": "Functie",
+    "Instrument type": "Instrumentsoort",
+    "e.g. Trumpet, Clarinet": "bijv. Trompet, Klarinet",
     "No sections.": "Geen onderdelen.",
 
     "Training": "Opleidingen",
@@ -244,10 +246,10 @@
     "Payments:": "Betalingen:",
     "No outstanding contributions.": "Geen openstaande contributies.",
 
-    "Current instruments": "Huidige instrumenten",
+    "Soli instruments": "Soli instrumenten",
     "Previous instruments": "Eerdere instrumenten",
     "Unknown instrument": "Onbekend instrument",
-    "No current instruments.": "Geen huidige instrumenten.",
+    "No Soli instruments.": "Geen Soli instrumenten.",
 
     "Members": "Leden",
     "New section": "Nieuw onderdeel",
@@ -451,7 +453,7 @@
 
     "Let op": "Let op",
     "Please note": "Let op",
-    "All relation data is currently stored in a different system. This page only stores information needed for communication with other systems.": "Alle relatiegegevens worden momenteel in een ander systeem opgeslagen. Deze pagina bevat alleen informatie die nodig is voor communicatie met andere systemen.",
+    "All relation data is currently stored in a different system. This page only stores information needed for communication with other systems.": "Alle gegevens worden momenteel in een ander systeem opgeslagen. Deze pagina bevat alleen sommige informatie.",
 
     "Account": "Account",
     "Linked user account": "Gekoppeld gebruikersaccount",
@@ -530,8 +532,23 @@
     "Cannot delete a fee group with linked contributions.": "Kan tariefgroep met gekoppelde contributies niet verwijderen.",
 
     "Sections membership over time": "Onderdelen bezetting over tijd",
+    "Last 5 years": "Laatste 5 jaar",
+    "All years": "Alle jaren",
     "joined": "erbij",
     "left": "vertrokken",
     "last 12 months": "afgelopen 12 maanden",
-    "Contact ledenadministratie@soli.nl to update your name or email address.": "Neem contact op met ledenadministratie@soli.nl om uw naam of e-mailadres te wijzigen."
+    "Contact ledenadministratie@soli.nl to update your name or email address.": "Neem contact op met ledenadministratie@soli.nl om uw naam of e-mailadres te wijzigen.",
+
+    "OAuth clients": "OAuth-clients",
+    "Manage client types and role mappings": "Beheer clienttypes en roltoewijzingen",
+    "Client type": "Clienttype",
+    "Default role": "Standaardrol",
+    "Role mappings": "Roltoewijzingen",
+    "Mapped role": "Toegewezen rol",
+    "Edit client settings": "Clientinstellingen bewerken",
+    "No role mappings configured. System roles will be used.": "Geen roltoewijzingen geconfigureerd. Systeemrollen worden gebruikt.",
+    "No OAuth clients found.": "Geen OAuth-clients gevonden.",
+    "No access": "Geen toegang",
+    "Highest priority first": "Hoogste prioriteit eerst",
+    "Settings saved.": "Instellingen opgeslagen."
 }

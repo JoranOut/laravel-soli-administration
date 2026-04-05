@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Auth\WordPressUserProvider;
 use App\Http\Responses\LoginResponse;
+use App\OpenId\OauthClientContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Date;
@@ -22,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
+        $this->app->scoped(OauthClientContext::class);
     }
 
     /**

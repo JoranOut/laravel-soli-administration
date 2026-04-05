@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             TariefgroepSeeder::class,
             SoortContributieSeeder::class,
             SampleDataSeeder::class,
+            ClientRoleMappingSeeder::class,
         ]);
 
         // Link the member user to the first relatie (replace auto-created user)

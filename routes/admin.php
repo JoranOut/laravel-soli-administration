@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\OauthClientSettingController;
 use App\Http\Controllers\Admin\BetalingController;
 use App\Http\Controllers\Admin\ContributieController;
 use App\Http\Controllers\Admin\InstrumentBespelerController;
@@ -33,6 +34,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::delete('admin/koppelingen/users/{user}', [UserRelatieLinkController::class, 'destroyUser'])->name('admin.koppelingen.destroy-user');
 
     Route::get('admin/activity-log', [ActivityLogController::class, 'index'])->name('admin.activity-log.index');
+
+    Route::get('admin/oauth-clients', [OauthClientSettingController::class, 'index'])->name('admin.oauth-clients.index');
+    Route::put('admin/oauth-clients/{clientId}', [OauthClientSettingController::class, 'update'])->name('admin.oauth-clients.update');
 });
 
 Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(function () {

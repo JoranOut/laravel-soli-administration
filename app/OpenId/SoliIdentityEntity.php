@@ -3,6 +3,7 @@
 namespace App\OpenId;
 
 use App\Models\User;
+use App\Services\ClientRoleResolver;
 use League\OAuth2\Server\Entities\Traits\EntityTrait;
 use OpenIDConnect\Claims\Traits\WithClaims;
 use OpenIDConnect\Interfaces\IdentityEntityInterface;
@@ -47,7 +48,15 @@ class SoliIdentityEntity implements IdentityEntityInterface
         }
 
         if (in_array('roles', $scopes)) {
-            $claims['roles'] = $this->user->getRoleNames()->toArray();
+            $context = app(OauthClientContext::class);
+            $clientId = $context->getClientId();
+
+            if ($clientId) {
+                $resolver = app(ClientRoleResolver::class);
+                $claims['roles'] = $resolver->resolve($this->user, $clientId);
+            } else {
+                $claims['roles'] = $this->user->getRoleNames()->toArray();
+            }
         }
 
         return $claims;

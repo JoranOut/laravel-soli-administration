@@ -18,6 +18,7 @@ sail artisan test                   # Run all tests
 sail artisan test --filter=ClassName # Run specific test class
 npm run dev                         # Vite dev server
 npm run build                       # Production build
+sail artisan import:sad-members <path> # Import members from legacy SAD system
 ```
 
 ## Seed Users

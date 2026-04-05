@@ -251,6 +251,28 @@ export type AndereVereniging = {
     is_actueel: boolean;
 };
 
+export type OauthClient = {
+    id: string;
+    name: string;
+    redirect_uris: string[];
+    setting: OauthClientSetting | null;
+};
+
+export type OauthClientSetting = {
+    id: number;
+    type: string;
+    default_role: string | null;
+    role_mappings: ClientRoleMapping[];
+};
+
+export type ClientRoleMapping = {
+    id: number;
+    relatie_type_id: number;
+    relatie_type_naam: string;
+    mapped_role: string;
+    priority: number;
+};
+
 export type PaginatedResponse<T> = {
     data: T[];
     current_page: number;
