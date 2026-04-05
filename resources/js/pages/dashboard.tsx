@@ -1,7 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Music, Users, Wrench, Heart, AlertTriangle } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -74,23 +75,25 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
         },
     ];
 
+    const [showAllYears, setShowAllYears] = useState(false);
+
     const { chartConfig, chartData, chartKeys } = useMemo(() => {
         if (!onderdeel_names?.length || !onderdeel_history?.length) {
             return { chartConfig: {} as ChartConfig, chartData: [] as OnderdeelHistoryEntry[], chartKeys: [] as string[] };
         }
 
         const nameToSlug = new Map(onderdeel_names.map((name) => [name, slugify(name)]));
-        const slugs = onderdeel_names.map((name) => nameToSlug.get(name)!);
 
-        const config = onderdeel_names.reduce<ChartConfig>((acc, name, index) => {
-            acc[nameToSlug.get(name)!] = {
-                label: name,
-                color: CHART_COLORS[index % CHART_COLORS.length],
-            };
-            return acc;
-        }, {});
+        // Filter to last 5 years unless showing all
+        let filteredHistory = onderdeel_history;
+        if (!showAllYears) {
+            const fiveYearsAgo = new Date();
+            fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
+            const cutoff = `${fiveYearsAgo.getFullYear()}-${String(fiveYearsAgo.getMonth() + 1).padStart(2, '0')}`;
+            filteredHistory = onderdeel_history.filter((entry) => entry.month >= cutoff);
+        }
 
-        const data = onderdeel_history.map((entry) => {
+        const data = filteredHistory.map((entry) => {
             const row: OnderdeelHistoryEntry = { month: entry.month };
             for (const name of onderdeel_names) {
                 row[nameToSlug.get(name)!] = entry[name];
@@ -98,8 +101,24 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
             return row;
         });
 
-        return { chartConfig: config, chartData: data, chartKeys: slugs };
-    }, [onderdeel_names, onderdeel_history]);
+        // Only include onderdelen that have at least one non-zero value in the visible data
+        const visibleSlugs = onderdeel_names
+            .map((name) => nameToSlug.get(name)!)
+            .filter((slug) => data.some((row) => (row[slug] as number) > 0));
+
+        const config = onderdeel_names.reduce<ChartConfig>((acc, name, index) => {
+            const slug = nameToSlug.get(name)!;
+            if (visibleSlugs.includes(slug)) {
+                acc[slug] = {
+                    label: name,
+                    color: CHART_COLORS[index % CHART_COLORS.length],
+                };
+            }
+            return acc;
+        }, {});
+
+        return { chartConfig: config, chartData: data, chartKeys: visibleSlugs };
+    }, [onderdeel_names, onderdeel_history, showAllYears]);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -148,8 +167,15 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
 
                 {chartData.length > 0 && chartKeys.length > 0 && (
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>{t('Sections membership over time')}</CardTitle>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowAllYears(!showAllYears)}
+                            >
+                                {showAllYears ? t('Last 5 years') : t('All years')}
+                            </Button>
                         </CardHeader>
                         <CardContent>
                             <ChartContainer config={chartConfig} className="aspect-auto h-[350px] w-full">
@@ -175,7 +201,7 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
                                             return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
                                         }}
                                     />
-                                    <ChartLegend content={<ChartLegendContent />} />
+                                    <ChartLegend content={<ChartLegendContent className="flex-wrap" />} />
                                     {chartKeys.map((key) => (
                                         <Line
                                             key={key}

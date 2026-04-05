@@ -113,6 +113,7 @@ export function AppSidebar() {
                 { title: t('Users'), href: '/admin/users' },
                 { title: t('Links'), href: '/admin/koppelingen' },
                 { title: t('Activity log'), href: '/admin/activity-log' },
+                { title: t('OAuth clients'), href: '/admin/oauth-clients' },
             ],
         });
     }

@@ -1,0 +1,177 @@
+[
+  {
+    "lid_id": 9001,
+    "naam": "Test Lid",
+    "vnaam": "Test",
+    "tussen": null,
+    "anaam": "Lid",
+    "gebdat": "15-03-1990",
+    "straat": "Dorpsstraat 10",
+    "postcode": "1985 AA",
+    "plaats": "Driehuis",
+    "telefoon": "0612345678",
+    "email": "testlid@example.com",
+    "lidmaatschap": [
+      {
+        "van": "01-01-2010",
+        "tot": null
+      }
+    ],
+    "onderdeel": [
+      {
+        "van": "01-01-2010",
+        "tot": null,
+        "onderdeel": "HA"
+      }
+    ],
+    "instrument": [
+      {
+        "van": "01-01-2010",
+        "tot": null,
+        "instrument": "Klarinet"
+      }
+    ]
+  },
+  {
+    "lid_id": 9002,
+    "naam": "Test ExLid",
+    "vnaam": "Test",
+    "tussen": null,
+    "anaam": "ExLid",
+    "gebdat": "20-06-1985",
+    "straat": "Kerkweg 5a",
+    "postcode": "2071 BP",
+    "plaats": "Santpoort-Noord",
+    "telefoon": null,
+    "email": null,
+    "lidmaatschap": [
+      {
+        "van": "01-09-2000",
+        "tot": "30-06-2015"
+      }
+    ],
+    "onderdeel": [
+      {
+        "van": "01-09-2000",
+        "tot": null,
+        "onderdeel": "HA"
+      }
+    ],
+    "instrument": [
+      {
+        "van": "01-09-2000",
+        "tot": "30-06-2015",
+        "instrument": "Hoorn"
+      }
+    ]
+  },
+  {
+    "lid_id": 9003,
+    "naam": "Test MultiOnderdeel",
+    "vnaam": "Test",
+    "tussen": null,
+    "anaam": "MultiOnderdeel",
+    "gebdat": "10-10-1995",
+    "straat": null,
+    "postcode": null,
+    "plaats": null,
+    "telefoon": null,
+    "email": null,
+    "lidmaatschap": [
+      {
+        "van": "01-01-2015",
+        "tot": null
+      }
+    ],
+    "onderdeel": [
+      {
+        "van": "01-01-2015",
+        "tot": null,
+        "onderdeel": "HAKO"
+      }
+    ],
+    "instrument": [
+      {
+        "van": "01-01-2015",
+        "tot": null,
+        "instrument": "Trombone"
+      }
+    ]
+  },
+  {
+    "lid_id": 9004,
+    "naam": "Test InstrumentSwitch",
+    "vnaam": "Test",
+    "tussen": null,
+    "anaam": "InstrumentSwitch",
+    "gebdat": "05-05-1980",
+    "straat": null,
+    "postcode": null,
+    "plaats": null,
+    "telefoon": null,
+    "email": null,
+    "lidmaatschap": [
+      {
+        "van": "01-01-2000",
+        "tot": null
+      }
+    ],
+    "onderdeel": [
+      {
+        "van": "01-01-2000",
+        "tot": null,
+        "onderdeel": "HA"
+      },
+      {
+        "van": "01-01-2010",
+        "tot": null,
+        "onderdeel": "KO"
+      }
+    ],
+    "instrument": [
+      {
+        "van": "01-01-2000",
+        "tot": "31-12-2009",
+        "instrument": "Trompet"
+      },
+      {
+        "van": "01-01-2009",
+        "tot": null,
+        "instrument": "Bariton"
+      }
+    ]
+  },
+  {
+    "lid_id": 9005,
+    "naam": "Test MagrÃ©",
+    "vnaam": "Test",
+    "tussen": null,
+    "anaam": "MagrÃ©",
+    "gebdat": "01-01-2000",
+    "straat": null,
+    "postcode": null,
+    "plaats": null,
+    "telefoon": null,
+    "email": null,
+    "lidmaatschap": [
+      {
+        "van": "01-01-2020",
+        "tot": null
+      }
+    ],
+    "onderdeel": [
+      {
+        "van": "01-01-2020",
+        "tot": null,
+        "onderdeel": "SG"
+      }
+    ],
+    "instrument": [
+      {
+        "van": "01-01-2020",
+        "tot": null,
+        "instrument": "Slagwerk"
+      }
+    ]
+  }
+]

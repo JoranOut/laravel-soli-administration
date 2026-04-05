@@ -150,6 +150,7 @@ function AddOnderdeelDialog({ relatieId, onderdelen }: { relatieId: number; onde
     const { data, setData, post, processing, reset } = useForm({
         onderdeel_id: '',
         functie: '',
+        instrument_soort: '',
         van: new Date().toISOString().split('T')[0],
         tot: '',
     });
@@ -184,6 +185,10 @@ function AddOnderdeelDialog({ relatieId, onderdelen }: { relatieId: number; onde
                         <Label>{t('Function')}</Label>
                         <Input value={data.functie} onChange={(e) => setData('functie', e.target.value)} placeholder={t('e.g. Conductor, Chairman')} />
                     </div>
+                    <div className="space-y-2">
+                        <Label>{t('Instrument type')}</Label>
+                        <Input value={data.instrument_soort} onChange={(e) => setData('instrument_soort', e.target.value)} placeholder={t('e.g. Trumpet, Clarinet')} />
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>{t('From')}</Label>
@@ -201,12 +206,19 @@ function AddOnderdeelDialog({ relatieId, onderdelen }: { relatieId: number; onde
     );
 }
 
-function EditOnderdeelDialog({ relatieId, onderdeel }: { relatieId: number; onderdeel: Onderdeel }) {
+function EditOnderdeelDialog({ relatieId, onderdeel, relatie }: { relatieId: number; onderdeel: Onderdeel; relatie: Relatie }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
+
+    const currentInstruments = (relatie.relatie_instrumenten ?? [])
+        .filter(ri => ri.onderdeel_id === onderdeel.id)
+        .map(ri => ri.instrument_soort)
+        .join(', ');
+
     const { data, setData, put, processing } = useForm({
         functie: onderdeel.pivot?.functie ?? '',
+        instrument_soort: currentInstruments,
         van: onderdeel.pivot?.van ?? '',
         tot: onderdeel.pivot?.tot ?? '',
     });
@@ -246,6 +258,10 @@ function EditOnderdeelDialog({ relatieId, onderdeel }: { relatieId: number; onde
                     <div className="space-y-2">
                         <Label>{t('Function')}</Label>
                         <Input value={data.functie} onChange={(e) => setData('functie', e.target.value)} placeholder={t('e.g. Conductor, Chairman')} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>{t('Instrument type')}</Label>
+                        <Input value={data.instrument_soort} onChange={(e) => setData('instrument_soort', e.target.value)} placeholder={t('e.g. Trumpet, Clarinet')} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -290,6 +306,12 @@ export default function RelatieLidmaatschapTab({ relatie, onderdelen }: Props) {
     const { can } = usePermissions();
     const { t } = useTranslation();
 
+    const getInstrumentsForOnderdeel = (onderdeelId: number): string[] => {
+        return (relatie.relatie_instrumenten ?? [])
+            .filter(ri => ri.onderdeel_id === onderdeelId)
+            .map(ri => ri.instrument_soort);
+    };
+
     return (
         <div className="space-y-6">
             {can('relaties.edit') && (
@@ -329,21 +351,27 @@ export default function RelatieLidmaatschapTab({ relatie, onderdelen }: Props) {
                 <CardContent>
                     {relatie.onderdelen && relatie.onderdelen.length > 0 ? (
                         <div className="space-y-3">
-                            {relatie.onderdelen.map((onderdeel) => (
-                                <div key={`${onderdeel.id}-${onderdeel.pivot?.van}`} className="flex items-center justify-between rounded-md border p-3">
-                                    <div>
-                                        <p className="font-medium">{onderdeel.naam}</p>
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="outline">{onderdeel.type}</Badge>
-                                            {onderdeel.pivot?.functie && <Badge variant="secondary">{onderdeel.pivot.functie}</Badge>}
-                                            {onderdeel.pivot && <DateRangeDisplay van={onderdeel.pivot.van} tot={onderdeel.pivot.tot} />}
+                            {relatie.onderdelen.map((onderdeel) => {
+                                const instruments = getInstrumentsForOnderdeel(onderdeel.id);
+                                return (
+                                    <div key={`${onderdeel.id}-${onderdeel.pivot?.van}`} className="flex items-center justify-between rounded-md border p-3">
+                                        <div>
+                                            <p className="font-medium">{onderdeel.naam}</p>
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline">{onderdeel.type}</Badge>
+                                                {onderdeel.pivot?.functie && <Badge variant="secondary">{onderdeel.pivot.functie}</Badge>}
+                                                {instruments.map((soort) => (
+                                                    <Badge key={soort}>{soort}</Badge>
+                                                ))}
+                                                {onderdeel.pivot && <DateRangeDisplay van={onderdeel.pivot.van} tot={onderdeel.pivot.tot} />}
+                                            </div>
                                         </div>
+                                        {can('relaties.edit') && onderdeel.pivot && (
+                                            <EditOnderdeelDialog relatieId={relatie.id} onderdeel={onderdeel} relatie={relatie} />
+                                        )}
                                     </div>
-                                    {can('relaties.edit') && onderdeel.pivot && (
-                                        <EditOnderdeelDialog relatieId={relatie.id} onderdeel={onderdeel} />
-                                    )}
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     ) : (
                         <p className="text-muted-foreground text-sm">{t('No sections.')}</p>

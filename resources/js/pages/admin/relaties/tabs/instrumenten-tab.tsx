@@ -25,7 +25,7 @@ export default function RelatieInstrumentenTab({ relatie }: Props) {
     return (
         <div className="space-y-6">
             <Card>
-                <CardHeader><CardTitle>{t('Current instruments')}</CardTitle></CardHeader>
+                <CardHeader><CardTitle>{t('Soli instruments')}</CardTitle></CardHeader>
                 <CardContent>
                     {relatie.instrument_bespelers && relatie.instrument_bespelers.filter(b => !b.tot).length > 0 ? (
                         <div className="space-y-3">
@@ -55,7 +55,7 @@ export default function RelatieInstrumentenTab({ relatie }: Props) {
                             ))}
                         </div>
                     ) : (
-                        <p className="text-muted-foreground text-sm">{t('No current instruments.')}</p>
+                        <p className="text-muted-foreground text-sm">{t('No Soli instruments.')}</p>
                     )}
                 </CardContent>
             </Card>

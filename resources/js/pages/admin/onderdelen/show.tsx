@@ -18,10 +18,11 @@ import { ONDERDEEL_TYPES } from '@/constants/onderdeel';
 import type { Onderdeel } from '@/types/admin';
 
 type Props = {
-    onderdeel: Onderdeel & { relaties?: Array<{ id: number; volledige_naam: string; pivot?: { functie: string | null; van: string; tot: string | null } }> };
+    onderdeel: Onderdeel & { relaties?: Array<{ id: number; volledige_naam: string; pivot?: { functie: string | null; van: string; tot: string | null }; types?: Array<{ id: number; naam: string }> }> };
+    instrumentsByRelatie: Record<number, string[]>;
 };
 
-export default function OnderdeelShow({ onderdeel }: Props) {
+export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props) {
     const { t } = useTranslation();
     const { can } = usePermissions();
     const [editOpen, setEditOpen] = useState(false);
@@ -156,18 +157,27 @@ export default function OnderdeelShow({ onderdeel }: Props) {
                         <CardContent>
                             {onderdeel.relaties && onderdeel.relaties.length > 0 ? (
                                 <div className="space-y-2">
-                                    {onderdeel.relaties.map((relatie) => (
-                                        <div key={relatie.id} className="flex items-center justify-between rounded-md border p-3">
-                                            <div>
-                                                <Link href={`/admin/relaties/${relatie.id}`} className="text-primary hover:underline font-medium">
-                                                    {relatie.volledige_naam}
-                                                </Link>
-                                                {relatie.pivot?.functie && (
-                                                    <Badge variant="secondary" className="ml-2">{relatie.pivot.functie}</Badge>
-                                                )}
+                                    {onderdeel.relaties.map((relatie) => {
+                                        const instruments = instrumentsByRelatie[relatie.id] ?? [];
+                                        return (
+                                            <div key={relatie.id} className="flex items-center justify-between rounded-md border p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <Link href={`/admin/relaties/${relatie.id}`} className="text-primary hover:underline font-medium">
+                                                        {relatie.volledige_naam}
+                                                    </Link>
+                                                    {relatie.types?.map((type) => (
+                                                        <Badge key={type.id} variant="outline">{type.naam}</Badge>
+                                                    ))}
+                                                    {relatie.pivot?.functie && (
+                                                        <Badge variant="secondary">{relatie.pivot.functie}</Badge>
+                                                    )}
+                                                    {instruments.map((soort) => (
+                                                        <Badge key={soort}>{soort}</Badge>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             ) : (
                                 <p className="text-muted-foreground text-sm">{t("No members.")}</p>
