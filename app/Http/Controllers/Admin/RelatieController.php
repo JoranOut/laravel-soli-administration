@@ -41,7 +41,10 @@ class RelatieController extends Controller
             ->search($request->input('search'))
             ->ofType($request->input('type'))
             ->when(! $request->boolean('show_inactive'), fn ($q) => $q->actief())
-            ->with(['types' => fn ($q) => $q->wherePivotNull('tot')->orWherePivot('tot', '>=', now()->toDateString())])
+            ->with([
+                'types' => fn ($q) => $q->wherePivotNull('tot')->orWherePivot('tot', '>=', now()->toDateString()),
+                'emails',
+            ])
             ->orderBy($sort, $direction)
             ->paginate(25)
             ->withQueryString();

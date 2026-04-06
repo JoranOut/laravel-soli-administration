@@ -1,6 +1,8 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Mail, Plus } from 'lucide-react';
+import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
+import { CopyEmailsDialog } from '@/components/admin/copy-emails-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -27,6 +29,7 @@ type Props = {
 export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props) {
     const { can } = usePermissions();
     const { t } = useTranslation();
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
     const columns: Column<Relatie>[] = [
         { key: 'relatie_nummer', label: '#', sortable: true },
@@ -146,7 +149,13 @@ export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props
                                 {t('Show inactive')}
                             </label>
                         </div>
+
+                        <Button variant="outline" size="sm" onClick={() => setEmailDialogOpen(true)}>
+                            <Mail className="mr-2 h-4 w-4" />{t('Copy emails')}
+                        </Button>
                     </div>
+
+                    <CopyEmailsDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} relaties={relaties.data} />
 
                     <DataTable
                         columns={columns}

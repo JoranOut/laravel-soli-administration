@@ -119,15 +119,23 @@ class SampleDataSeeder extends Seeder
             $donateur->update(['user_id' => $user->id]);
         }
 
-        // Create 3 docenten
+        // Create 3 docenten (1 is also lid)
+        $opleidingsgroepen = $onderdelen->where('type', 'opleidingsgroep')->where('actief', true);
         $docenten = Relatie::factory(3)->create();
-        foreach ($docenten as $docent) {
+        foreach ($docenten as $i => $docent) {
             $docent->types()->attach($docentType->id, [
                 'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
             ]);
 
+            // First docent is also a lid
+            if ($i === 0) {
+                $docent->types()->attach($lidType->id, [
+                    'van' => fake()->dateTimeBetween('-10 years', '-5 years')->format('Y-m-d'),
+                ]);
+            }
+
             $emailAddress = $this->generateEmail($docent->voornaam, $docent->achternaam);
-            $email = Email::create([
+            Email::create([
                 'relatie_id' => $docent->id,
                 'email' => $emailAddress,
             ]);
@@ -139,14 +147,43 @@ class SampleDataSeeder extends Seeder
             ]);
             $user->assignRole('member');
             $docent->update(['user_id' => $user->id]);
+
+            // Assign to a random training group
+            if ($opleidingsgroepen->isNotEmpty()) {
+                $docent->onderdelen()->attach($opleidingsgroepen->random()->id, [
+                    'functie' => 'Docent',
+                    'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
+                ]);
+            }
         }
 
-        // Create 2 dirigenten
+        // Create 2 dirigenten (1 is also lid)
         $dirigenten = Relatie::factory(2)->create();
-        foreach ($dirigenten as $dirigent) {
+        foreach ($dirigenten as $i => $dirigent) {
             $dirigent->types()->attach($dirigentType->id, [
                 'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
             ]);
+
+            // First dirigent is also a lid
+            if ($i === 0) {
+                $dirigent->types()->attach($lidType->id, [
+                    'van' => fake()->dateTimeBetween('-10 years', '-5 years')->format('Y-m-d'),
+                ]);
+            }
+
+            $emailAddress = $this->generateEmail($dirigent->voornaam, $dirigent->achternaam);
+            Email::create([
+                'relatie_id' => $dirigent->id,
+                'email' => $emailAddress,
+            ]);
+
+            $user = User::create([
+                'name' => $dirigent->voornaam.' '.$dirigent->achternaam,
+                'email' => $emailAddress,
+                'password' => Hash::make('password'),
+            ]);
+            $user->assignRole('member');
+            $dirigent->update(['user_id' => $user->id]);
 
             if ($harmonieOrkest) {
                 $dirigent->onderdelen()->attach($harmonieOrkest->id, [

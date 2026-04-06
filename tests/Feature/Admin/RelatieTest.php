@@ -28,6 +28,41 @@ test('admin can view relaties index', function () {
     );
 });
 
+test('admin can view relaties index with emails', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $relatie = Relatie::factory()->create();
+    $relatie->emails()->create(['email' => 'piet@example.com']);
+
+    $response = $this->actingAs($admin)->get('/admin/relaties');
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/relaties/index')
+        ->has('relaties.data', 1)
+        ->where('relaties.data.0.emails.0.email', 'piet@example.com')
+    );
+});
+
+test('relaties index includes emails for relatie with accented name', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $relatie = Relatie::factory()->create([
+        'voornaam' => 'René',
+        'tussenvoegsel' => null,
+        'achternaam' => 'Müller',
+    ]);
+    $relatie->emails()->create(['email' => 'rene@example.com']);
+
+    $response = $this->actingAs($admin)->get('/admin/relaties');
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/relaties/index')
+        ->has('relaties.data', 1)
+        ->where('relaties.data.0.emails.0.email', 'rene@example.com')
+        ->where('relaties.data.0.volledige_naam', 'René Müller')
+    );
+});
+
 test('admin can search relaties', function () {
     $admin = User::factory()->create()->assignRole('admin');
     Relatie::factory()->create(['voornaam' => 'Jan', 'achternaam' => 'Jansen']);

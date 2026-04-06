@@ -53,6 +53,7 @@ class OnderdeelController extends Controller
                     $q2->whereNull('soli_relatie_relatie_type.tot')
                         ->orWhere('soli_relatie_relatie_type.tot', '>=', now()->toDateString());
                 }),
+            'relaties.emails',
         ]);
 
         $instrumentsByRelatie = RelatieInstrument::where('onderdeel_id', $onderdeel->id)
