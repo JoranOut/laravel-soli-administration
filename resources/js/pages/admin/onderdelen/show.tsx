@@ -1,8 +1,9 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Trash } from 'lucide-react';
+import { ArrowLeft, Mail, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 
+import { CopyEmailsDialog } from '@/components/admin/copy-emails-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,10 +16,10 @@ import InputError from '@/components/input-error';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
 import { ONDERDEEL_TYPES } from '@/constants/onderdeel';
-import type { Onderdeel } from '@/types/admin';
+import type { EmailRecord, Onderdeel } from '@/types/admin';
 
 type Props = {
-    onderdeel: Onderdeel & { relaties?: Array<{ id: number; volledige_naam: string; pivot?: { functie: string | null; van: string; tot: string | null }; types?: Array<{ id: number; naam: string }> }> };
+    onderdeel: Onderdeel & { relaties?: Array<{ id: number; volledige_naam: string; emails?: EmailRecord[]; pivot?: { functie: string | null; van: string; tot: string | null }; types?: Array<{ id: number; naam: string }> }> };
     instrumentsByRelatie: Record<number, string[]>;
 };
 
@@ -28,6 +29,7 @@ export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
 
     const { data, setData, put, processing, errors } = useForm({
         naam: onderdeel.naam,
@@ -150,9 +152,16 @@ export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props
                         </DialogContent>
                     </Dialog>
 
+                    <CopyEmailsDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} relaties={onderdeel.relaties ?? []} />
+
                     <Card>
                         <CardHeader>
-                            <CardTitle>{t("Members")} ({onderdeel.relaties?.length ?? 0})</CardTitle>
+                            <div className="flex items-center justify-between">
+                                <CardTitle>{t("Members")} ({onderdeel.relaties?.length ?? 0})</CardTitle>
+                                <Button variant="outline" size="sm" onClick={() => setEmailDialogOpen(true)}>
+                                    <Mail className="mr-2 h-4 w-4" />{t('Copy emails')}
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent>
                             {onderdeel.relaties && onderdeel.relaties.length > 0 ? (

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Onderdeel;
+use App\Models\Relatie;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
@@ -206,6 +207,45 @@ test('afkorting cannot exceed 10 characters', function () {
     ]);
 
     $response->assertSessionHasErrors('afkorting');
+});
+
+test('onderdeel show includes emails for relaties', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $onderdeel = Onderdeel::factory()->create();
+    $relatie = Relatie::factory()->create();
+    $relatie->onderdelen()->attach($onderdeel->id, ['van' => now()->subYear()->toDateString()]);
+    $relatie->emails()->create(['email' => 'jan@example.com']);
+
+    $response = $this->actingAs($admin)->get("/admin/onderdelen/{$onderdeel->id}");
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/onderdelen/show')
+        ->has('onderdeel.relaties', 1)
+        ->where('onderdeel.relaties.0.emails.0.email', 'jan@example.com')
+    );
+});
+
+test('onderdeel show includes emails for relatie with accented name', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $onderdeel = Onderdeel::factory()->create();
+    $relatie = Relatie::factory()->create([
+        'voornaam' => 'René',
+        'tussenvoegsel' => null,
+        'achternaam' => 'Müller',
+    ]);
+    $relatie->onderdelen()->attach($onderdeel->id, ['van' => now()->subYear()->toDateString()]);
+    $relatie->emails()->create(['email' => 'rene.muller@example.com']);
+
+    $response = $this->actingAs($admin)->get("/admin/onderdelen/{$onderdeel->id}");
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/onderdelen/show')
+        ->has('onderdeel.relaties', 1)
+        ->where('onderdeel.relaties.0.emails.0.email', 'rene.muller@example.com')
+        ->where('onderdeel.relaties.0.volledige_naam', 'René Müller')
+    );
 });
 
 test('guest is redirected to login', function () {

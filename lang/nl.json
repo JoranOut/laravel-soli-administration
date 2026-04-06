@@ -550,5 +550,10 @@
     "No OAuth clients found.": "Geen OAuth-clients gevonden.",
     "No access": "Geen toegang",
     "Highest priority first": "Hoogste prioriteit eerst",
-    "Settings saved.": "Instellingen opgeslagen."
+    "Settings saved.": "Instellingen opgeslagen.",
+
+    "Copy emails": "Kopieer e-mails",
+    "Exclude dirigent": "Dirigent uitsluiten",
+    "Emails copied!": "E-mails gekopieerd!",
+    "No emails found.": "Geen e-mails gevonden."
 }
