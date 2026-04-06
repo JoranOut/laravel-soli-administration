@@ -73,7 +73,7 @@ jobs:
           mysqldump -h"${DB_HOST:-127.0.0.1}" -P"${DB_PORT:-3306}" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" | gzip > "$BACKUP_FILE"
           echo "Database backup saved to $BACKUP_FILE"
           ls -t "$BACKUP_DIR"/pre-deploy-*.sql.gz | tail -n +6 | xargs -r rm --
-          chown www-data:www-data "$BACKUP_FILE"
+          chown www-data:www-data "$BACKUP_FILE" 2>/dev/null || true
 
           # Run migrations on staging (abort on failure)
           cd "$STAGING"
