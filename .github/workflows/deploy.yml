@@ -65,6 +65,16 @@ jobs:
           ln -sfn "$SHARED/.env" "$STAGING/.env"
           ln -sfn "$SHARED/storage" "$STAGING/storage"
 
+          # Database backup before migrations (keep last 5)
+          BACKUP_DIR="$SHARED/storage/backups"
+          mkdir -p "$BACKUP_DIR"
+          source "$SHARED/.env"
+          BACKUP_FILE="$BACKUP_DIR/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz"
+          mysqldump -h"${DB_HOST:-127.0.0.1}" -P"${DB_PORT:-3306}" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" | gzip > "$BACKUP_FILE"
+          echo "Database backup saved to $BACKUP_FILE"
+          ls -t "$BACKUP_DIR"/pre-deploy-*.sql.gz | tail -n +6 | xargs -r rm --
+          chown www-data:www-data "$BACKUP_FILE"
+
           # Run migrations on staging (abort on failure)
           cd "$STAGING"
           if ! sudo -u www-data php artisan migrate --force; then
