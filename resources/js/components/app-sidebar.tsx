@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Coins, FolderGit2, Guitar, LayoutGrid, Mail, Music, Shield, User, Users } from 'lucide-react';
+import { Coins, Globe, Guitar, LayoutGrid, Mail, Music, Rocket, Shield, ShoppingCart, User, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
@@ -49,14 +49,24 @@ export function AppSidebar() {
 
     const footerNavItems: NavItem[] = [
         {
-            title: t('Repository'),
-            href: 'https://github.com/JoranOut/laravel-soli-administration',
-            icon: FolderGit2,
+            title: 'soli.nl',
+            href: 'https://soli.nl',
+            icon: Globe,
         },
         {
-            title: t('Documentation'),
-            href: 'https://soli.nl',
-            icon: BookOpen,
+            title: t('My page'),
+            href: 'https://soli.nl/mijn-pagina',
+            icon: User,
+        },
+        {
+            title: t('Shop'),
+            href: 'https://winkel.soli.nl',
+            icon: ShoppingCart,
+        },
+        {
+            title: 'dev.soli.nl',
+            href: 'https://dev.soli.nl',
+            icon: Rocket,
         },
     ];
 
