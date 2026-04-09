@@ -84,48 +84,49 @@ class DashboardController extends Controller
         $onderdeelIds = $onderdelen->pluck('id');
         $onderdeelNames = $onderdelen->pluck('naam', 'id');
 
-        $earliestVan = DB::table('soli_relatie_onderdeel')
-            ->whereIn('onderdeel_id', $onderdeelIds)
-            ->min('van');
+        $start = Carbon::now()->subYears(5)->startOfMonth()->toDateString();
+        $end = Carbon::now()->startOfMonth()->toDateString();
 
-        if (! $earliestVan) {
-            return ['history' => [], 'names' => $onderdelen->pluck('naam')->values()->all()];
+        $placeholders = implode(',', array_fill(0, count($onderdeelIds), '?'));
+
+        $rows = DB::select("
+            WITH RECURSIVE months AS (
+                SELECT ? AS month_start
+                UNION ALL
+                SELECT DATE_ADD(month_start, INTERVAL 1 MONTH)
+                FROM months
+                WHERE month_start < ?
+            )
+            SELECT
+                DATE_FORMAT(m.month_start, '%Y-%m') AS month,
+                r.onderdeel_id,
+                COUNT(*) AS cnt
+            FROM months m
+            INNER JOIN soli_relatie_onderdeel r
+                ON r.van <= LAST_DAY(m.month_start)
+                AND (r.tot IS NULL OR r.tot >= m.month_start)
+                AND r.onderdeel_id IN ({$placeholders})
+            GROUP BY m.month_start, r.onderdeel_id
+            ORDER BY m.month_start
+        ", [$start, $end, ...$onderdeelIds]);
+
+        // Index results by month → onderdeel_id → count
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[$row->month][$row->onderdeel_id] = (int) $row->cnt;
         }
 
-        $start = Carbon::parse($earliestVan)->startOfMonth();
-        $end = Carbon::now()->startOfMonth();
-
-        $records = DB::table('soli_relatie_onderdeel')
-            ->whereIn('onderdeel_id', $onderdeelIds)
-            ->get(['onderdeel_id', 'van', 'tot']);
-
+        // Build history with all months and all onderdelen
         $history = [];
-        $current = $start->copy();
+        $current = Carbon::parse($start);
+        $endDate = Carbon::parse($end);
 
-        while ($current->lte($end)) {
-            $monthStart = $current->copy()->startOfMonth();
-            $monthEnd = $current->copy()->endOfMonth();
-
-            $row = ['month' => $current->format('Y-m')];
+        while ($current->lte($endDate)) {
+            $month = $current->format('Y-m');
+            $row = ['month' => $month];
 
             foreach ($onderdelen as $onderdeel) {
-                $count = $records->where('onderdeel_id', $onderdeel->id)
-                    ->filter(function ($record) use ($monthStart, $monthEnd) {
-                        $van = Carbon::parse($record->van);
-
-                        if ($van->gt($monthEnd)) {
-                            return false;
-                        }
-
-                        if ($record->tot === null) {
-                            return true;
-                        }
-
-                        return Carbon::parse($record->tot)->gte($monthStart);
-                    })
-                    ->count();
-
-                $row[$onderdeel->naam] = $count;
+                $row[$onderdeel->naam] = $counts[$month][$onderdeel->id] ?? 0;
             }
 
             $history[] = $row;

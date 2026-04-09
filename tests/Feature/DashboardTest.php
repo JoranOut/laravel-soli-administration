@@ -1,9 +1,11 @@
 <?php
 
+use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\User;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\DB;
 
 test('guests are redirected to the login page', function () {
     $response = $this->get(route('dashboard'));
@@ -44,4 +46,97 @@ test('member without linked relatie sees not-linked page on dashboard', function
     $response->assertInertia(fn ($page) => $page
         ->component('admin/relaties/not-linked')
     );
+});
+
+test('admin dashboard includes onderdeel history chart data', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
+    $relatie = Relatie::factory()->create();
+
+    DB::table('soli_relatie_onderdeel')->insert([
+        'relatie_id' => $relatie->id,
+        'onderdeel_id' => $orkest->id,
+        'van' => now()->subMonths(3)->toDateString(),
+        'tot' => null,
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('dashboard'));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('dashboard')
+        ->has('onderdeel_history')
+        ->has('onderdeel_names')
+        ->where('onderdeel_names', ['Harmonie'])
+    );
+});
+
+test('onderdeel history counts active members correctly per month', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
+    $relatie1 = Relatie::factory()->create();
+    $relatie2 = Relatie::factory()->create();
+
+    // relatie1: active from 2 months ago, still active
+    DB::table('soli_relatie_onderdeel')->insert([
+        'relatie_id' => $relatie1->id,
+        'onderdeel_id' => $orkest->id,
+        'van' => now()->subMonths(2)->startOfMonth()->toDateString(),
+        'tot' => null,
+    ]);
+
+    // relatie2: active from 2 months ago, ended last month
+    DB::table('soli_relatie_onderdeel')->insert([
+        'relatie_id' => $relatie2->id,
+        'onderdeel_id' => $orkest->id,
+        'van' => now()->subMonths(2)->startOfMonth()->toDateString(),
+        'tot' => now()->subMonth()->endOfMonth()->toDateString(),
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('dashboard'));
+    $response->assertOk();
+
+    $history = $response->original->getData()['page']['props']['onderdeel_history'];
+    $currentMonth = now()->format('Y-m');
+    $lastMonth = now()->subMonth()->format('Y-m');
+
+    $currentRow = collect($history)->firstWhere('month', $currentMonth);
+    $lastMonthRow = collect($history)->firstWhere('month', $lastMonth);
+
+    // Current month: only relatie1 is active
+    expect($currentRow['Harmonie'])->toBe(1);
+    // Last month: both were active
+    expect($lastMonthRow['Harmonie'])->toBe(2);
+});
+
+test('onderdeel history excludes old data beyond 5 years', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
+    $relatie = Relatie::factory()->create();
+
+    // Record that ended 6 years ago — should not appear
+    DB::table('soli_relatie_onderdeel')->insert([
+        'relatie_id' => $relatie->id,
+        'onderdeel_id' => $orkest->id,
+        'van' => now()->subYears(7)->toDateString(),
+        'tot' => now()->subYears(6)->toDateString(),
+    ]);
+
+    $response = $this->actingAs($admin)->get(route('dashboard'));
+    $response->assertOk();
+
+    $history = $response->original->getData()['page']['props']['onderdeel_history'];
+
+    // All counts should be 0 since the record is outside the 5-year window
+    foreach ($history as $row) {
+        expect($row['Harmonie'])->toBe(0);
+    }
 });
