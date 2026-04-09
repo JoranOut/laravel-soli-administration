@@ -162,9 +162,11 @@ class MemberSyncService
             $relatie->emails()->create(['email' => $data['email']]);
         }
 
-        // Ensure user account exists
+        // Ensure user account exists and email is in sync
         if (! $relatie->user_id) {
             $this->ensureUserAccount($relatie, $data);
+        } else {
+            $this->syncUserEmail($relatie, $data['email']);
         }
 
         // Ensure "lid" type is active
@@ -250,6 +252,26 @@ class MemberSyncService
 
         $relatie->user_id = $user->id;
         $relatie->save();
+    }
+
+    private function syncUserEmail(Relatie $relatie, string $newEmail): void
+    {
+        $user = $relatie->user;
+
+        if (! $user || $user->email === $newEmail) {
+            return;
+        }
+
+        // Only update if no other user already has this email
+        if (User::where('email', $newEmail)->where('id', '!=', $user->id)->exists()) {
+            Log::warning("MemberSyncService: Cannot update user {$user->id} email to {$newEmail} — already taken by another user.");
+
+            return;
+        }
+
+        $user->email = $newEmail;
+        $user->email_verified_at = null;
+        $user->save();
     }
 
     private function getLidType(): ?RelatieType

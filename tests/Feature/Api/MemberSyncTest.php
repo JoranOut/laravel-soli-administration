@@ -234,6 +234,65 @@ test('adds missing email on update', function () {
     expect($relatie->emails()->where('email', 'old@test.nl')->exists())->toBeTrue();
 });
 
+test('syncs user email when sync email changes', function () {
+    $user = User::factory()->create(['email' => 'old@test.nl']);
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
+    $relatie->emails()->create(['email' => 'old@test.nl']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'new@test.nl',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $user->refresh();
+    expect($user->email)->toBe('new@test.nl');
+    expect($user->email_verified_at)->toBeNull();
+});
+
+test('does not overwrite user email if new email is taken by another user', function () {
+    $otherUser = User::factory()->create(['email' => 'taken@test.nl']);
+
+    $user = User::factory()->create(['email' => 'old@test.nl']);
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
+    $relatie->emails()->create(['email' => 'old@test.nl']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'taken@test.nl',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    // User email should NOT have changed
+    $user->refresh();
+    expect($user->email)->toBe('old@test.nl');
+});
+
+test('does not touch user email when sync email is unchanged', function () {
+    $user = User::factory()->create(['email' => 'same@test.nl', 'email_verified_at' => now()]);
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
+    $relatie->emails()->create(['email' => 'same@test.nl']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'same@test.nl',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $user->refresh();
+    expect($user->email)->toBe('same@test.nl');
+    expect($user->email_verified_at)->not->toBeNull();
+});
+
 test('syncs onderdelen on update: adds new, closes removed', function () {
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
