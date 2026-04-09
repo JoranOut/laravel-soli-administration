@@ -84,7 +84,15 @@ class DashboardController extends Controller
         $onderdeelIds = $onderdelen->pluck('id');
         $onderdeelNames = $onderdelen->pluck('naam', 'id');
 
-        $start = Carbon::now()->subYears(5)->startOfMonth()->toDateString();
+        $earliestVan = DB::table('soli_relatie_onderdeel')
+            ->whereIn('onderdeel_id', $onderdeelIds)
+            ->min('van');
+
+        if (! $earliestVan) {
+            return ['history' => [], 'names' => $onderdelen->pluck('naam')->values()->all()];
+        }
+
+        $start = Carbon::parse($earliestVan)->startOfMonth()->toDateString();
         $end = Carbon::now()->startOfMonth()->toDateString();
 
         $placeholders = implode(',', array_fill(0, count($onderdeelIds), '?'));

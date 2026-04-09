@@ -114,7 +114,7 @@ test('onderdeel history counts active members correctly per month', function () 
     expect($lastMonthRow['Harmonie'])->toBe(2);
 });
 
-test('onderdeel history excludes old data beyond 5 years', function () {
+test('onderdeel history includes old data for all-years toggle', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     $admin = User::factory()->create()->assignRole('admin');
@@ -122,7 +122,7 @@ test('onderdeel history excludes old data beyond 5 years', function () {
     $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
     $relatie = Relatie::factory()->create();
 
-    // Record that ended 6 years ago — should not appear
+    // Record that ended 6 years ago — should still be included in full history
     DB::table('soli_relatie_onderdeel')->insert([
         'relatie_id' => $relatie->id,
         'onderdeel_id' => $orkest->id,
@@ -135,8 +135,9 @@ test('onderdeel history excludes old data beyond 5 years', function () {
 
     $history = $response->original->getData()['page']['props']['onderdeel_history'];
 
-    // All counts should be 0 since the record is outside the 5-year window
-    foreach ($history as $row) {
-        expect($row['Harmonie'])->toBe(0);
-    }
+    // History should go back to the record's start date
+    $oldMonth = now()->subYears(7)->format('Y-m');
+    $oldRow = collect($history)->firstWhere('month', $oldMonth);
+    expect($oldRow)->not->toBeNull();
+    expect($oldRow['Harmonie'])->toBe(1);
 });
