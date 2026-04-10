@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRelatieRequest;
 use App\Http\Requests\UpdateRelatieRequest;
+use App\Jobs\SyncGoogleContactsJob;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
@@ -149,6 +150,8 @@ class RelatieController extends Controller
 
             return $relatie;
         });
+
+        SyncGoogleContactsJob::dispatch($relatie->id);
 
         return redirect()
             ->route('admin.relaties.show', $relatie)

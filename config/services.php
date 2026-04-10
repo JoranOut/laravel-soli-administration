@@ -39,4 +39,11 @@ return [
         'api_key' => env('SOLI_SYNC_API_KEY'),
     ],
 
+    'google' => [
+        'service_account_key' => env('GOOGLE_SERVICE_ACCOUNT_KEY_PATH'),
+        'workspace_domain' => env('GOOGLE_WORKSPACE_DOMAIN', 'soli.nl'),
+        'admin_email' => env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
+        'contacts_sync_enabled' => env('GOOGLE_CONTACTS_SYNC_ENABLED', false),
+    ],
+
 ];

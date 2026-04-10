@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\SyncGoogleContactsJob;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
+use App\Observers\GoogleContactSyncObserver;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -218,8 +220,9 @@ class ImportSadMembers extends Command
 
         $stats = ['created' => 0, 'matched' => 0, 'errors' => 0];
 
-        // Disable activity logging during mass import
+        // Disable activity logging and Google Contacts observers during mass import
         activity()->disableLogging();
+        GoogleContactSyncObserver::$disabled = true;
 
         $importFn = function () use ($members, $onderdelen, $lidType, &$stats, $dryRun) {
             $bar = $this->output->createProgressBar(count($members));
@@ -261,6 +264,11 @@ class ImportSadMembers extends Command
         $this->deactivateEmptyOnderdelen();
 
         activity()->enableLogging();
+        GoogleContactSyncObserver::$disabled = false;
+
+        if (! $dryRun) {
+            SyncGoogleContactsJob::dispatch();
+        }
 
         $this->info($dryRun ? 'Dry run complete!' : 'Import complete!');
         $this->table(

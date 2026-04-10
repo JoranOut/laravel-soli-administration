@@ -4,6 +4,10 @@ namespace App\Providers;
 
 use App\Auth\WordPressUserProvider;
 use App\Http\Responses\LoginResponse;
+use App\Models\Email;
+use App\Models\Relatie;
+use App\Observers\EmailGoogleSyncObserver;
+use App\Observers\RelatieGoogleSyncObserver;
 use App\OpenId\OauthClientContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -34,6 +38,9 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configurePassport();
         $this->configureAuth();
+
+        Relatie::observe(RelatieGoogleSyncObserver::class);
+        Email::observe(EmailGoogleSyncObserver::class);
     }
 
     protected function configureAuth(): void

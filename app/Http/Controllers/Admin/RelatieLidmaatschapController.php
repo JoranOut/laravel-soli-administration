@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncGoogleContactsJob;
 use App\Models\Relatie;
 use App\Models\RelatieInstrument;
 use App\Models\RelatieSinds;
@@ -76,6 +77,8 @@ class RelatieLidmaatschapController extends Controller
             }
         }
 
+        SyncGoogleContactsJob::dispatch($relatie->id);
+
         return back()->with('success', __('Section added.'));
     }
 
@@ -115,6 +118,8 @@ class RelatieLidmaatschapController extends Controller
             }
         }
 
+        SyncGoogleContactsJob::dispatch($relatie->id);
+
         return back()->with('success', __('Section updated.'));
     }
 
@@ -131,6 +136,8 @@ class RelatieLidmaatschapController extends Controller
                 ->where('onderdeel_id', $onderdeel->id)
                 ->delete();
         }
+
+        SyncGoogleContactsJob::dispatch($relatie->id);
 
         return back()->with('success', __('Section deleted.'));
     }
