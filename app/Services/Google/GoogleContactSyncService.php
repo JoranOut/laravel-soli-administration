@@ -52,6 +52,12 @@ class GoogleContactSyncService
         return $summary;
     }
 
+    private const BATCH_CREATE_LIMIT = 200;
+
+    private const BATCH_UPDATE_LIMIT = 200;
+
+    private const BATCH_DELETE_LIMIT = 500;
+
     public function syncForUser(string $googleEmail, ?bool $dryRun = false): array
     {
         $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
@@ -73,7 +79,11 @@ class GoogleContactSyncService
             ->get()
             ->keyBy('relatie_id');
 
-        // 4. Process each active relatie
+        // 4. Collect operations
+        $toCreate = [];  // [{relatie, person, hash}, ...]
+        $toUpdate = [];  // [{relatie, person, hash, sync, existingPerson}, ...]
+        $toRecreate = []; // [{relatie, person, hash, sync}, ...]
+
         foreach ($relaties as $relatie) {
             $hash = $this->computeDataHash($relatie);
             $existing = $existingSyncs->get($relatie->id);
@@ -84,18 +94,7 @@ class GoogleContactSyncService
                 continue;
             }
 
-            // Resolve group resource names for this relatie's active onderdelen
-            $activeOnderdeelIds = $relatie->onderdelen
-                ->filter(fn ($o) => $o->pivot->tot === null || $o->pivot->tot >= now()->toDateString())
-                ->pluck('id')
-                ->all();
-
-            $groupResourceNames = collect($activeOnderdeelIds)
-                ->map(fn ($id) => $groupMap[$id] ?? null)
-                ->filter()
-                ->values()
-                ->all();
-
+            $groupResourceNames = $this->resolveGroupResourceNames($relatie, $groupMap);
             $person = $this->apiClient->buildPerson($relatie, $groupResourceNames);
 
             if ($dryRun) {
@@ -105,86 +104,135 @@ class GoogleContactSyncService
             }
 
             if ($existing) {
-                // Update existing contact
+                // Check if contact still exists in Google
                 try {
                     $existingPerson = $this->apiClient->getContact($service, $existing->google_resource_name);
 
                     if (! $existingPerson) {
-                        // Contact was deleted externally — re-create
-                        $created = $this->apiClient->createContact($service, $person);
-                        $existing->update([
-                            'google_resource_name' => $created->getResourceName(),
-                            'data_hash' => $hash,
-                        ]);
-                        $stats['created']++;
-
-                        continue;
+                        $toRecreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
+                    } else {
+                        $etag = $this->apiClient->getEtag($existingPerson);
+                        $person->setEtag($etag);
+                        $toUpdate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
                     }
-
-                    $etag = $this->apiClient->getEtag($existingPerson);
-                    $this->apiClient->updateContact($service, $existing->google_resource_name, $person, $etag);
-                    $existing->update(['data_hash' => $hash]);
-                    $stats['updated']++;
                 } catch (\Throwable $e) {
-                    Log::warning('Google Contacts sync update failed', [
+                    Log::warning('Google Contacts sync getContact failed', [
                         'relatie_id' => $relatie->id,
                         'google_user' => $googleEmail,
                         'error' => $e->getMessage(),
                     ]);
                 }
             } else {
-                // Create new contact
-                try {
-                    $created = $this->apiClient->createContact($service, $person);
-                    GoogleContactSync::create([
-                        'relatie_id' => $relatie->id,
-                        'google_user_email' => $googleEmail,
-                        'google_resource_name' => $created->getResourceName(),
-                        'data_hash' => $hash,
-                    ]);
-                    $stats['created']++;
-                } catch (\Throwable $e) {
-                    Log::warning('Google Contacts sync create failed', [
-                        'relatie_id' => $relatie->id,
-                        'google_user' => $googleEmail,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
+                $toCreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash];
             }
         }
 
-        // 5. Delete contacts for relaties no longer active
+        // 5. Execute batch creates (including re-creates)
+        $allCreates = array_merge($toCreate, $toRecreate);
+
+        foreach (array_chunk($allCreates, self::BATCH_CREATE_LIMIT) as $chunk) {
+            try {
+                $persons = array_map(fn ($item) => $item['person'], $chunk);
+                $created = $this->apiClient->batchCreateContacts($service, $persons);
+
+                foreach ($created as $index => $createdPerson) {
+                    $item = $chunk[$index];
+                    $resourceName = $createdPerson->getResourceName();
+
+                    if (isset($item['sync'])) {
+                        // Re-create: update existing mapping
+                        $item['sync']->update([
+                            'google_resource_name' => $resourceName,
+                            'data_hash' => $item['hash'],
+                        ]);
+                    } else {
+                        // New create
+                        GoogleContactSync::create([
+                            'relatie_id' => $item['relatie']->id,
+                            'google_user_email' => $googleEmail,
+                            'google_resource_name' => $resourceName,
+                            'data_hash' => $item['hash'],
+                        ]);
+                    }
+                    $stats['created']++;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Google Contacts batch create failed', [
+                    'google_user' => $googleEmail,
+                    'count' => count($chunk),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // 6. Execute batch updates
+        foreach (array_chunk($toUpdate, self::BATCH_UPDATE_LIMIT) as $chunk) {
+            try {
+                $persons = [];
+                foreach ($chunk as $item) {
+                    $persons[$item['sync']->google_resource_name] = $item['person'];
+                }
+                $this->apiClient->batchUpdateContacts($service, $persons);
+
+                foreach ($chunk as $item) {
+                    $item['sync']->update(['data_hash' => $item['hash']]);
+                    $stats['updated']++;
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Google Contacts batch update failed', [
+                    'google_user' => $googleEmail,
+                    'count' => count($chunk),
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        // 7. Delete contacts for relaties no longer active
         $toDelete = $existingSyncs->filter(fn ($sync) => ! in_array($sync->relatie_id, $activeRelatieIds));
 
-        foreach ($toDelete as $sync) {
-            if ($dryRun) {
-                $stats['deleted']++;
+        if ($dryRun) {
+            $stats['deleted'] += $toDelete->count();
+        } else {
+            foreach ($toDelete->chunk(self::BATCH_DELETE_LIMIT) as $chunk) {
+                $resourceNames = $chunk->pluck('google_resource_name')->all();
 
-                continue;
-            }
-
-            try {
-                $this->apiClient->deleteContact($service, $sync->google_resource_name);
-            } catch (\Google\Service\Exception $e) {
-                if ($e->getCode() !== 404) {
-                    Log::warning('Google Contacts sync delete failed', [
-                        'relatie_id' => $sync->relatie_id,
+                try {
+                    $this->apiClient->batchDeleteContacts($service, $resourceNames);
+                } catch (\Throwable $e) {
+                    Log::warning('Google Contacts batch delete failed', [
                         'google_user' => $googleEmail,
+                        'count' => count($resourceNames),
                         'error' => $e->getMessage(),
                     ]);
                 }
-            }
 
-            $sync->delete();
-            $stats['deleted']++;
+                foreach ($chunk as $sync) {
+                    $sync->delete();
+                    $stats['deleted']++;
+                }
+            }
         }
 
-        // 6. Clean up groups for inactive onderdelen
+        // 8. Clean up groups for inactive onderdelen
         if (! $dryRun) {
             $this->cleanupStaleGroups($service, $googleEmail);
         }
 
         return $stats;
+    }
+
+    private function resolveGroupResourceNames(Relatie $relatie, array $groupMap): array
+    {
+        $activeOnderdeelIds = $relatie->onderdelen
+            ->filter(fn ($o) => $o->pivot->tot === null || $o->pivot->tot >= now()->toDateString())
+            ->pluck('id')
+            ->all();
+
+        return collect($activeOnderdeelIds)
+            ->map(fn ($id) => $groupMap[$id] ?? null)
+            ->filter()
+            ->values()
+            ->all();
     }
 
     public function syncRelatieForUser(Relatie $relatie, string $googleEmail, ?bool $dryRun = false): array
