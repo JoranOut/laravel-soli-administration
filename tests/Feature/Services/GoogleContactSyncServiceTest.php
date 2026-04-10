@@ -32,8 +32,9 @@ test('syncForUser creates contacts for active relaties', function () {
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
-    $this->mockApiClient->shouldReceive('createContact')->once()->andReturn($createdPerson);
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$createdPerson]);
+    $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $service = app(GoogleContactSyncService::class);
@@ -66,9 +67,9 @@ test('syncForUser skips relaties with unchanged hash', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
-    $this->mockApiClient->shouldReceive('createContact')->never();
-    $this->mockApiClient->shouldReceive('updateContact')->never();
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $stats = $service->syncForUser($this->googleEmail);
@@ -94,18 +95,15 @@ test('syncForUser updates contacts when hash changes', function () {
     $existingPerson = new Person;
     $existingPerson->setEtag('etag-abc');
 
-    $updatedPerson = new Person;
-    $updatedPerson->setResourceName('people/c123');
-
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
     $this->mockApiClient->shouldReceive('getContact')->with($this->mockService, 'people/c123')->andReturn($existingPerson);
     $this->mockApiClient->shouldReceive('getEtag')->with($existingPerson)->andReturn('etag-abc');
-    $this->mockApiClient->shouldReceive('updateContact')->once()->andReturn($updatedPerson);
-    $this->mockApiClient->shouldReceive('createContact')->never();
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchUpdateContacts')->once()->andReturn([]);
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $service = app(GoogleContactSyncService::class);
@@ -132,8 +130,11 @@ test('syncForUser deletes contacts for deactivated relaties', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
-    $this->mockApiClient->shouldReceive('deleteContact')->with($this->mockService, 'people/c999')->once();
-    $this->mockApiClient->shouldReceive('createContact')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')
+        ->with($this->mockService, ['people/c999'])
+        ->once();
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $service = app(GoogleContactSyncService::class);
@@ -166,8 +167,9 @@ test('syncForUser handles externally deleted contact by re-creating', function (
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
     $this->mockApiClient->shouldReceive('getContact')->with($this->mockService, 'people/c-deleted')->andReturnNull();
-    $this->mockApiClient->shouldReceive('createContact')->once()->andReturn($newPerson);
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$newPerson]);
+    $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $service = app(GoogleContactSyncService::class);
@@ -248,6 +250,9 @@ test('contact groups created for orkest ensemble and opleidingsgroep only', func
     $groupOpleiding->setResourceName('contactGroups/opleiding1');
     $groupOpleiding->setName('Soli - Test Opleiding');
 
+    $createdPerson = new Person;
+    $createdPerson->setResourceName('people/c1');
+
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
@@ -264,8 +269,8 @@ test('contact groups created for orkest ensemble and opleidingsgroep only', func
         ->once()
         ->andReturn($groupOpleiding);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
-    $this->mockApiClient->shouldReceive('createContact')->andReturn(tap(new Person, fn ($p) => $p->setResourceName('people/c1')));
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->andReturn([$createdPerson]);
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $service = app(GoogleContactSyncService::class);
@@ -294,13 +299,16 @@ test('stale contact groups are cleaned up', function () {
     // Create an active relatie so syncForUser processes properly
     Relatie::factory()->create();
 
+    $createdPerson = new Person;
+    $createdPerson->setResourceName('people/c1');
+
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
-    $this->mockApiClient->shouldReceive('createContact')->andReturn(tap(new Person, fn ($p) => $p->setResourceName('people/c1')));
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->andReturn([$createdPerson]);
     $this->mockApiClient->shouldReceive('deleteContactGroup')->with($this->mockService, 'contactGroups/stale1')->once();
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
 
     $service = app(GoogleContactSyncService::class);
     $service->syncForUser($this->googleEmail);

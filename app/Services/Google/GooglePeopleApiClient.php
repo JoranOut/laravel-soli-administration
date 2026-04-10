@@ -6,8 +6,12 @@ use App\Models\Relatie;
 use Google\Client;
 use Google\Service\Directory;
 use Google\Service\PeopleService;
+use Google\Service\PeopleService\BatchCreateContactsRequest;
+use Google\Service\PeopleService\BatchDeleteContactsRequest;
+use Google\Service\PeopleService\BatchUpdateContactsRequest;
 use Google\Service\PeopleService\ClientData;
 use Google\Service\PeopleService\ContactGroup;
+use Google\Service\PeopleService\ContactToCreate;
 use Google\Service\PeopleService\EmailAddress;
 use Google\Service\PeopleService\ModifyContactGroupMembersRequest;
 use Google\Service\PeopleService\Name;
@@ -137,6 +141,62 @@ class GooglePeopleApiClient
     public function deleteContact(PeopleService $service, string $resourceName): void
     {
         $service->people->deleteContact($resourceName);
+    }
+
+    /**
+     * Batch create contacts (max 200 per call).
+     *
+     * @param  Person[]  $persons
+     * @return Person[] Created persons keyed by index
+     */
+    public function batchCreateContacts(PeopleService $service, array $persons): array
+    {
+        $contacts = array_map(function ($person) {
+            $contact = new ContactToCreate;
+            $contact->setContactPerson($person);
+
+            return $contact;
+        }, $persons);
+
+        $request = new BatchCreateContactsRequest;
+        $request->setContacts($contacts);
+        $request->setReadMask('names,emailAddresses,clientData,memberships');
+
+        $response = $service->people->batchCreateContacts($request);
+
+        return array_map(
+            fn ($result) => $result->getPerson(),
+            $response->getCreatedPeople() ?? []
+        );
+    }
+
+    /**
+     * Batch update contacts (max 200 per call).
+     *
+     * @param  array<string, Person>  $persons  Keyed by resourceName
+     */
+    public function batchUpdateContacts(PeopleService $service, array $persons): array
+    {
+        $request = new BatchUpdateContactsRequest;
+        $request->setContacts($persons);
+        $request->setReadMask('names,emailAddresses,clientData,memberships');
+
+        $response = $service->people->batchUpdateContacts($request);
+
+        return $response->getUpdateResult() ?? [];
+    }
+
+    /**
+     * Batch delete contacts (max 500 per call).
+     *
+     * @param  string[]  $resourceNames
+     */
+    public function batchDeleteContacts(PeopleService $service, array $resourceNames): void
+    {
+        $request = new BatchDeleteContactsRequest;
+        $request->setResourceNames($resourceNames);
+
+        $service->people->batchDeleteContacts($request);
     }
 
     public function getContact(PeopleService $service, string $resourceName): ?Person
