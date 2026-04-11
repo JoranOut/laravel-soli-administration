@@ -573,5 +573,11 @@
     "Emails copied!": "Emails copied!",
     "No emails found.": "No emails found.",
 
-    "Section (optional)": "Section (optional)"
+    "Section (optional)": "Section (optional)",
+
+    "Member changes": "Member changes",
+    "Joined": "Joined",
+    "Left": "Left",
+    "No members joined.": "No members joined.",
+    "No members left.": "No members left."
 }

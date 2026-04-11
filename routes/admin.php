@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\GoogleContactSyncController;
+use App\Http\Controllers\Admin\LedenverloopController;
 use App\Http\Controllers\Admin\OauthClientSettingController;
 use App\Http\Controllers\Admin\BetalingController;
 use App\Http\Controllers\Admin\ContributieController;
@@ -44,6 +45,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 });
 
 Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(function () {
+    // Ledenverloop
+    Route::get('admin/ledenverloop', [LedenverloopController::class, 'index'])->name('admin.ledenverloop.index');
+
     // Relaties
     Route::get('admin/relaties', [RelatieController::class, 'index'])->name('admin.relaties.index');
     Route::get('admin/relaties/create', [RelatieController::class, 'create'])->name('admin.relaties.create')
