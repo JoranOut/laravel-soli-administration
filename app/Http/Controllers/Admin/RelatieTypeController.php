@@ -27,7 +27,7 @@ class RelatieTypeController extends Controller
             'email' => $validated['email'] ?? null,
         ]);
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Type added.'));
     }
@@ -52,7 +52,7 @@ class RelatieTypeController extends Controller
             $validated
         );
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Type updated.'));
     }
@@ -67,7 +67,7 @@ class RelatieTypeController extends Controller
 
         $relatie->types()->wherePivot('id', $pivotId)->detach($type->id);
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Type deleted.'));
     }

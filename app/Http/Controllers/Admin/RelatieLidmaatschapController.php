@@ -77,7 +77,7 @@ class RelatieLidmaatschapController extends Controller
             }
         }
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Section added.'));
     }
@@ -118,7 +118,7 @@ class RelatieLidmaatschapController extends Controller
             }
         }
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Section updated.'));
     }
@@ -137,7 +137,7 @@ class RelatieLidmaatschapController extends Controller
                 ->delete();
         }
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Section deleted.'));
     }

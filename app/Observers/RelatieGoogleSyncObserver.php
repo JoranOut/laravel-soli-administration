@@ -19,6 +19,6 @@ class RelatieGoogleSyncObserver
             return;
         }
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
     }
 }

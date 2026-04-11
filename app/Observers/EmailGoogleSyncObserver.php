@@ -13,7 +13,7 @@ class EmailGoogleSyncObserver
             return;
         }
 
-        SyncGoogleContactsJob::dispatch($email->relatie_id);
+        SyncGoogleContactsJob::dispatch($email->relatie_id)->afterResponse();
     }
 
     public function deleted(Email $email): void
@@ -22,6 +22,6 @@ class EmailGoogleSyncObserver
             return;
         }
 
-        SyncGoogleContactsJob::dispatch($email->relatie_id);
+        SyncGoogleContactsJob::dispatch($email->relatie_id)->afterResponse();
     }
 }
