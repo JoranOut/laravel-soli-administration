@@ -124,6 +124,7 @@ export function AppSidebar() {
                 { title: t('Links'), href: '/admin/koppelingen' },
                 { title: t('Activity log'), href: '/admin/activity-log' },
                 { title: t('OAuth clients'), href: '/admin/oauth-clients' },
+                { title: t('Google Contacts'), href: '/admin/google-contacts-sync' },
             ],
         });
     }

@@ -273,6 +273,22 @@ export type ClientRoleMapping = {
     priority: number;
 };
 
+export type GoogleContactSyncLog = {
+    id: number;
+    type: 'full' | 'relatie';
+    relatie_id: number | null;
+    relatie?: { id: number; voornaam: string; tussenvoegsel: string | null; achternaam: string } | null;
+    status: 'running' | 'completed' | 'failed';
+    workspace_users: number;
+    contacts_created: number;
+    contacts_updated: number;
+    contacts_deleted: number;
+    contacts_skipped: number;
+    error_message: string | null;
+    started_at: string;
+    completed_at: string | null;
+};
+
 export type PaginatedResponse<T> = {
     data: T[];
     current_page: number;
