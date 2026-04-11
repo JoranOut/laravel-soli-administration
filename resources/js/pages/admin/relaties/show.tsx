@@ -113,7 +113,7 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, users, 
                             <RelatieOverviewTab relatie={relatie} />
                         )}
                         {activeTab === 'types' && (
-                            <RelatieTypesTab relatie={relatie} relatieTypes={relatieTypes} />
+                            <RelatieTypesTab relatie={relatie} relatieTypes={relatieTypes} onderdelen={onderdelen} />
                         )}
                         {activeTab === 'contact' && (
                             <RelatieContactTab relatie={relatie} />

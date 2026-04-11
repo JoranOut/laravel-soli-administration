@@ -162,6 +162,7 @@ class SampleDataSeeder extends Seeder
         foreach ($dirigenten as $i => $dirigent) {
             $dirigent->types()->attach($dirigentType->id, [
                 'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
+                'onderdeel_id' => $harmonieOrkest?->id,
             ]);
 
             // First dirigent is also a lid

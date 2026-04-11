@@ -571,5 +571,7 @@
     "Copy emails": "Copy emails",
     "Exclude dirigent": "Exclude dirigent",
     "Emails copied!": "Emails copied!",
-    "No emails found.": "No emails found."
+    "No emails found.": "No emails found.",
+
+    "Section (optional)": "Section (optional)"
 }

@@ -9,7 +9,7 @@ export function LocaleSwitcher() {
     }
 
     return (
-        <div className="flex items-center gap-1 px-2 text-xs">
+        <div className="flex items-center gap-1 px-2 text-xs group-data-[collapsible=icon]:hidden">
             <button
                 onClick={() => switchLocale('nl')}
                 className={`rounded px-1.5 py-0.5 ${locale === 'nl' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}

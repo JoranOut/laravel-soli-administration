@@ -401,10 +401,10 @@ class GoogleContactSyncService
                 ->sort()
                 ->values()
                 ->all(),
-            'type_ids' => $relatie->types
+            'type_assignments' => $relatie->types
                 ->filter(fn ($t) => $t->pivot->tot === null || $t->pivot->tot >= now()->toDateString())
-                ->pluck('id')
-                ->sort()
+                ->map(fn ($t) => [$t->id, $t->pivot->onderdeel_id])
+                ->sortBy(fn ($pair) => $pair[0])
                 ->values()
                 ->all(),
         ];

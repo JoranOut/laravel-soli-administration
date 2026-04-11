@@ -6,22 +6,23 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InputError from '@/components/input-error';
 import { useTranslation } from '@/hooks/use-translation';
-import type { RelatieCreateFormData, RelatieType, RelatieTypeEntry } from '@/types/admin';
+import type { Onderdeel, RelatieCreateFormData, RelatieType, RelatieTypeEntry } from '@/types/admin';
 
 type Props = {
     data: RelatieCreateFormData;
     setData: <K extends keyof RelatieCreateFormData>(key: K, value: RelatieCreateFormData[K]) => void;
     errors: Partial<Record<string, string>>;
     relatieTypes: RelatieType[];
+    onderdelen: Onderdeel[];
 };
 
 const today = () => new Date().toISOString().split('T')[0];
 
 function emptyTypeEntry(): RelatieTypeEntry {
-    return { type_id: '', van: today(), tot: '', functie: '', email: '' };
+    return { type_id: '', van: today(), tot: '', functie: '', email: '', onderdeel_id: '' };
 }
 
-export default function Step1Personal({ data, setData, errors, relatieTypes }: Props) {
+export default function Step1Personal({ data, setData, errors, relatieTypes, onderdelen }: Props) {
     const { t } = useTranslation();
 
     const updateType = (index: number, field: keyof RelatieTypeEntry, value: string) => {
@@ -209,6 +210,22 @@ export default function Step1Personal({ data, setData, errors, relatieTypes }: P
                                                     value={entry.email}
                                                     onChange={(e) => updateType(index, 'email', e.target.value)}
                                                 />
+                                            </div>
+                                        </div>
+                                    )}
+                                    {entry.type_id && relatieTypes.find((t) => t.id.toString() === entry.type_id)?.onderdeel_koppelbaar && (
+                                        <div className="mt-3 border-t pt-3">
+                                            <div className="space-y-2 sm:w-1/2">
+                                                <Label>{t('Section (optional)')}</Label>
+                                                <Select value={entry.onderdeel_id} onValueChange={(v) => updateType(index, 'onderdeel_id', v === 'none' ? '' : v)}>
+                                                    <SelectTrigger><SelectValue placeholder={t('Select section')} /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">-</SelectItem>
+                                                        {onderdelen.map((o) => (
+                                                            <SelectItem key={o.id} value={o.id.toString()}>{o.naam}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
                                         </div>
                                     )}

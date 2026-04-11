@@ -93,6 +93,7 @@ class RelatieController extends Controller
                     'tot' => $type['tot'] ?? null,
                     'functie' => $type['functie'] ?? null,
                     'email' => $type['email'] ?? null,
+                    'onderdeel_id' => $type['onderdeel_id'] ?? null,
                 ]);
             }
 

@@ -11,14 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DateRangeDisplay } from '@/components/admin/date-range-display';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
-import type { Relatie, RelatieType } from '@/types/admin';
+import type { Onderdeel, Relatie, RelatieType } from '@/types/admin';
 
 type Props = {
     relatie: Relatie;
     relatieTypes: RelatieType[];
+    onderdelen: Onderdeel[];
 };
 
-function EditTypeDialog({ relatieId, type }: { relatieId: number; type: RelatieType }) {
+function EditTypeDialog({ relatieId, type, relatieTypes, onderdelen }: { relatieId: number; type: RelatieType; relatieTypes: RelatieType[]; onderdelen: Onderdeel[] }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -27,7 +28,10 @@ function EditTypeDialog({ relatieId, type }: { relatieId: number; type: RelatieT
         tot: type.pivot?.tot ?? '',
         functie: type.pivot?.functie ?? '',
         email: type.pivot?.email ?? '',
+        onderdeel_id: type.pivot?.onderdeel_id?.toString() ?? '',
     });
+
+    const typeDefinition = relatieTypes.find((t) => t.id === type.id);
 
     const isLid = type.naam === 'lid';
 
@@ -85,6 +89,20 @@ function EditTypeDialog({ relatieId, type }: { relatieId: number; type: RelatieT
                             </div>
                         </div>
                     )}
+                    {typeDefinition?.onderdeel_koppelbaar && (
+                        <div className="space-y-2">
+                            <Label>{t('Section (optional)')}</Label>
+                            <Select value={data.onderdeel_id} onValueChange={(v) => setData('onderdeel_id', v === 'none' ? '' : v)}>
+                                <SelectTrigger><SelectValue placeholder={t('Select section')} /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">-</SelectItem>
+                                    {onderdelen.map((o) => (
+                                        <SelectItem key={o.id} value={o.id.toString()}>{o.naam}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
                     <div className="flex items-center justify-between border-t pt-4">
                         <div>
                             {!confirmDelete ? (
@@ -114,7 +132,7 @@ function EditTypeDialog({ relatieId, type }: { relatieId: number; type: RelatieT
     );
 }
 
-export default function RelatieTypesTab({ relatie, relatieTypes }: Props) {
+export default function RelatieTypesTab({ relatie, relatieTypes, onderdelen }: Props) {
     const { can } = usePermissions();
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
@@ -125,6 +143,7 @@ export default function RelatieTypesTab({ relatie, relatieTypes }: Props) {
         tot: '',
         functie: '',
         email: '',
+        onderdeel_id: '',
     });
 
     const selectedType = relatieTypes.find((t) => t.id.toString() === data.relatie_type_id);
@@ -187,6 +206,20 @@ export default function RelatieTypesTab({ relatie, relatieTypes }: Props) {
                                         </div>
                                     </div>
                                 )}
+                                {selectedType?.onderdeel_koppelbaar && (
+                                    <div className="space-y-2">
+                                        <Label>{t('Section (optional)')}</Label>
+                                        <Select value={data.onderdeel_id} onValueChange={(v) => setData('onderdeel_id', v === 'none' ? '' : v)}>
+                                            <SelectTrigger><SelectValue placeholder={t('Select section')} /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">-</SelectItem>
+                                                {onderdelen.map((o) => (
+                                                    <SelectItem key={o.id} value={o.id.toString()}>{o.naam}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
                                 <Button type="submit" disabled={processing}>{t('Save')}</Button>
                             </form>
                         </DialogContent>
@@ -200,12 +233,15 @@ export default function RelatieTypesTab({ relatie, relatieTypes }: Props) {
                             <div key={`${type.id}-${type.pivot?.van}`} className="flex items-center justify-between rounded-md border p-3">
                                 <div className="flex items-center gap-3">
                                     <Badge variant="secondary">{type.naam}</Badge>
+                                    {type.pivot?.onderdeel_id && (
+                                        <Badge variant="outline">{onderdelen.find((o) => o.id === type.pivot!.onderdeel_id)?.naam}</Badge>
+                                    )}
                                     {type.pivot?.functie && <span className="text-muted-foreground text-sm">{type.pivot.functie}</span>}
                                     {type.pivot?.email && <span className="text-muted-foreground text-sm">{type.pivot.email}</span>}
                                     {type.pivot && <DateRangeDisplay van={type.pivot.van} tot={type.pivot.tot} />}
                                 </div>
                                 {can('relaties.edit') && type.pivot && (
-                                    <EditTypeDialog relatieId={relatie.id} type={type} />
+                                    <EditTypeDialog relatieId={relatie.id} type={type} relatieTypes={relatieTypes} onderdelen={onderdelen} />
                                 )}
                             </div>
                         ))}

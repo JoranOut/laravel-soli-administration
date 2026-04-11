@@ -18,6 +18,7 @@ class RelatieTypeController extends Controller
             'tot' => ['nullable', 'date', 'after_or_equal:van'],
             'functie' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
+            'onderdeel_id' => ['nullable', 'exists:soli_onderdelen,id'],
         ]);
 
         $relatie->types()->attach($validated['relatie_type_id'], [
@@ -25,6 +26,7 @@ class RelatieTypeController extends Controller
             'tot' => $validated['tot'] ?? null,
             'functie' => $validated['functie'] ?? null,
             'email' => $validated['email'] ?? null,
+            'onderdeel_id' => $validated['onderdeel_id'] ?? null,
         ]);
 
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
@@ -39,6 +41,7 @@ class RelatieTypeController extends Controller
             'tot' => ['nullable', 'date', 'after_or_equal:van'],
             'functie' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
+            'onderdeel_id' => ['nullable', 'exists:soli_onderdelen,id'],
         ]);
 
         $type = $relatie->types()->wherePivot('id', $pivotId)->first();
