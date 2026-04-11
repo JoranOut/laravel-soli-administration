@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncGoogleContactsJob;
 use App\Models\Relatie;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,8 @@ class RelatieTypeController extends Controller
             'functie' => $validated['functie'] ?? null,
             'email' => $validated['email'] ?? null,
         ]);
+
+        SyncGoogleContactsJob::dispatch($relatie->id);
 
         return back()->with('success', __('Type added.'));
     }
@@ -49,6 +52,8 @@ class RelatieTypeController extends Controller
             $validated
         );
 
+        SyncGoogleContactsJob::dispatch($relatie->id);
+
         return back()->with('success', __('Type updated.'));
     }
 
@@ -61,6 +66,8 @@ class RelatieTypeController extends Controller
         }
 
         $relatie->types()->wherePivot('id', $pivotId)->detach($type->id);
+
+        SyncGoogleContactsJob::dispatch($relatie->id);
 
         return back()->with('success', __('Type deleted.'));
     }
