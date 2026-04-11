@@ -3,8 +3,10 @@
 use App\Models\Email;
 use App\Models\GoogleContactGroup;
 use App\Models\GoogleContactSync;
+use App\Models\GoogleContactTypeGroup;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieType;
 use App\Services\Google\GoogleContactSyncService;
 use App\Services\Google\GooglePeopleApiClient;
 use Google\Service\PeopleService;
@@ -186,7 +188,7 @@ test('syncForUser handles externally deleted contact by re-creating', function (
 
 test('computeDataHash changes when name changes', function () {
     $relatie = Relatie::factory()->create(['voornaam' => 'Jan', 'achternaam' => 'Jansen']);
-    $relatie->load(['emails', 'onderdelen']);
+    $relatie->load(['emails', 'onderdelen', 'types']);
 
     $service = app(GoogleContactSyncService::class);
     $hash1 = $service->computeDataHash($relatie);
@@ -199,7 +201,7 @@ test('computeDataHash changes when name changes', function () {
 
 test('computeDataHash changes when email changes', function () {
     $relatie = Relatie::factory()->create();
-    $relatie->load(['emails', 'onderdelen']);
+    $relatie->load(['emails', 'onderdelen', 'types']);
 
     $service = app(GoogleContactSyncService::class);
     $hash1 = $service->computeDataHash($relatie);
@@ -214,7 +216,7 @@ test('computeDataHash changes when email changes', function () {
 test('computeDataHash changes when onderdeel changes', function () {
     $relatie = Relatie::factory()->create();
     $onderdeel = Onderdeel::factory()->create(['type' => 'orkest']);
-    $relatie->load(['emails', 'onderdelen']);
+    $relatie->load(['emails', 'onderdelen', 'types']);
 
     $service = app(GoogleContactSyncService::class);
     $hash1 = $service->computeDataHash($relatie);
@@ -286,6 +288,21 @@ test('contact groups created for orkest ensemble and opleidingsgroep only', func
     $this->assertDatabaseMissing('soli_google_contact_groups', ['onderdeel_id' => $bestuur->id]);
 });
 
+test('computeDataHash changes when type changes', function () {
+    $relatie = Relatie::factory()->create();
+    $type = RelatieType::factory()->create(['naam' => 'lid']);
+    $relatie->load(['emails', 'onderdelen', 'types']);
+
+    $service = app(GoogleContactSyncService::class);
+    $hash1 = $service->computeDataHash($relatie);
+
+    $relatie->types()->attach($type->id, ['van' => now()->subYear()->toDateString()]);
+    $relatie->load('types');
+    $hash2 = $service->computeDataHash($relatie);
+
+    expect($hash1)->not->toBe($hash2);
+});
+
 test('stale contact groups are cleaned up', function () {
     // Create an onderdeel that was previously active and has a group, but is now inactive
     $inactiveOnderdeel = Onderdeel::factory()->create(['type' => 'orkest', 'actief' => false, 'naam' => 'Oud Orkest']);
@@ -315,5 +332,65 @@ test('stale contact groups are cleaned up', function () {
 
     $this->assertDatabaseMissing('soli_google_contact_groups', [
         'onderdeel_id' => $inactiveOnderdeel->id,
+    ]);
+});
+
+// --- Type contact groups ---
+
+test('contact type groups created for all relatie types', function () {
+    $lid = RelatieType::factory()->create(['naam' => 'lid']);
+    $donateur = RelatieType::factory()->create(['naam' => 'donateur']);
+
+    Relatie::factory()->create();
+
+    $groupLid = new ContactGroup;
+    $groupLid->setResourceName('contactGroups/lid1');
+    $groupLid->setName('Soli - Lid');
+
+    $groupDonateur = new ContactGroup;
+    $groupDonateur->setResourceName('contactGroups/donateur1');
+    $groupDonateur->setName('Soli - Donateur');
+
+    $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->with($this->mockService, 'Soli - Lid')
+        ->once()
+        ->andReturn($groupLid);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->with($this->mockService, 'Soli - Donateur')
+        ->once()
+        ->andReturn($groupDonateur);
+    $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('createContact')->andReturn(tap(new Person, fn ($p) => $p->setResourceName('people/c1')));
+    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
+
+    $service = app(GoogleContactSyncService::class);
+    $service->syncForUser($this->googleEmail);
+
+    $this->assertDatabaseHas('soli_google_contact_type_groups', ['relatie_type_id' => $lid->id]);
+    $this->assertDatabaseHas('soli_google_contact_type_groups', ['relatie_type_id' => $donateur->id]);
+});
+
+test('stale contact type groups are cleaned up via cascade delete', function () {
+    // With cascadeOnDelete, deleting a RelatieType auto-removes its GoogleContactTypeGroup
+    $oldType = RelatieType::factory()->create(['naam' => 'oud_type']);
+
+    GoogleContactTypeGroup::create([
+        'relatie_type_id' => $oldType->id,
+        'google_user_email' => $this->googleEmail,
+        'google_resource_name' => 'contactGroups/staleType1',
+    ]);
+
+    $this->assertDatabaseHas('soli_google_contact_type_groups', [
+        'relatie_type_id' => $oldType->id,
+    ]);
+
+    $oldType->delete();
+
+    $this->assertDatabaseMissing('soli_google_contact_type_groups', [
+        'relatie_type_id' => $oldType->id,
     ]);
 });
