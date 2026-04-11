@@ -3,9 +3,11 @@
 namespace App\Services\Google;
 
 use App\Models\GoogleContactGroup;
+use App\Models\GoogleContactTypeGroup;
 use App\Models\GoogleContactSync;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieType;
 use Illuminate\Support\Facades\Log;
 
 class GoogleContactSyncService
@@ -39,7 +41,7 @@ class GoogleContactSyncService
         $users = $this->apiClient->getWorkspaceUsers();
         $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
 
-        $relatie->load(['emails', 'onderdelen']);
+        $relatie->load(['emails', 'onderdelen', 'types']);
 
         foreach ($users as $email) {
             $result = $this->syncRelatieForUser($relatie, $email, $dryRun);
@@ -66,10 +68,11 @@ class GoogleContactSyncService
 
         // 1. Ensure contact groups exist
         $groupMap = $this->ensureContactGroups($service, $googleEmail, $dryRun);
+        $typeGroupMap = $this->ensureContactTypeGroups($service, $googleEmail, $dryRun);
 
-        // 2. Load all active relaties with their emails and onderdelen
+        // 2. Load all active relaties with their emails, onderdelen and types
         $relaties = Relatie::actief()
-            ->with(['emails', 'onderdelen' => fn ($q) => $q->actief()])
+            ->with(['emails', 'onderdelen' => fn ($q) => $q->actief(), 'types'])
             ->get();
 
         $activeRelatieIds = $relaties->pluck('id')->all();
@@ -94,7 +97,8 @@ class GoogleContactSyncService
                 continue;
             }
 
-            $groupResourceNames = $this->resolveGroupResourceNames($relatie, $groupMap);
+            $groupResourceNames = $this->resolveGroupResourceNames($relatie, $groupMap, $typeGroupMap);
+
             $person = $this->apiClient->buildPerson($relatie, $groupResourceNames);
 
             if ($dryRun) {
@@ -213,26 +217,13 @@ class GoogleContactSyncService
             }
         }
 
-        // 8. Clean up groups for inactive onderdelen
+        // 8. Clean up stale groups
         if (! $dryRun) {
             $this->cleanupStaleGroups($service, $googleEmail);
+            $this->cleanupStaleTypeGroups($service, $googleEmail);
         }
 
         return $stats;
-    }
-
-    private function resolveGroupResourceNames(Relatie $relatie, array $groupMap): array
-    {
-        $activeOnderdeelIds = $relatie->onderdelen
-            ->filter(fn ($o) => $o->pivot->tot === null || $o->pivot->tot >= now()->toDateString())
-            ->pluck('id')
-            ->all();
-
-        return collect($activeOnderdeelIds)
-            ->map(fn ($id) => $groupMap[$id] ?? null)
-            ->filter()
-            ->values()
-            ->all();
     }
 
     public function syncRelatieForUser(Relatie $relatie, string $googleEmail, ?bool $dryRun = false): array
@@ -243,6 +234,7 @@ class GoogleContactSyncService
 
         // Ensure contact groups exist
         $groupMap = $this->ensureContactGroups($service, $googleEmail, $dryRun);
+        $typeGroupMap = $this->ensureContactTypeGroups($service, $googleEmail, $dryRun);
 
         $hash = $this->computeDataHash($relatie);
         $existing = GoogleContactSync::where('relatie_id', $relatie->id)
@@ -275,16 +267,7 @@ class GoogleContactSyncService
         }
 
         // Resolve group resource names
-        $activeOnderdeelIds = $relatie->onderdelen
-            ->filter(fn ($o) => $o->pivot->tot === null || $o->pivot->tot >= now()->toDateString())
-            ->pluck('id')
-            ->all();
-
-        $groupResourceNames = collect($activeOnderdeelIds)
-            ->map(fn ($id) => $groupMap[$id] ?? null)
-            ->filter()
-            ->values()
-            ->all();
+        $groupResourceNames = $this->resolveGroupResourceNames($relatie, $groupMap, $typeGroupMap);
 
         $person = $this->apiClient->buildPerson($relatie, $groupResourceNames);
 
@@ -356,9 +339,36 @@ class GoogleContactSyncService
                 ->sort()
                 ->values()
                 ->all(),
+            'type_ids' => $relatie->types
+                ->filter(fn ($t) => $t->pivot->tot === null || $t->pivot->tot >= now()->toDateString())
+                ->pluck('id')
+                ->sort()
+                ->values()
+                ->all(),
         ];
 
         return hash('sha256', json_encode($data));
+    }
+
+    private function resolveGroupResourceNames(Relatie $relatie, array $groupMap, array $typeGroupMap): array
+    {
+        $onderdeelGroups = $relatie->onderdelen
+            ->filter(fn ($o) => $o->pivot->tot === null || $o->pivot->tot >= now()->toDateString())
+            ->pluck('id')
+            ->map(fn ($id) => $groupMap[$id] ?? null)
+            ->filter()
+            ->values()
+            ->all();
+
+        $typeGroups = $relatie->types
+            ->filter(fn ($t) => $t->pivot->tot === null || $t->pivot->tot >= now()->toDateString())
+            ->pluck('id')
+            ->map(fn ($id) => $typeGroupMap[$id] ?? null)
+            ->filter()
+            ->values()
+            ->all();
+
+        return array_merge($onderdeelGroups, $typeGroups);
     }
 
     private function ensureContactGroups(mixed $service, string $googleEmail, bool $dryRun): array
@@ -432,6 +442,82 @@ class GoogleContactSyncService
                 if ($e->getCode() !== 404) {
                     Log::warning('Google Contacts group cleanup failed', [
                         'onderdeel_id' => $group->onderdeel_id,
+                        'google_user' => $googleEmail,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            $group->delete();
+        }
+    }
+
+    private function ensureContactTypeGroups(mixed $service, string $googleEmail, bool $dryRun): array
+    {
+        $types = RelatieType::all();
+
+        $existingGroups = GoogleContactTypeGroup::where('google_user_email', $googleEmail)
+            ->get()
+            ->keyBy('relatie_type_id');
+
+        $existingApiGroups = null;
+        $typeGroupMap = [];
+
+        foreach ($types as $type) {
+            $existing = $existingGroups->get($type->id);
+
+            if ($existing) {
+                $typeGroupMap[$type->id] = $existing->google_resource_name;
+
+                continue;
+            }
+
+            if ($dryRun) {
+                continue;
+            }
+
+            if ($existingApiGroups === null) {
+                $existingApiGroups = collect($this->apiClient->listContactGroups($service))
+                    ->keyBy(fn ($g) => $g->getName());
+            }
+
+            $groupName = self::GROUP_PREFIX.ucfirst($type->naam);
+            $apiGroup = $existingApiGroups->get($groupName);
+
+            if ($apiGroup) {
+                $resourceName = $apiGroup->getResourceName();
+            } else {
+                $created = $this->apiClient->createContactGroup($service, $groupName);
+                $resourceName = $created->getResourceName();
+            }
+
+            GoogleContactTypeGroup::create([
+                'relatie_type_id' => $type->id,
+                'google_user_email' => $googleEmail,
+                'google_resource_name' => $resourceName,
+            ]);
+
+            $typeGroupMap[$type->id] = $resourceName;
+        }
+
+        return $typeGroupMap;
+    }
+
+    private function cleanupStaleTypeGroups(mixed $service, string $googleEmail): void
+    {
+        $activeTypeIds = RelatieType::pluck('id');
+
+        $staleGroups = GoogleContactTypeGroup::where('google_user_email', $googleEmail)
+            ->whereNotIn('relatie_type_id', $activeTypeIds)
+            ->get();
+
+        foreach ($staleGroups as $group) {
+            try {
+                $this->apiClient->deleteContactGroup($service, $group->google_resource_name);
+            } catch (\Google\Service\Exception $e) {
+                if ($e->getCode() !== 404) {
+                    Log::warning('Google Contacts type group cleanup failed', [
+                        'relatie_type_id' => $group->relatie_type_id,
                         'google_user' => $googleEmail,
                         'error' => $e->getMessage(),
                     ]);
