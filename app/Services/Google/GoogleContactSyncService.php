@@ -33,12 +33,18 @@ class GoogleContactSyncService
             $users = $this->apiClient->getWorkspaceUsers();
             $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
 
+            $isFirst = true;
             foreach ($users as $email) {
                 $result = $this->syncForUser($email, $dryRun);
-                $summary['created'] += $result['created'];
-                $summary['updated'] += $result['updated'];
-                $summary['deleted'] += $result['deleted'];
-                $summary['skipped'] += $result['skipped'];
+                // Count unique relaties (each user processes the same set),
+                // so only use the first user's stats as representative.
+                if ($isFirst) {
+                    $summary['created'] = $result['created'];
+                    $summary['updated'] = $result['updated'];
+                    $summary['deleted'] = $result['deleted'];
+                    $summary['skipped'] = $result['skipped'];
+                    $isFirst = false;
+                }
             }
 
             $log?->update([
@@ -80,10 +86,12 @@ class GoogleContactSyncService
 
             foreach ($users as $email) {
                 $result = $this->syncRelatieForUser($relatie, $email, $dryRun);
-                $summary['created'] += $result['created'];
-                $summary['updated'] += $result['updated'];
-                $summary['deleted'] += $result['deleted'];
-                $summary['skipped'] += $result['skipped'];
+                // Use max so stats reflect the single relatie (0 or 1),
+                // not multiplied by the number of workspace users.
+                $summary['created'] = max($summary['created'], $result['created']);
+                $summary['updated'] = max($summary['updated'], $result['updated']);
+                $summary['deleted'] = max($summary['deleted'], $result['deleted']);
+                $summary['skipped'] = max($summary['skipped'], $result['skipped']);
             }
 
             $log?->update([
