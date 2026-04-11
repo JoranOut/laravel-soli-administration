@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\GoogleContactSyncController;
 use App\Http\Controllers\Admin\OauthClientSettingController;
 use App\Http\Controllers\Admin\BetalingController;
 use App\Http\Controllers\Admin\ContributieController;
@@ -37,6 +38,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     Route::get('admin/oauth-clients', [OauthClientSettingController::class, 'index'])->name('admin.oauth-clients.index');
     Route::put('admin/oauth-clients/{clientId}', [OauthClientSettingController::class, 'update'])->name('admin.oauth-clients.update');
+
+    Route::get('admin/google-contacts-sync', [GoogleContactSyncController::class, 'index'])->name('admin.google-contacts-sync.index');
+    Route::post('admin/google-contacts-sync', [GoogleContactSyncController::class, 'store'])->name('admin.google-contacts-sync.store');
 });
 
 Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(function () {

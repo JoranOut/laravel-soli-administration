@@ -3,6 +3,7 @@
 namespace App\Services\Google;
 
 use App\Models\GoogleContactGroup;
+use App\Models\GoogleContactSyncLog;
 use App\Models\GoogleContactTypeGroup;
 use App\Models\GoogleContactSync;
 use App\Models\Onderdeel;
@@ -22,36 +23,89 @@ class GoogleContactSyncService
 
     public function syncAll(?bool $dryRun = false): array
     {
-        $users = $this->apiClient->getWorkspaceUsers();
-        $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+        $log = $dryRun ? null : GoogleContactSyncLog::create([
+            'type' => 'full',
+            'status' => 'running',
+            'started_at' => now(),
+        ]);
 
-        foreach ($users as $email) {
-            $result = $this->syncForUser($email, $dryRun);
-            $summary['created'] += $result['created'];
-            $summary['updated'] += $result['updated'];
-            $summary['deleted'] += $result['deleted'];
-            $summary['skipped'] += $result['skipped'];
+        try {
+            $users = $this->apiClient->getWorkspaceUsers();
+            $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+
+            foreach ($users as $email) {
+                $result = $this->syncForUser($email, $dryRun);
+                $summary['created'] += $result['created'];
+                $summary['updated'] += $result['updated'];
+                $summary['deleted'] += $result['deleted'];
+                $summary['skipped'] += $result['skipped'];
+            }
+
+            $log?->update([
+                'status' => 'completed',
+                'workspace_users' => $summary['users'],
+                'contacts_created' => $summary['created'],
+                'contacts_updated' => $summary['updated'],
+                'contacts_deleted' => $summary['deleted'],
+                'contacts_skipped' => $summary['skipped'],
+                'completed_at' => now(),
+            ]);
+
+            return $summary;
+        } catch (\Throwable $e) {
+            $log?->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'completed_at' => now(),
+            ]);
+
+            throw $e;
         }
-
-        return $summary;
     }
 
     public function syncRelatie(Relatie $relatie, ?bool $dryRun = false): array
     {
-        $users = $this->apiClient->getWorkspaceUsers();
-        $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+        $log = $dryRun ? null : GoogleContactSyncLog::create([
+            'type' => 'relatie',
+            'relatie_id' => $relatie->id,
+            'status' => 'running',
+            'started_at' => now(),
+        ]);
 
-        $relatie->load(['emails', 'onderdelen', 'types']);
+        try {
+            $users = $this->apiClient->getWorkspaceUsers();
+            $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
 
-        foreach ($users as $email) {
-            $result = $this->syncRelatieForUser($relatie, $email, $dryRun);
-            $summary['created'] += $result['created'];
-            $summary['updated'] += $result['updated'];
-            $summary['deleted'] += $result['deleted'];
-            $summary['skipped'] += $result['skipped'];
+            $relatie->load(['emails', 'onderdelen', 'types']);
+
+            foreach ($users as $email) {
+                $result = $this->syncRelatieForUser($relatie, $email, $dryRun);
+                $summary['created'] += $result['created'];
+                $summary['updated'] += $result['updated'];
+                $summary['deleted'] += $result['deleted'];
+                $summary['skipped'] += $result['skipped'];
+            }
+
+            $log?->update([
+                'status' => 'completed',
+                'workspace_users' => $summary['users'],
+                'contacts_created' => $summary['created'],
+                'contacts_updated' => $summary['updated'],
+                'contacts_deleted' => $summary['deleted'],
+                'contacts_skipped' => $summary['skipped'],
+                'completed_at' => now(),
+            ]);
+
+            return $summary;
+        } catch (\Throwable $e) {
+            $log?->update([
+                'status' => 'failed',
+                'error_message' => $e->getMessage(),
+                'completed_at' => now(),
+            ]);
+
+            throw $e;
         }
-
-        return $summary;
     }
 
     private const BATCH_CREATE_LIMIT = 200;
