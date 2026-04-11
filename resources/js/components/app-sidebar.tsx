@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Coins, Globe, Guitar, LayoutGrid, Mail, Music, Rocket, Shield, ShoppingCart, User, Users } from 'lucide-react';
+import { Coins, Globe, Guitar, LayoutGrid, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
@@ -84,6 +84,12 @@ export function AppSidebar() {
             icon: Users,
             children: typeChildren,
             allLabel: t('All relations'),
+        });
+
+        dataNavItems.push({
+            title: t('Member changes'),
+            href: '/admin/ledenverloop',
+            icon: UserRoundPlus,
         });
     }
 

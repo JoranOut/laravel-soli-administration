@@ -576,5 +576,11 @@
     "Emails copied!": "E-mails gekopieerd!",
     "No emails found.": "Geen e-mails gevonden.",
 
-    "Section (optional)": "Onderdeel (optioneel)"
+    "Section (optional)": "Onderdeel (optioneel)",
+
+    "Member changes": "Ledenverloop",
+    "Joined": "Toegetreden",
+    "Left": "Vertrokken",
+    "No members joined.": "Geen leden toegetreden.",
+    "No members left.": "Geen leden vertrokken."
 }
