@@ -151,7 +151,7 @@ class RelatieController extends Controller
             return $relatie;
         });
 
-        SyncGoogleContactsJob::dispatch($relatie->id);
+        SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return redirect()
             ->route('admin.relaties.show', $relatie)
