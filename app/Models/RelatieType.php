@@ -12,12 +12,19 @@ class RelatieType extends Model
 
     protected $table = 'soli_relatie_types';
 
-    protected $fillable = ['naam'];
+    protected $fillable = ['naam', 'onderdeel_koppelbaar'];
+
+    protected function casts(): array
+    {
+        return [
+            'onderdeel_koppelbaar' => 'boolean',
+        ];
+    }
 
     public function relaties(): BelongsToMany
     {
         return $this->belongsToMany(Relatie::class, 'soli_relatie_relatie_type')
-            ->withPivot(['van', 'tot'])
+            ->withPivot(['van', 'tot', 'onderdeel_id'])
             ->withTimestamps();
     }
 }

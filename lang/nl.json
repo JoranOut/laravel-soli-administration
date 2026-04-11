@@ -574,5 +574,7 @@
     "Copy emails": "Kopieer e-mails",
     "Exclude dirigent": "Dirigent uitsluiten",
     "Emails copied!": "E-mails gekopieerd!",
-    "No emails found.": "Geen e-mails gevonden."
+    "No emails found.": "Geen e-mails gevonden.",
+
+    "Section (optional)": "Onderdeel (optioneel)"
 }

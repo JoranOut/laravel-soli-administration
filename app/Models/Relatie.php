@@ -63,7 +63,7 @@ class Relatie extends Model
     public function types(): BelongsToMany
     {
         return $this->belongsToMany(RelatieType::class, 'soli_relatie_relatie_type')
-            ->withPivot(['id', 'van', 'tot', 'functie', 'email'])
+            ->withPivot(['id', 'van', 'tot', 'functie', 'email', 'onderdeel_id'])
             ->withTimestamps();
     }
 

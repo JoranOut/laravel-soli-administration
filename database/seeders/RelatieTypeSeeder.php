@@ -9,10 +9,21 @@ class RelatieTypeSeeder extends Seeder
 {
     public function run(): void
     {
-        $types = ['donateur', 'lid', 'docent', 'dirigent', 'bestuur', 'contactpersoon', 'vrijwilliger'];
+        $types = [
+            ['naam' => 'donateur', 'onderdeel_koppelbaar' => false],
+            ['naam' => 'lid', 'onderdeel_koppelbaar' => false],
+            ['naam' => 'docent', 'onderdeel_koppelbaar' => false],
+            ['naam' => 'dirigent', 'onderdeel_koppelbaar' => true],
+            ['naam' => 'bestuur', 'onderdeel_koppelbaar' => false],
+            ['naam' => 'contactpersoon', 'onderdeel_koppelbaar' => true],
+            ['naam' => 'vrijwilliger', 'onderdeel_koppelbaar' => false],
+        ];
 
         foreach ($types as $type) {
-            RelatieType::firstOrCreate(['naam' => $type]);
+            RelatieType::updateOrCreate(
+                ['naam' => $type['naam']],
+                ['onderdeel_koppelbaar' => $type['onderdeel_koppelbaar']]
+            );
         }
     }
 }

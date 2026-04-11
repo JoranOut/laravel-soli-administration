@@ -52,6 +52,10 @@ class OnderdeelController extends Controller
                 ->where(function ($q2) {
                     $q2->whereNull('soli_relatie_relatie_type.tot')
                         ->orWhere('soli_relatie_relatie_type.tot', '>=', now()->toDateString());
+                })
+                ->where(function ($q2) use ($onderdeel) {
+                    $q2->where('soli_relatie_relatie_type.onderdeel_id', $onderdeel->id)
+                        ->orWhereNull('soli_relatie_relatie_type.onderdeel_id');
                 }),
             'relaties.emails',
         ]);

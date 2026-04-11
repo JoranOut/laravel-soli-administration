@@ -46,7 +46,7 @@ function emptyEmail(): EmailEntry {
 
 function createInitialData(nextRelatieNummer: number, preselectedTypeId: number | null): RelatieCreateFormData {
     const types = preselectedTypeId
-        ? [{ type_id: preselectedTypeId.toString(), van: today(), tot: '', functie: '', email: '' }]
+        ? [{ type_id: preselectedTypeId.toString(), van: today(), tot: '', functie: '', email: '', onderdeel_id: '' }]
         : [];
 
     return {
@@ -143,7 +143,7 @@ export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderde
 
                 <div className="min-h-[400px]">
                     {currentStep === 1 && (
-                        <Step1Personal data={data} setData={setData} errors={errors} relatieTypes={relatieTypes} />
+                        <Step1Personal data={data} setData={setData} errors={errors} relatieTypes={relatieTypes} onderdelen={onderdelen} />
                     )}
                     {currentStep === 2 && (
                         <Step2Contact data={data} setData={setData} errors={errors} />

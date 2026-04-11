@@ -32,6 +32,7 @@ class StoreRelatieRequest extends FormRequest
             'types.*.tot' => ['nullable', 'date'],
             'types.*.functie' => ['nullable', 'string', 'max:255'],
             'types.*.email' => ['nullable', 'email', 'max:255'],
+            'types.*.onderdeel_id' => ['nullable', 'exists:soli_onderdelen,id'],
 
             // Adressen
             'adressen' => ['nullable', 'array'],

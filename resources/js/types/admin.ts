@@ -37,12 +37,14 @@ export type Relatie = {
 export type RelatieType = {
     id: number;
     naam: string;
+    onderdeel_koppelbaar?: boolean;
     pivot?: {
         id: number;
         van: string;
         tot: string | null;
         functie: string | null;
         email: string | null;
+        onderdeel_id: number | null;
     };
 };
 
@@ -332,6 +334,7 @@ export type RelatieTypeEntry = {
     tot: string;
     functie: string;
     email: string;
+    onderdeel_id: string;
 };
 
 export type AdresEntry = {
