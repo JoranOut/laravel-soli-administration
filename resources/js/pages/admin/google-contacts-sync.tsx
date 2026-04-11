@@ -1,8 +1,8 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import Heading from '@/components/heading';
 import { Pagination } from '@/components/admin/pagination';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
@@ -35,6 +35,62 @@ function relatieLabel(log: GoogleContactSyncLog): string {
     if (!log.relatie) return '';
     const { voornaam, tussenvoegsel, achternaam } = log.relatie;
     return [voornaam, tussenvoegsel, achternaam].filter(Boolean).join(' ');
+}
+
+const COL_COUNT = 9;
+
+function SyncLogRow({ log }: { log: GoogleContactSyncLog }) {
+    const { t } = useTranslation();
+    const [expanded, setExpanded] = useState(false);
+    const hasError = log.status === 'failed' && log.error_message;
+
+    return (
+        <>
+            <tr
+                className={`border-b last:border-0 ${hasError ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                onClick={() => hasError && setExpanded(!expanded)}
+            >
+                <td className="py-2 pr-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1">
+                        {hasError && (
+                            expanded
+                                ? <ChevronDown className="text-muted-foreground size-3.5" />
+                                : <ChevronRight className="text-muted-foreground size-3.5" />
+                        )}
+                        {new Date(log.started_at).toLocaleString()}
+                    </div>
+                </td>
+                <td className="py-2 pr-4 whitespace-nowrap">
+                    {t(log.type)}
+                    {log.type === 'relatie' && log.relatie && (
+                        <span className="text-muted-foreground ml-1">
+                            ({relatieLabel(log)})
+                        </span>
+                    )}
+                </td>
+                <td className="py-2 pr-4">
+                    <StatusBadge status={log.status} />
+                </td>
+                <td className="py-2 pr-4 text-center">{log.workspace_users}</td>
+                <td className="py-2 pr-4 text-center">{log.contacts_created}</td>
+                <td className="py-2 pr-4 text-center">{log.contacts_updated}</td>
+                <td className="py-2 pr-4 text-center">{log.contacts_deleted}</td>
+                <td className="py-2 pr-4 text-center">{log.contacts_skipped}</td>
+                <td className="py-2 whitespace-nowrap">
+                    {formatDuration(log.started_at, log.completed_at, t)}
+                </td>
+            </tr>
+            {hasError && expanded && (
+                <tr className="border-b last:border-0">
+                    <td colSpan={COL_COUNT} className="px-4 pb-3 pt-0">
+                        <pre className="bg-muted text-muted-foreground max-h-48 overflow-auto rounded-md p-3 text-xs whitespace-pre-wrap">
+                            {log.error_message}
+                        </pre>
+                    </td>
+                </tr>
+            )}
+        </>
+    );
 }
 
 export default function GoogleContactsSync({
@@ -90,53 +146,11 @@ export default function GoogleContactsSync({
                                 </thead>
                                 <tbody>
                                     {logs.data.map((log) => (
-                                        <tr key={log.id} className="border-b last:border-0">
-                                            <td className="py-2 pr-4 whitespace-nowrap">
-                                                {new Date(log.started_at).toLocaleString()}
-                                            </td>
-                                            <td className="py-2 pr-4 whitespace-nowrap">
-                                                {t(log.type)}
-                                                {log.type === 'relatie' && log.relatie && (
-                                                    <span className="text-muted-foreground ml-1">
-                                                        ({relatieLabel(log)})
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="py-2 pr-4">
-                                                <StatusBadge status={log.status} />
-                                            </td>
-                                            <td className="py-2 pr-4 text-center">{log.workspace_users}</td>
-                                            <td className="py-2 pr-4 text-center">{log.contacts_created}</td>
-                                            <td className="py-2 pr-4 text-center">{log.contacts_updated}</td>
-                                            <td className="py-2 pr-4 text-center">{log.contacts_deleted}</td>
-                                            <td className="py-2 pr-4 text-center">{log.contacts_skipped}</td>
-                                            <td className="py-2 whitespace-nowrap">
-                                                {formatDuration(log.started_at, log.completed_at, t)}
-                                            </td>
-                                        </tr>
+                                        <SyncLogRow key={log.id} log={log} />
                                     ))}
                                 </tbody>
                             </table>
                         </div>
-
-                        {logs.data.some((log) => log.status === 'failed' && log.error_message) && (
-                            <div className="space-y-2">
-                                {logs.data
-                                    .filter((log) => log.status === 'failed' && log.error_message)
-                                    .map((log) => (
-                                        <Card key={log.id} className="border-red-200 dark:border-red-800">
-                                            <CardContent className="py-3">
-                                                <p className="text-xs font-medium text-red-600 dark:text-red-400">
-                                                    {new Date(log.started_at).toLocaleString()}
-                                                </p>
-                                                <p className="text-muted-foreground mt-1 text-xs whitespace-pre-wrap">
-                                                    {log.error_message}
-                                                </p>
-                                            </CardContent>
-                                        </Card>
-                                    ))}
-                            </div>
-                        )}
 
                         <Pagination pagination={logs} />
                     </div>

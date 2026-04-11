@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
             SoortContributieSeeder::class,
             SampleDataSeeder::class,
             ClientRoleMappingSeeder::class,
+            GoogleContactSyncLogSeeder::class,
         ]);
 
         // Link the member user to the first relatie (replace auto-created user)
