@@ -19,19 +19,21 @@ test('import creates relaties from JSON', function () {
     $this->artisan('import:sad-members', ['path' => $this->fixturePath])
         ->assertExitCode(0);
 
-    expect(Relatie::count())->toBe(5);
+    expect(Relatie::count())->toBe(6);
 
     $relatie9001 = Relatie::where('relatie_nummer', 9001)->first();
     $relatie9002 = Relatie::where('relatie_nummer', 9002)->first();
     $relatie9003 = Relatie::where('relatie_nummer', 9003)->first();
     $relatie9004 = Relatie::where('relatie_nummer', 9004)->first();
     $relatie9005 = Relatie::where('relatie_nummer', 9005)->first();
+    $relatie9006 = Relatie::where('relatie_nummer', 9006)->first();
 
     expect($relatie9001)->not->toBeNull();
     expect($relatie9002)->not->toBeNull();
     expect($relatie9003)->not->toBeNull();
     expect($relatie9004)->not->toBeNull();
     expect($relatie9005)->not->toBeNull();
+    expect($relatie9006)->not->toBeNull();
 });
 
 test('import parses personal info correctly', function () {
@@ -146,8 +148,8 @@ test('import is idempotent', function () {
     $this->artisan('import:sad-members', ['path' => $this->fixturePath])
         ->assertExitCode(0);
 
-    // Should still have exactly 5 relaties (no duplicates)
-    expect(Relatie::count())->toBe(5);
+    // Should still have exactly 6 relaties (no duplicates)
+    expect(Relatie::count())->toBe(6);
 });
 
 test('fresh flag clears existing data', function () {
@@ -168,7 +170,47 @@ test('fresh flag clears existing data', function () {
 
     // Original relatie should be gone, only fixture relaties exist
     expect(Relatie::where('relatie_nummer', 8888)->exists())->toBeFalse();
-    expect(Relatie::count())->toBe(5);
+    expect(Relatie::count())->toBe(6);
+});
+
+test('re-import does not reassign manually removed lid type', function () {
+    // First import: dirigent (9006) gets lid type from lidmaatschap periods
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath])
+        ->assertExitCode(0);
+
+    $relatie = Relatie::where('relatie_nummer', 9006)->first();
+    $lidTypeId = DB::table('soli_relatie_types')->where('naam', 'lid')->value('id');
+
+    expect(
+        DB::table('soli_relatie_relatie_type')
+            ->where('relatie_id', $relatie->id)
+            ->where('relatie_type_id', $lidTypeId)
+            ->exists()
+    )->toBeTrue();
+
+    // Manually remove lid type (as an admin would for a dirigent who is not a lid)
+    DB::table('soli_relatie_relatie_type')
+        ->where('relatie_id', $relatie->id)
+        ->where('relatie_type_id', $lidTypeId)
+        ->delete();
+
+    expect(
+        DB::table('soli_relatie_relatie_type')
+            ->where('relatie_id', $relatie->id)
+            ->where('relatie_type_id', $lidTypeId)
+            ->exists()
+    )->toBeFalse();
+
+    // Re-import: lid type should NOT be reassigned to matched relatie
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath])
+        ->assertExitCode(0);
+
+    expect(
+        DB::table('soli_relatie_relatie_type')
+            ->where('relatie_id', $relatie->id)
+            ->where('relatie_type_id', $lidTypeId)
+            ->exists()
+    )->toBeFalse();
 });
 
 test('dry-run flag does not persist', function () {
