@@ -508,6 +508,8 @@ class ImportSadMembers extends Command
             }
         }
 
+        $isNew = false;
+
         if ($relatie) {
             $stats['matched']++;
             if ($dryRun) {
@@ -519,6 +521,7 @@ class ImportSadMembers extends Command
                 $relatie->update(['relatie_nummer' => $lidId]);
             }
         } else {
+            $isNew = true;
             $stats['created']++;
             if ($dryRun) {
                 return;
@@ -540,7 +543,12 @@ class ImportSadMembers extends Command
         $this->importLidmaatschap($relatie, $member);
         $this->importOnderdelen($relatie, $member, $onderdelen);
         $this->importInstrumenten($relatie, $member, $onderdelen);
-        $this->attachLidType($relatie, $member, $lidType);
+
+        // Only assign lid type for new relaties — preserves manual corrections
+        // (e.g. removing lid type from a dirigent who has lidmaatschap periods in SAD)
+        if ($isNew) {
+            $this->attachLidType($relatie, $member, $lidType);
+        }
     }
 
     // ──────────────────────────────────────────────

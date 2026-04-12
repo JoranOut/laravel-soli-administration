@@ -153,6 +153,14 @@ TeBetakenContributie → Betaling
 
 Payment covers balance → auto `betaald`.
 
+### SAD Member Import
+
+`import:sad-members {path}`. Matches by `relatie_nummer`, falls back to exact name. Sub-resources always upserted. Lid type only assigned on create — re-imports preserve manual corrections. SAD has no concept of relatie types; types are an admin-only feature managed manually.
+
+Post-import: caps Drumfanfare at Klein Orkest start, closes onderdelen for ex-members, deactivates empty onderdelen.
+
+`TYPE_MAP` maps SAD instruments to relatie types. `INSTRUMENT_MAP` normalizes instrument names. SAD data is double-encoded UTF-8 — decoded with `mb_convert_encoding` before `json_decode`.
+
 ### Google Contact Sync
 
 Syncs active relaties as Google Contacts to all Workspace users under `soli.nl`. Service Account with domain-wide delegation, impersonates each user. Kill switch: `GOOGLE_CONTACTS_SYNC_ENABLED=false`.

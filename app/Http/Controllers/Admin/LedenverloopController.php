@@ -20,10 +20,16 @@ class LedenverloopController extends Controller
             ->addSelect('soli_relatie_relatie_type.van as lid_datum')
             ->join('soli_relatie_relatie_type', 'soli_relaties.id', '=', 'soli_relatie_relatie_type.relatie_id')
             ->where('soli_relatie_relatie_type.relatie_type_id', $lidTypeId)
-            ->with(['onderdelen' => fn ($q) => $q->whereNull('soli_relatie_onderdeel.tot')])
+            ->with('onderdelen')
             ->orderByDesc('soli_relatie_relatie_type.van')
             ->paginate(25, ['*'], 'joined_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function ($relatie) {
+                $minVan = $relatie->onderdelen->min('pivot.van');
+                $relatie->setRelation('onderdelen', $relatie->onderdelen->filter(fn ($o) => $o->pivot->van === $minVan)->values());
+
+                return $relatie;
+            });
 
         $left = Relatie::query()
             ->select('soli_relaties.*')
@@ -31,10 +37,16 @@ class LedenverloopController extends Controller
             ->join('soli_relatie_relatie_type', 'soli_relaties.id', '=', 'soli_relatie_relatie_type.relatie_id')
             ->where('soli_relatie_relatie_type.relatie_type_id', $lidTypeId)
             ->whereNotNull('soli_relatie_relatie_type.tot')
-            ->with(['onderdelen' => fn ($q) => $q->whereNull('soli_relatie_onderdeel.tot')])
+            ->with(['onderdelen' => fn ($q) => $q->whereNotNull('soli_relatie_onderdeel.tot')])
             ->orderByDesc('soli_relatie_relatie_type.tot')
             ->paginate(25, ['*'], 'left_page')
-            ->withQueryString();
+            ->withQueryString()
+            ->through(function ($relatie) {
+                $maxTot = $relatie->onderdelen->max('pivot.tot');
+                $relatie->setRelation('onderdelen', $relatie->onderdelen->filter(fn ($o) => $o->pivot->tot === $maxTot)->values());
+
+                return $relatie;
+            });
 
         return Inertia::render('admin/ledenverloop/index', [
             'joined' => $joined,

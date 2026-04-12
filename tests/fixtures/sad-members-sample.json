@@ -142,6 +142,39 @@
     ]
   },
   {
+    "lid_id": 9006,
+    "naam": "Test Dirigent",
+    "vnaam": "Test",
+    "tussen": null,
+    "anaam": "Dirigent",
+    "gebdat": "12-04-1975",
+    "straat": null,
+    "postcode": null,
+    "plaats": null,
+    "telefoon": null,
+    "email": null,
+    "lidmaatschap": [
+      {
+        "van": "01-09-2005",
+        "tot": null
+      }
+    ],
+    "onderdeel": [
+      {
+        "van": "01-09-2005",
+        "tot": null,
+        "onderdeel": "HA"
+      }
+    ],
+    "instrument": [
+      {
+        "van": "01-09-2005",
+        "tot": null,
+        "instrument": "Dirigent"
+      }
+    ]
+  },
+  {
     "lid_id": 9005,
     "naam": "Test MagrÃ©",
     "vnaam": "Test",
