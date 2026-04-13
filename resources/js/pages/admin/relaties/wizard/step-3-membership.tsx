@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import InputError from '@/components/input-error';
 import { useTranslation } from '@/hooks/use-translation';
 import type { LidmaatschapEntry, Onderdeel, OnderdeelEntry, RelatieCreateFormData } from '@/types/admin';
@@ -76,7 +77,7 @@ export default function Step3Membership({ data, setData, errors, onderdelen }: P
                                         </div>
                                         <div className="col-span-full space-y-2">
                                             <Label>{t('Reason for departure')}</Label>
-                                            <Input value={lid.reden_vertrek} onChange={(e) => updateLidmaatschap(index, 'reden_vertrek', e.target.value)} />
+                                            <Textarea value={lid.reden_vertrek} onChange={(e) => updateLidmaatschap(index, 'reden_vertrek', e.target.value)} rows={3} />
                                         </div>
                                     </div>
                                 </div>
