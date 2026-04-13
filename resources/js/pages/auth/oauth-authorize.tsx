@@ -1,5 +1,7 @@
 import { Head } from '@inertiajs/react';
+import { CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/hooks/use-translation';
 import AuthLayout from '@/layouts/auth-layout';
 
@@ -26,24 +28,40 @@ type Props = {
 export default function OAuthAuthorize({ client, scopes, authToken, request, csrfToken }: Props) {
     const { t } = useTranslation();
 
+    const visibleScopes = scopes.filter((scope) => scope.id !== 'openid');
+
     return (
         <AuthLayout
             title={t('Authorization Request')}
-            description={t(':client is requesting access to your account.', { client: client.name })}
+            description={t(':client is requesting access to your account. You only need to approve this once.', { client: client.name })}
         >
             <Head title={t('Authorize')} />
 
             <div className="flex flex-col gap-6">
-                {scopes.length > 0 && (
+                {visibleScopes.length > 0 && (
                     <div className="grid gap-2">
-                        <p className="text-sm font-medium">{t('This application will be able to:')}</p>
+                        <p className="text-sm font-medium">{t('This application will access:')}</p>
                         <ul className="list-inside list-disc text-sm text-muted-foreground">
-                            {scopes.map((scope) => (
+                            {visibleScopes.map((scope) => (
                                 <li key={scope.id}>{scope.description}</li>
                             ))}
                         </ul>
                     </div>
                 )}
+
+                <TooltipProvider>
+                    <p className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+                        {t('Why do I see this?')}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <CircleHelp className="size-3.5" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                                <p>{t('You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.')}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </p>
+                </TooltipProvider>
 
                 <div className="flex gap-3">
                     <form method="POST" action="/oauth/authorize" className="flex-1">

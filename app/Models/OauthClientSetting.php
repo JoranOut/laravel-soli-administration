@@ -11,7 +11,7 @@ class OauthClientSetting extends Model
 {
     protected $table = 'soli_oauth_client_settings';
 
-    protected $fillable = ['client_id', 'type', 'default_role'];
+    protected $fillable = ['client_id', 'type', 'default_role', 'skip_authorization'];
 
     public function roleMappings(): HasMany
     {

@@ -31,6 +31,7 @@ class OauthClientSettingController extends Controller
                         'id' => $setting->id,
                         'type' => $setting->type,
                         'default_role' => $setting->default_role,
+                        'skip_authorization' => (bool) $setting->skip_authorization,
                         'role_mappings' => $setting->roleMappings->sortBy('priority')->values()->map(fn (ClientRoleMapping $m) => [
                             'id' => $m->id,
                             'relatie_type_id' => $m->relatie_type_id,
@@ -57,6 +58,7 @@ class OauthClientSettingController extends Controller
         $validated = $request->validate([
             'type' => ['required', 'string', 'max:50'],
             'default_role' => ['nullable', 'string', 'max:100'],
+            'skip_authorization' => ['boolean'],
             'role_mappings' => ['present', 'array'],
             'role_mappings.*.relatie_type_id' => ['required', 'exists:soli_relatie_types,id'],
             'role_mappings.*.mapped_role' => ['required', 'string', 'max:100'],
@@ -68,6 +70,7 @@ class OauthClientSettingController extends Controller
                 [
                     'type' => $validated['type'],
                     'default_role' => $validated['default_role'],
+                    'skip_authorization' => $validated['skip_authorization'] ?? false,
                 ]
             );
 

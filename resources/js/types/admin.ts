@@ -264,6 +264,7 @@ export type OauthClientSetting = {
     id: number;
     type: string;
     default_role: string | null;
+    skip_authorization: boolean;
     role_mappings: ClientRoleMapping[];
 };
 
