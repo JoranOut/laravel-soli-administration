@@ -550,6 +550,9 @@
     "No OAuth clients found.": "Geen OAuth-clients gevonden.",
     "No access": "Geen toegang",
     "Highest priority first": "Hoogste prioriteit eerst",
+    "Skip authorization screen": "Autorisatiescherm overslaan",
+    "Automatically approve authorization for this client": "Autorisatie automatisch goedkeuren voor deze client",
+    "Skip auth": "Skip auth",
     "Settings saved.": "Instellingen opgeslagen.",
 
     "Google Contacts": "Google Contacten",
@@ -582,5 +585,16 @@
     "Joined": "Toegetreden",
     "Left": "Vertrokken",
     "No members joined.": "Geen leden toegetreden.",
-    "No members left.": "Geen leden vertrokken."
+    "No members left.": "Geen leden vertrokken.",
+
+    "Authorization Request": "Autorisatieverzoek",
+    ":client is requesting access to your account. You only need to approve this once.": ":client vraagt toegang tot je account. Je hoeft dit maar één keer goed te keuren.",
+    "Authorize": "Toestaan",
+    "Deny": "Weigeren",
+    "This application will access:": "Deze applicatie krijgt toegang tot:",
+    "Your name": "Je naam",
+    "Your email address": "Je e-mailadres",
+    "Your role": "Je gebruikersrol",
+    "Why do I see this?": "Waarom zie ik dit?",
+    "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.": "Je logt in op een Soli website via onze Login server (SSO). Er worden geen gegevens gedeeld met derde partijen. Alle servers en websites van Soli zijn in beheer van Soli."
 }

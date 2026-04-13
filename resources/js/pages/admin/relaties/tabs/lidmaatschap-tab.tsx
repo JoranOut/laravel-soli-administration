@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { DateRangeDisplay } from '@/components/admin/date-range-display';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
@@ -54,7 +55,7 @@ function AddLidmaatschapDialog({ relatieId }: { relatieId: number }) {
                     </div>
                     <div className="space-y-2">
                         <Label>{t('Reason for departure')}</Label>
-                        <Input value={data.reden_vertrek} onChange={(e) => setData('reden_vertrek', e.target.value)} />
+                        <Textarea value={data.reden_vertrek} onChange={(e) => setData('reden_vertrek', e.target.value)} rows={3} />
                     </div>
                     <Button type="submit" disabled={processing}>{t('Save')}</Button>
                 </form>
@@ -113,7 +114,7 @@ function EditLidmaatschapDialog({ relatieId, rs }: { relatieId: number; rs: Rela
                     </div>
                     <div className="space-y-2">
                         <Label>{t('Reason for departure')}</Label>
-                        <Input value={data.reden_vertrek} onChange={(e) => setData('reden_vertrek', e.target.value)} />
+                        <Textarea value={data.reden_vertrek} onChange={(e) => setData('reden_vertrek', e.target.value)} rows={3} />
                     </div>
                     <div className="flex items-center justify-between border-t pt-4">
                         <div>

@@ -547,6 +547,9 @@
     "No OAuth clients found.": "No OAuth clients found.",
     "No access": "No access",
     "Highest priority first": "Highest priority first",
+    "Skip authorization screen": "Skip authorization screen",
+    "Automatically approve authorization for this client": "Automatically approve authorization for this client",
+    "Skip auth": "Skip auth",
     "Settings saved.": "Settings saved.",
 
     "Google Contacts": "Google Contacts",
@@ -579,5 +582,16 @@
     "Joined": "Joined",
     "Left": "Left",
     "No members joined.": "No members joined.",
-    "No members left.": "No members left."
+    "No members left.": "No members left.",
+
+    "Authorization Request": "Authorization Request",
+    ":client is requesting access to your account. You only need to approve this once.": ":client is requesting access to your account. You only need to approve this once.",
+    "Authorize": "Authorize",
+    "Deny": "Deny",
+    "This application will access:": "This application will access:",
+    "Your name": "Your name",
+    "Your email address": "Your email address",
+    "Your role": "Your role",
+    "Why do I see this?": "Why do I see this?",
+    "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.": "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli."
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -51,6 +52,7 @@ export default function OauthClients({
     const [editingClient, setEditingClient] = useState<OauthClient | null>(null);
     const [type, setType] = useState('');
     const [defaultRole, setDefaultRole] = useState('');
+    const [skipAuthorization, setSkipAuthorization] = useState(false);
     const [mappings, setMappings] = useState<RoleMappingEntry[]>([]);
 
     function roleLabel(role: string): string {
@@ -66,6 +68,7 @@ export default function OauthClients({
         setEditingClient(client);
         setType(client.setting?.type ?? 'wordpress');
         setDefaultRole(client.setting?.default_role ?? NO_ACCESS);
+        setSkipAuthorization(client.setting?.skip_authorization ?? false);
         setMappings(
             client.setting?.role_mappings.map((m) => ({
                 relatie_type_id: String(m.relatie_type_id),
@@ -104,6 +107,7 @@ export default function OauthClients({
             {
                 type,
                 default_role: defaultRole || null,
+                skip_authorization: skipAuthorization,
                 role_mappings: validMappings.map((m) => ({
                     relatie_type_id: Number(m.relatie_type_id),
                     mapped_role: m.mapped_role,
@@ -150,11 +154,16 @@ export default function OauthClients({
                                 <tr key={client.id} className="border-b">
                                     <td className="py-3 pr-4 font-medium">{client.name}</td>
                                     <td className="px-4 py-3">
-                                        {client.setting ? (
-                                            <Badge variant="secondary">{client.setting.type}</Badge>
-                                        ) : (
-                                            <span className="text-muted-foreground">-</span>
-                                        )}
+                                        <div className="flex flex-wrap gap-1">
+                                            {client.setting ? (
+                                                <Badge variant="secondary">{client.setting.type}</Badge>
+                                            ) : (
+                                                <span className="text-muted-foreground">-</span>
+                                            )}
+                                            {client.setting?.skip_authorization && (
+                                                <Badge variant="outline">{t('Skip auth')}</Badge>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-4 py-3">
                                         {client.setting?.default_role ? (
@@ -243,6 +252,20 @@ export default function OauthClients({
                                         placeholder="e.g. subscriber"
                                     />
                                 )}
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="skip-authorization"
+                                checked={skipAuthorization}
+                                onCheckedChange={(checked) => setSkipAuthorization(checked === true)}
+                            />
+                            <div>
+                                <Label htmlFor="skip-authorization">{t('Skip authorization screen')}</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    {t('Automatically approve authorization for this client')}
+                                </p>
                             </div>
                         </div>
 

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Auth\WordPressUserProvider;
 use App\Http\Responses\LoginResponse;
 use App\Models\Email;
+use App\Models\PassportClient;
 use App\Models\Relatie;
 use App\Observers\EmailGoogleSyncObserver;
 use App\Observers\RelatieGoogleSyncObserver;
@@ -52,11 +53,13 @@ class AppServiceProvider extends ServiceProvider
 
     protected function configurePassport(): void
     {
+        Passport::useClientModel(PassportClient::class);
+
         Passport::tokensCan([
-            'openid' => 'Enable OpenID Connect',
-            'profile' => 'Access user profile (name)',
-            'email' => 'Access user email address',
-            'roles' => 'Access user roles',
+            'openid' => 'OpenID Connect',
+            'profile' => __('Your name'),
+            'email' => __('Your email address'),
+            'roles' => __('Your role'),
         ]);
 
         Passport::defaultScopes(['openid']);

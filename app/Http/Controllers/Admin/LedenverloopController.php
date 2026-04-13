@@ -37,13 +37,20 @@ class LedenverloopController extends Controller
             ->join('soli_relatie_relatie_type', 'soli_relaties.id', '=', 'soli_relatie_relatie_type.relatie_id')
             ->where('soli_relatie_relatie_type.relatie_type_id', $lidTypeId)
             ->whereNotNull('soli_relatie_relatie_type.tot')
-            ->with(['onderdelen' => fn ($q) => $q->whereNotNull('soli_relatie_onderdeel.tot')])
+            ->with([
+                'onderdelen' => fn ($q) => $q->whereNotNull('soli_relatie_onderdeel.tot'),
+                'relatieSinds' => fn ($q) => $q->whereNotNull('lid_tot')->orderByDesc('lid_tot'),
+            ])
             ->orderByDesc('soli_relatie_relatie_type.tot')
             ->paginate(25, ['*'], 'left_page')
             ->withQueryString()
             ->through(function ($relatie) {
                 $maxTot = $relatie->onderdelen->max('pivot.tot');
                 $relatie->setRelation('onderdelen', $relatie->onderdelen->filter(fn ($o) => $o->pivot->tot === $maxTot)->values());
+
+                $matching = $relatie->relatieSinds->first(fn ($rs) => $rs->lid_tot?->toDateString() === $relatie->lid_datum);
+                $relatie->reden_vertrek = ($matching ?? $relatie->relatieSinds->first())?->reden_vertrek;
+                $relatie->unsetRelation('relatieSinds');
 
                 return $relatie;
             });

@@ -9,6 +9,7 @@ import type { PaginatedResponse, Relatie } from '@/types/admin';
 
 type LedenverloopRelatie = Relatie & {
     lid_datum: string;
+    reden_vertrek?: string | null;
 };
 
 type Props = {
@@ -19,6 +20,13 @@ type Props = {
 
 export default function LedenverloopIndex({ joined, left, tab }: Props) {
     const { t } = useTranslation();
+
+    const handleTabChange = (newTab: string) => {
+        router.get('/admin/ledenverloop', { tab: newTab }, { preserveState: true, preserveScroll: true });
+    };
+
+    const isJoined = tab === 'joined';
+    const data = isJoined ? joined : left;
 
     const columns: Column<LedenverloopRelatie>[] = [
         {
@@ -47,14 +55,21 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
             key: 'lid_datum',
             label: t('Date'),
         },
+        ...(!isJoined
+            ? [
+                  {
+                      key: 'reden_vertrek',
+                      label: t('Reason for departure'),
+                      render: (relatie: LedenverloopRelatie) =>
+                          relatie.reden_vertrek ? (
+                              <span className="text-sm">{relatie.reden_vertrek}</span>
+                          ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                          ),
+                  } satisfies Column<LedenverloopRelatie>,
+              ]
+            : []),
     ];
-
-    const handleTabChange = (newTab: string) => {
-        router.get('/admin/ledenverloop', { tab: newTab }, { preserveState: true, preserveScroll: true });
-    };
-
-    const isJoined = tab === 'joined';
-    const data = isJoined ? joined : left;
 
     return (
         <AppLayout>

@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             TariefgroepSeeder::class,
             SoortContributieSeeder::class,
             SampleDataSeeder::class,
+            OauthClientSeeder::class,
             ClientRoleMappingSeeder::class,
             GoogleContactSyncLogSeeder::class,
         ]);
