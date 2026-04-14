@@ -60,6 +60,7 @@ class AppServiceProvider extends ServiceProvider
             'profile' => __('Your name'),
             'email' => __('Your email address'),
             'roles' => __('Your role'),
+            'assignments' => __('Your orchestra and instrument assignments'),
         ]);
 
         Passport::defaultScopes(['openid']);

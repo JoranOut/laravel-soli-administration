@@ -2,6 +2,7 @@
 
 namespace App\OpenId;
 
+use App\Models\RelatieInstrument;
 use App\Models\User;
 use App\Services\ClientRoleResolver;
 use League\OAuth2\Server\Entities\Traits\EntityTrait;
@@ -57,6 +58,19 @@ class SoliIdentityEntity implements IdentityEntityInterface
             } else {
                 $claims['roles'] = $this->user->getRoleNames()->toArray();
             }
+        }
+
+        if (in_array('assignments', $scopes)) {
+            $relatieIds = $this->user->relaties()->pluck('id');
+
+            $claims['assignments'] = RelatieInstrument::whereIn('relatie_id', $relatieIds)
+                ->get(['onderdeel_id', 'instrument_soort'])
+                ->map(fn ($ri) => [
+                    'onderdeel_id' => $ri->onderdeel_id,
+                    'instrument_soort' => $ri->instrument_soort,
+                ])
+                ->values()
+                ->toArray();
         }
 
         return $claims;

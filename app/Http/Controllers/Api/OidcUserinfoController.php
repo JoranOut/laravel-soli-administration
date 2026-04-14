@@ -15,7 +15,7 @@ class OidcUserinfoController extends Controller
         $user = $request->user();
         $token = $user->token();
 
-        $scopes = collect(['openid', 'profile', 'email', 'roles'])
+        $scopes = collect(['openid', 'profile', 'email', 'roles', 'assignments'])
             ->filter(fn (string $scope) => $token->can($scope))
             ->values()
             ->all();
