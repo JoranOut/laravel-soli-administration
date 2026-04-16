@@ -4,7 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Vite;
+use Laravel\Passport\Client;
 use Symfony\Component\HttpFoundation\Response;
 
 class SecurityHeaders
@@ -22,6 +24,7 @@ class SecurityHeaders
 
         if (app()->isProduction()) {
             $nonce = Vite::cspNonce();
+            $formAction = "'self' ".$this->passportClientOrigins();
 
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
             $response->headers->set('Content-Security-Policy',
@@ -33,11 +36,31 @@ class SecurityHeaders
                 "connect-src 'self'; ".
                 "object-src 'none'; ".
                 "base-uri 'self'; ".
-                "form-action 'self'; ".
+                "form-action {$formAction}; ".
                 "frame-ancestors 'none'"
             );
         }
 
         return $response;
+    }
+
+    /**
+     * Get unique origins from all Passport client redirect URIs.
+     */
+    private function passportClientOrigins(): string
+    {
+        $origins = Cache::remember('csp_passport_origins', 3600, function () {
+            return Client::query()
+                ->whereNotNull('redirect')
+                ->pluck('redirect')
+                ->flatMap(fn (string $redirect) => explode(',', $redirect))
+                ->map(fn (string $uri) => parse_url(trim($uri), PHP_URL_SCHEME).'://'.parse_url(trim($uri), PHP_URL_HOST))
+                ->unique()
+                ->filter()
+                ->values()
+                ->all();
+        });
+
+        return implode(' ', $origins);
     }
 }
