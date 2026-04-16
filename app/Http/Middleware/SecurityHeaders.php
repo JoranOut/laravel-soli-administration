@@ -52,9 +52,9 @@ class SecurityHeaders
         try {
             $origins = Cache::remember('csp_passport_origins', 3600, function () {
                 return Client::query()
-                    ->whereNotNull('redirect')
-                    ->pluck('redirect')
-                    ->flatMap(fn (string $redirect) => explode(',', $redirect))
+                    ->whereNotNull('redirect_uris')
+                    ->pluck('redirect_uris')
+                    ->flatten()
                     ->map(fn (string $uri) => parse_url(trim($uri), PHP_URL_SCHEME).'://'.parse_url(trim($uri), PHP_URL_HOST))
                     ->unique()
                     ->filter()
