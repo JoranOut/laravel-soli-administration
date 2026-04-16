@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowDown, ArrowUp, Pencil } from 'lucide-react';
-import { useState } from 'react';
+import { ArrowDown, ArrowUp, ChevronsUpDown, Pencil } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,17 @@ type RoleMappingEntry = {
     mapped_role: string;
 };
 
+type UserRoleEntry = {
+    user_id: string;
+    mapped_role: string;
+};
+
+type UserOption = {
+    id: number;
+    name: string;
+    email: string;
+};
+
 const NO_ACCESS = '__no_access__';
 
 const WORDPRESS_ROLES = [
@@ -41,12 +52,111 @@ const WORDPRESS_ROLES = [
     { value: 'subscriber', label: 'Subscriber' },
 ];
 
+function UserCombobox({
+    users,
+    value,
+    onChange,
+    placeholder,
+}: {
+    users: UserOption[];
+    value: string;
+    onChange: (value: string) => void;
+    placeholder: string;
+}) {
+    const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        function onPointerDown(event: PointerEvent) {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        }
+        function onKey(event: KeyboardEvent) {
+            if (event.key === 'Escape') setOpen(false);
+        }
+        document.addEventListener('pointerdown', onPointerDown);
+        document.addEventListener('keydown', onKey);
+        return () => {
+            document.removeEventListener('pointerdown', onPointerDown);
+            document.removeEventListener('keydown', onKey);
+        };
+    }, [open]);
+
+    const selected = users.find((u) => String(u.id) === value);
+    const query = search.trim().toLowerCase();
+    const filtered = query
+        ? users.filter(
+              (u) => u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query),
+          )
+        : users;
+
+    return (
+        <div ref={containerRef} className="relative w-[260px]">
+            <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-between font-normal"
+                onClick={() => setOpen((o) => !o)}
+            >
+                <span className={selected ? 'truncate' : 'text-muted-foreground truncate'}>
+                    {selected ? `${selected.name} — ${selected.email}` : placeholder}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+            {open && (
+                <div className="bg-popover text-popover-foreground absolute top-full left-0 z-50 mt-1 w-full rounded-md border shadow-md">
+                    <div className="border-b p-1">
+                        <Input
+                            autoFocus
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={t('Search...')}
+                            className="h-8"
+                        />
+                    </div>
+                    <div className="max-h-60 overflow-y-auto py-1">
+                        {filtered.length === 0 ? (
+                            <div className="text-muted-foreground px-3 py-2 text-sm">
+                                {t('No results found.')}
+                            </div>
+                        ) : (
+                            filtered.map((u) => (
+                                <button
+                                    key={u.id}
+                                    type="button"
+                                    className="hover:bg-accent hover:text-accent-foreground block w-full px-3 py-1.5 text-left text-sm"
+                                    onClick={() => {
+                                        onChange(String(u.id));
+                                        setOpen(false);
+                                        setSearch('');
+                                    }}
+                                >
+                                    <div className="truncate">{u.name}</div>
+                                    <div className="text-muted-foreground truncate text-xs">
+                                        {u.email}
+                                    </div>
+                                </button>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function OauthClients({
     clients,
     relatieTypes,
+    users,
 }: {
     clients: OauthClient[];
     relatieTypes: RelatieType[];
+    users: UserOption[];
 }) {
     const { t } = useTranslation();
     const [editingClient, setEditingClient] = useState<OauthClient | null>(null);
@@ -54,6 +164,7 @@ export default function OauthClients({
     const [defaultRole, setDefaultRole] = useState('');
     const [skipAuthorization, setSkipAuthorization] = useState(false);
     const [mappings, setMappings] = useState<RoleMappingEntry[]>([]);
+    const [userRoles, setUserRoles] = useState<UserRoleEntry[]>([]);
 
     function roleLabel(role: string): string {
         if (role === NO_ACCESS) return t('No access');
@@ -73,6 +184,12 @@ export default function OauthClients({
             client.setting?.role_mappings.map((m) => ({
                 relatie_type_id: String(m.relatie_type_id),
                 mapped_role: m.mapped_role,
+            })) ?? [],
+        );
+        setUserRoles(
+            client.setting?.user_roles.map((u) => ({
+                user_id: String(u.user_id),
+                mapped_role: u.mapped_role,
             })) ?? [],
         );
     }
@@ -101,6 +218,7 @@ export default function OauthClients({
         if (!editingClient) return;
 
         const validMappings = mappings.filter((m) => m.relatie_type_id && m.mapped_role);
+        const validUserRoles = userRoles.filter((u) => u.user_id && u.mapped_role);
 
         router.put(
             `/admin/oauth-clients/${editingClient.id}`,
@@ -111,6 +229,10 @@ export default function OauthClients({
                 role_mappings: validMappings.map((m) => ({
                     relatie_type_id: Number(m.relatie_type_id),
                     mapped_role: m.mapped_role,
+                })),
+                user_roles: validUserRoles.map((u) => ({
+                    user_id: Number(u.user_id),
+                    mapped_role: u.mapped_role,
                 })),
             },
             {
@@ -126,6 +248,26 @@ export default function OauthClients({
             .filter((_, i) => i !== currentIndex)
             .map((m) => m.relatie_type_id);
         return relatieTypes.filter((rt) => !usedIds.includes(String(rt.id)));
+    }
+
+    function addUserRole() {
+        setUserRoles([...userRoles, { user_id: '', mapped_role: '' }]);
+    }
+
+    function removeUserRole(index: number) {
+        setUserRoles(userRoles.filter((_, i) => i !== index));
+    }
+
+    function updateUserRole(index: number, field: keyof UserRoleEntry, value: string) {
+        setUserRoles(userRoles.map((u, i) => (i === index ? { ...u, [field]: value } : u)));
+    }
+
+    // Users not yet picked in other rows
+    function availableUsers(currentIndex: number) {
+        const usedIds = userRoles
+            .filter((_, i) => i !== currentIndex)
+            .map((u) => u.user_id);
+        return users.filter((u) => !usedIds.includes(String(u.id)));
     }
 
     return (
@@ -173,13 +315,18 @@ export default function OauthClients({
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
-                                        {client.setting?.role_mappings.length ? (
+                                        {client.setting?.role_mappings.length || client.setting?.user_roles.length ? (
                                             <div className="flex flex-wrap gap-1">
-                                                {client.setting.role_mappings.map((m) => (
+                                                {client.setting?.role_mappings.map((m) => (
                                                     <Badge key={m.id} variant={m.mapped_role === NO_ACCESS ? 'destructive' : 'outline'}>
                                                         {m.relatie_type_naam} &rarr; {roleLabel(m.mapped_role)}
                                                     </Badge>
                                                 ))}
+                                                {client.setting && client.setting.user_roles.length > 0 && (
+                                                    <Badge variant="secondary">
+                                                        {client.setting.user_roles.length} {t('user overrides')}
+                                                    </Badge>
+                                                )}
                                             </div>
                                         ) : (
                                             <span className="text-muted-foreground">-</span>
@@ -209,7 +356,7 @@ export default function OauthClients({
             </div>
 
             <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
                             {t('Edit client settings')}: {editingClient?.name}
@@ -364,6 +511,70 @@ export default function OauthClients({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => removeMapping(index)}
+                                    >
+                                        &times;
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <Label>{t('User-specific roles')}</Label>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('Overrides type mapping for specific users')}
+                                    </p>
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addUserRole}
+                                    disabled={userRoles.length >= users.length}
+                                >
+                                    {t('Add')}
+                                </Button>
+                            </div>
+
+                            {userRoles.map((userRole, index) => (
+                                <div key={index} className="flex items-center gap-2">
+                                    <UserCombobox
+                                        users={availableUsers(index)}
+                                        value={userRole.user_id}
+                                        onChange={(v) => updateUserRole(index, 'user_id', v)}
+                                        placeholder={t('Select user')}
+                                    />
+                                    <span className="text-muted-foreground">&rarr;</span>
+                                    {type === 'wordpress' ? (
+                                        <Select
+                                            value={userRole.mapped_role}
+                                            onValueChange={(v) => updateUserRole(index, 'mapped_role', v)}
+                                        >
+                                            <SelectTrigger className="flex-1">
+                                                <SelectValue placeholder={t('Select...')} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {WORDPRESS_ROLES.map((r) => (
+                                                    <SelectItem key={r.value} value={r.value}>
+                                                        {r.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Input
+                                            value={userRole.mapped_role}
+                                            onChange={(e) => updateUserRole(index, 'mapped_role', e.target.value)}
+                                            placeholder={t('Mapped role')}
+                                            className="flex-1"
+                                        />
+                                    )}
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => removeUserRole(index)}
                                     >
                                         &times;
                                     </Button>

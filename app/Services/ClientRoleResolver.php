@@ -20,12 +20,20 @@ class ClientRoleResolver
      */
     public function resolve(User $user, string $clientId): array
     {
-        $setting = OauthClientSetting::with('roleMappings')
+        $setting = OauthClientSetting::with(['roleMappings', 'userRoles'])
             ->where('client_id', $clientId)
             ->first();
 
         if (! $setting) {
             return $user->getRoleNames()->toArray();
+        }
+
+        // User-specific override takes precedence over everything else
+        $userOverride = $setting->userRoles->firstWhere('user_id', $user->id);
+        if ($userOverride) {
+            return $userOverride->mapped_role === self::NO_ACCESS
+                ? []
+                : [$userOverride->mapped_role];
         }
 
         $today = Carbon::today();

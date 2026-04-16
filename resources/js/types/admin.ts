@@ -266,6 +266,7 @@ export type OauthClientSetting = {
     default_role: string | null;
     skip_authorization: boolean;
     role_mappings: ClientRoleMapping[];
+    user_roles: UserRoleOverride[];
 };
 
 export type ClientRoleMapping = {
@@ -274,6 +275,13 @@ export type ClientRoleMapping = {
     relatie_type_naam: string;
     mapped_role: string;
     priority: number;
+};
+
+export type UserRoleOverride = {
+    id: number;
+    user_id: number;
+    user_name: string;
+    mapped_role: string;
 };
 
 export type GoogleContactSyncLog = {

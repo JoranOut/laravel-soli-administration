@@ -551,6 +551,9 @@
     "Automatically approve authorization for this client": "Automatically approve authorization for this client",
     "Skip auth": "Skip auth",
     "Settings saved.": "Settings saved.",
+    "User-specific roles": "User-specific roles",
+    "Overrides type mapping for specific users": "Overrides type mapping for specific users",
+    "user overrides": "user overrides",
 
     "Google Contacts": "Google Contacts",
     "Google Contacts sync history and controls.": "Google Contacts sync history and controls.",

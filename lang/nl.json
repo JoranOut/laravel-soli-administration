@@ -554,6 +554,9 @@
     "Automatically approve authorization for this client": "Autorisatie automatisch goedkeuren voor deze client",
     "Skip auth": "Skip auth",
     "Settings saved.": "Instellingen opgeslagen.",
+    "User-specific roles": "Gebruiker-specifieke rollen",
+    "Overrides type mapping for specific users": "Overschrijft type-mapping voor specifieke gebruikers",
+    "user overrides": "gebruiker-overrides",
 
     "Google Contacts": "Google Contacten",
     "Google Contacts sync history and controls.": "Google Contacten synchronisatiegeschiedenis en bediening.",

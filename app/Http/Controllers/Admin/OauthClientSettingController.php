@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ClientRoleMapping;
 use App\Models\OauthClientSetting;
+use App\Models\OauthClientUserRole;
 use App\Models\RelatieType;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -19,7 +21,7 @@ class OauthClientSettingController extends Controller
         $clients = Client::where('revoked', false)
             ->get()
             ->map(function (Client $client) {
-                $setting = OauthClientSetting::with('roleMappings.relatieType')
+                $setting = OauthClientSetting::with(['roleMappings.relatieType', 'userRoles.user:id,name,email'])
                     ->where('client_id', $client->id)
                     ->first();
 
@@ -39,15 +41,23 @@ class OauthClientSettingController extends Controller
                             'mapped_role' => $m->mapped_role,
                             'priority' => $m->priority,
                         ]),
+                        'user_roles' => $setting->userRoles->values()->map(fn (OauthClientUserRole $u) => [
+                            'id' => $u->id,
+                            'user_id' => $u->user_id,
+                            'user_name' => $u->user?->name ?? '',
+                            'mapped_role' => $u->mapped_role,
+                        ]),
                     ] : null,
                 ];
             });
 
         $relatieTypes = RelatieType::orderBy('naam')->get(['id', 'naam']);
+        $users = User::orderBy('name')->get(['id', 'name', 'email']);
 
         return Inertia::render('admin/oauth-clients/index', [
             'clients' => $clients,
             'relatieTypes' => $relatieTypes,
+            'users' => $users,
         ]);
     }
 
@@ -62,6 +72,9 @@ class OauthClientSettingController extends Controller
             'role_mappings' => ['present', 'array'],
             'role_mappings.*.relatie_type_id' => ['required', 'exists:soli_relatie_types,id'],
             'role_mappings.*.mapped_role' => ['required', 'string', 'max:100'],
+            'user_roles' => ['present', 'array'],
+            'user_roles.*.user_id' => ['required', 'exists:users,id'],
+            'user_roles.*.mapped_role' => ['required', 'string', 'max:100'],
         ]);
 
         DB::transaction(function () use ($client, $validated) {
@@ -82,6 +95,16 @@ class OauthClientSettingController extends Controller
                     'relatie_type_id' => $mapping['relatie_type_id'],
                     'mapped_role' => $mapping['mapped_role'],
                     'priority' => $index,
+                ]);
+            }
+
+            // Sync user-specific role overrides: delete existing, insert new
+            $setting->userRoles()->delete();
+
+            foreach ($validated['user_roles'] as $userRole) {
+                $setting->userRoles()->create([
+                    'user_id' => $userRole['user_id'],
+                    'mapped_role' => $userRole['mapped_role'],
                 ]);
             }
         });

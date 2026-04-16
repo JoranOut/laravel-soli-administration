@@ -9,6 +9,7 @@ use App\Models\Instrument;
 use App\Models\InstrumentBespeler;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\SoortContributie;
 use App\Models\Tariefgroep;
@@ -50,6 +51,12 @@ class SampleDataSeeder extends Seeder
         $kleinOrkest = $onderdelen->firstWhere('naam', 'Klein Orkest');
         $bigband = $onderdelen->firstWhere('naam', 'Bigband');
 
+        $instrumentSoorten = [
+            'Trompet', 'Klarinet', 'Altsaxofoon', 'Tenorsaxofoon', 'Trombone',
+            'Hoorn', 'Tuba', 'Dwarsfluit', 'Hobo', 'Fagot', 'Slagwerk',
+            'Euphonium', 'Cornet', 'Bariton', 'Besklarinet',
+        ];
+
         // Create 35 leden
         $leden = Relatie::factory(35)->create();
         foreach ($leden as $lid) {
@@ -85,15 +92,37 @@ class SampleDataSeeder extends Seeder
                 'nummer' => fake()->phoneNumber(),
             ]);
 
-            // Assign to random onderdeel(en)
+            // Assign to random onderdeel(en) with instrument soort
             $selectedOnderdelen = $onderdelen
                 ->whereIn('type', ['orkest', 'ensemble'])
                 ->random(rand(1, 3));
+
+            // Pick a primary instrument soort for this lid (consistent across onderdelen)
+            $primarySoort = fake()->randomElement($instrumentSoorten);
 
             foreach ($selectedOnderdelen as $onderdeel) {
                 $lid->onderdelen()->attach($onderdeel->id, [
                     'van' => fake()->dateTimeBetween('-8 years', '-1 year')->format('Y-m-d'),
                 ]);
+
+                // Every lid gets their primary instrument soort per onderdeel
+                RelatieInstrument::create([
+                    'relatie_id' => $lid->id,
+                    'onderdeel_id' => $onderdeel->id,
+                    'instrument_soort' => $primarySoort,
+                ]);
+
+                // ~20% of leden play a second instrument in an onderdeel
+                if (fake()->boolean(20)) {
+                    $secondSoort = fake()->randomElement(
+                        array_values(array_diff($instrumentSoorten, [$primarySoort]))
+                    );
+                    RelatieInstrument::create([
+                        'relatie_id' => $lid->id,
+                        'onderdeel_id' => $onderdeel->id,
+                        'instrument_soort' => $secondSoort,
+                    ]);
+                }
             }
         }
 
