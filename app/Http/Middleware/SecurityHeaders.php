@@ -49,18 +49,22 @@ class SecurityHeaders
      */
     private function passportClientOrigins(): string
     {
-        $origins = Cache::remember('csp_passport_origins', 3600, function () {
-            return Client::query()
-                ->whereNotNull('redirect')
-                ->pluck('redirect')
-                ->flatMap(fn (string $redirect) => explode(',', $redirect))
-                ->map(fn (string $uri) => parse_url(trim($uri), PHP_URL_SCHEME).'://'.parse_url(trim($uri), PHP_URL_HOST))
-                ->unique()
-                ->filter()
-                ->values()
-                ->all();
-        });
+        try {
+            $origins = Cache::remember('csp_passport_origins', 3600, function () {
+                return Client::query()
+                    ->whereNotNull('redirect')
+                    ->pluck('redirect')
+                    ->flatMap(fn (string $redirect) => explode(',', $redirect))
+                    ->map(fn (string $uri) => parse_url(trim($uri), PHP_URL_SCHEME).'://'.parse_url(trim($uri), PHP_URL_HOST))
+                    ->unique()
+                    ->filter()
+                    ->values()
+                    ->all();
+            });
 
-        return implode(' ', $origins);
+            return implode(' ', $origins);
+        } catch (\Throwable) {
+            return '';
+        }
     }
 }
