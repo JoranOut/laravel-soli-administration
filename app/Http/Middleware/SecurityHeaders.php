@@ -50,7 +50,7 @@ class SecurityHeaders
     private function passportClientOrigins(): string
     {
         try {
-            $origins = Cache::remember('csp_passport_origins', 3600, function () {
+            $origins = Cache::remember('csp_passport_origins', 86400, function () {
                 return Client::query()
                     ->whereNotNull('redirect_uris')
                     ->pluck('redirect_uris')
