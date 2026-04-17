@@ -1,10 +1,11 @@
 import { Head, useForm } from '@inertiajs/react';
-import { Pencil, Plus, Settings, Trash } from 'lucide-react';
+import { Info, Pencil, Plus, Settings, Trash } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 
 import { DataTable, type Column } from '@/components/admin/data-table';
 import InputError from '@/components/input-error';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -141,6 +142,14 @@ export default function InstrumentSoortenIndex({ instrumentSoorten, families }: 
         <AppLayout>
             <Head title={t('Instrument types')} />
             <div className="space-y-4 p-4">
+                <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>{t('Instrument types vs. Soli instruments')}</AlertTitle>
+                    <AlertDescription>
+                        {t('instrument_types_explanation')}
+                    </AlertDescription>
+                </Alert>
+
                 <div className="flex items-center justify-between">
                     <h2 className="text-lg font-semibold">{t('Instrument types')}</h2>
                     <div className="flex items-center gap-2">

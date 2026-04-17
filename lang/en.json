@@ -600,6 +600,8 @@
     "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.": "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.",
 
     "Instrument types": "Instrument types",
+    "Instrument types vs. Soli instruments": "Instrument types vs. Soli instruments",
+    "instrument_types_explanation": "This table lists the instrument types played in the orchestras. Soli instruments (under Management) track the physical instruments owned by the association. This table is also used by the music library: even if no member currently plays an instrument type, music sheets may still exist for it. Members from the same instrument family can play each other's parts (e.g. a tuba player may play a string bass part).",
     "Add instrument type": "Add instrument type",
     "Edit instrument type": "Edit instrument type",
     "Delete instrument type": "Delete instrument type",

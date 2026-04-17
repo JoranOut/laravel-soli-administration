@@ -603,6 +603,8 @@
     "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.": "Je logt in op een Soli website via onze Login server (SSO). Er worden geen gegevens gedeeld met derde partijen. Alle servers en websites van Soli zijn in beheer van Soli.",
 
     "Instrument types": "Instrumentsoorten",
+    "Instrument types vs. Soli instruments": "Instrumentsoorten vs. Soli-instrumenten",
+    "instrument_types_explanation": "Deze tabel bevat de instrumentsoorten die in de orkesten worden bespeeld. Soli-instrumenten (onder Beheer) registreren de fysieke instrumenten in eigendom van de vereniging. Deze tabel wordt ook gebruikt door de muziekbibliotheek: ook als niemand een instrumentsoort bespeelt, kunnen er wel bladmuziekpartijen voor bestaan. Leden uit dezelfde instrumentfamilie kunnen elkaars partijen spelen (bijv. een tubaspeler kan een strijkbaspartij spelen).",
     "Add instrument type": "Instrumentsoort toevoegen",
     "Edit instrument type": "Instrumentsoort bewerken",
     "Delete instrument type": "Instrumentsoort verwijderen",
