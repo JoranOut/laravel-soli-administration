@@ -2,6 +2,7 @@
 
 use App\Models\ClientRoleMapping;
 use App\Models\OauthClientSetting;
+use App\Models\OauthClientUserRole;
 use App\Models\Relatie;
 use App\Models\RelatieType;
 use App\Models\User;
@@ -253,4 +254,101 @@ test('no-access wins over lower-priority match by priority', function () {
     $roles = $this->resolver->resolve($user, $client->id);
 
     expect($roles)->toBe([]);
+});
+
+test('user override wins over matching type mapping', function () {
+    $client = createClient();
+    $setting = createSettingWithMappings($client->id, [
+        ['type' => 'bestuur', 'role' => 'editor'],
+    ]);
+
+    $user = createUserWithRelatieTypes(['bestuur']);
+
+    OauthClientUserRole::create([
+        'client_setting_id' => $setting->id,
+        'user_id' => $user->id,
+        'mapped_role' => 'administrator',
+    ]);
+
+    $roles = $this->resolver->resolve($user, $client->id);
+
+    expect($roles)->toBe(['administrator']);
+});
+
+test('user override wins over default role', function () {
+    $client = createClient();
+    $setting = createSettingWithMappings($client->id, [], 'subscriber');
+
+    $user = createUserWithRelatieTypes(['lid']);
+
+    OauthClientUserRole::create([
+        'client_setting_id' => $setting->id,
+        'user_id' => $user->id,
+        'mapped_role' => 'editor',
+    ]);
+
+    $roles = $this->resolver->resolve($user, $client->id);
+
+    expect($roles)->toBe(['editor']);
+});
+
+test('user override with NO_ACCESS returns empty array', function () {
+    $client = createClient();
+    $setting = createSettingWithMappings($client->id, [
+        ['type' => 'bestuur', 'role' => 'editor'],
+    ], 'subscriber');
+
+    $user = createUserWithRelatieTypes(['bestuur']);
+
+    OauthClientUserRole::create([
+        'client_setting_id' => $setting->id,
+        'user_id' => $user->id,
+        'mapped_role' => ClientRoleResolver::NO_ACCESS,
+    ]);
+
+    $roles = $this->resolver->resolve($user, $client->id);
+
+    expect($roles)->toBe([]);
+});
+
+test('no user override falls back to type mapping and default logic', function () {
+    $client = createClient();
+    $setting = createSettingWithMappings($client->id, [
+        ['type' => 'bestuur', 'role' => 'editor'],
+    ], 'subscriber');
+
+    // Override exists, but for a different user
+    $otherUser = User::factory()->create();
+    OauthClientUserRole::create([
+        'client_setting_id' => $setting->id,
+        'user_id' => $otherUser->id,
+        'mapped_role' => 'administrator',
+    ]);
+
+    $user = createUserWithRelatieTypes(['bestuur']);
+
+    $roles = $this->resolver->resolve($user, $client->id);
+
+    // Current user has no override, so type mapping applies
+    expect($roles)->toBe(['editor']);
+});
+
+test('user override for another user does not affect current user', function () {
+    $client = createClient();
+    $setting = createSettingWithMappings($client->id, [
+        ['type' => 'lid', 'role' => 'subscriber'],
+    ]);
+
+    $otherUser = createUserWithRelatieTypes(['lid']);
+    OauthClientUserRole::create([
+        'client_setting_id' => $setting->id,
+        'user_id' => $otherUser->id,
+        'mapped_role' => 'administrator',
+    ]);
+
+    $user = createUserWithRelatieTypes(['lid']);
+
+    $roles = $this->resolver->resolve($user, $client->id);
+
+    expect($roles)->toBe(['subscriber']);
 });

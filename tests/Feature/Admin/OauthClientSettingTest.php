@@ -2,6 +2,7 @@
 
 use App\Models\ClientRoleMapping;
 use App\Models\OauthClientSetting;
+use App\Models\OauthClientUserRole;
 use App\Models\RelatieType;
 use App\Models\User;
 use Database\Seeders\RelatieTypeSeeder;
@@ -45,6 +46,7 @@ test('admin can view the oauth clients page', function () {
         ->component('admin/oauth-clients/index')
         ->has('clients', 1)
         ->has('relatieTypes')
+        ->has('users')
     );
 });
 
@@ -63,6 +65,7 @@ test('admin can save client settings with role mappings', function () {
             ['relatie_type_id' => $bestuurType->id, 'mapped_role' => 'editor'],
             ['relatie_type_id' => $lidType->id, 'mapped_role' => 'subscriber'],
         ],
+        'user_roles' => [],
     ]);
 
     $response->assertRedirect();
@@ -107,6 +110,7 @@ test('admin can update existing client settings', function () {
         'type' => 'other',
         'default_role' => 'viewer',
         'role_mappings' => [],
+        'user_roles' => [],
     ]);
 
     $response->assertRedirect();
@@ -127,7 +131,79 @@ test('non-admin cannot update client settings', function () {
         'type' => 'wordpress',
         'default_role' => 'subscriber',
         'role_mappings' => [],
+        'user_roles' => [],
     ]);
 
     $response->assertForbidden();
+});
+
+test('admin can save client settings with user role overrides', function () {
+    $this->seed([RolesAndPermissionsSeeder::class, RelatieTypeSeeder::class]);
+
+    $admin = User::factory()->create()->assignRole('admin');
+    $user1 = User::factory()->create();
+    $user2 = User::factory()->create();
+    $client = createOauthClient();
+
+    // First save: two user overrides
+    $response = $this->actingAs($admin)->put(route('admin.oauth-clients.update', $client->id), [
+        'type' => 'wordpress',
+        'default_role' => 'subscriber',
+        'role_mappings' => [],
+        'user_roles' => [
+            ['user_id' => $user1->id, 'mapped_role' => 'administrator'],
+            ['user_id' => $user2->id, 'mapped_role' => 'editor'],
+        ],
+    ]);
+
+    $response->assertRedirect();
+
+    $setting = OauthClientSetting::where('client_id', $client->id)->first();
+    expect($setting->userRoles)->toHaveCount(2);
+
+    $roles = $setting->userRoles()->orderBy('user_id')->get();
+    expect($roles[0]->user_id)->toBe($user1->id);
+    expect($roles[0]->mapped_role)->toBe('administrator');
+    expect($roles[1]->user_id)->toBe($user2->id);
+    expect($roles[1]->mapped_role)->toBe('editor');
+
+    // Re-save replaces the overrides
+    $this->actingAs($admin)->put(route('admin.oauth-clients.update', $client->id), [
+        'type' => 'wordpress',
+        'default_role' => 'subscriber',
+        'role_mappings' => [],
+        'user_roles' => [
+            ['user_id' => $user1->id, 'mapped_role' => 'subscriber'],
+        ],
+    ]);
+
+    $setting->refresh();
+    expect($setting->userRoles)->toHaveCount(1);
+    expect($setting->userRoles->first()->user_id)->toBe($user1->id);
+    expect($setting->userRoles->first()->mapped_role)->toBe('subscriber');
+
+    // index() returns overrides
+    $response = $this->actingAs($admin)->get(route('admin.oauth-clients.index'));
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/oauth-clients/index')
+        ->has('clients.0.setting.user_roles', 1)
+        ->where('clients.0.setting.user_roles.0.user_id', $user1->id)
+        ->where('clients.0.setting.user_roles.0.mapped_role', 'subscriber')
+        ->where('clients.0.setting.user_roles.0.user_name', $user1->name)
+    );
+});
+
+test('user_roles must be present in update payload', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $admin = User::factory()->create()->assignRole('admin');
+    $client = createOauthClient();
+
+    $response = $this->actingAs($admin)->put(route('admin.oauth-clients.update', $client->id), [
+        'type' => 'wordpress',
+        'default_role' => 'subscriber',
+        'role_mappings' => [],
+    ]);
+
+    $response->assertSessionHasErrors('user_roles');
 });

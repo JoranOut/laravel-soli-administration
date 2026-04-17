@@ -7,12 +7,16 @@ return [
             'profile' => 'Access user profile (name)',
             'email' => 'Access user email address',
             'roles' => 'Access user roles',
+            'assignments' => 'Access orchestra/instrument assignments',
         ],
     ],
 
     'custom_claim_sets' => [
         'roles' => [
             'roles',
+        ],
+        'assignments' => [
+            'assignments',
         ],
     ],
 

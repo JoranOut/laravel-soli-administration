@@ -18,6 +18,11 @@ class OauthClientSetting extends Model
         return $this->hasMany(ClientRoleMapping::class, 'client_setting_id');
     }
 
+    public function userRoles(): HasMany
+    {
+        return $this->hasMany(OauthClientUserRole::class, 'client_setting_id');
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');

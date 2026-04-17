@@ -13,7 +13,13 @@ class ClientRoleMappingSeeder extends Seeder
 {
     public function run(): void
     {
-        $client = Client::where('revoked', false)->first();
+        $this->seedWebsiteMappings();
+        $this->seedMuziekMappings();
+    }
+
+    private function seedWebsiteMappings(): void
+    {
+        $client = Client::where('name', 'Soli Website')->first();
 
         if (! $client) {
             return;
@@ -27,9 +33,7 @@ class ClientRoleMappingSeeder extends Seeder
             ]
         );
 
-        // Ordered by priority (0 = highest). When a user has multiple
-        // matching relatie types, the highest-priority mapping wins.
-        $mappings = [
+        $this->createMappings($setting, [
             ['type' => 'dirigent',       'role' => 'editor'],
             ['type' => 'bestuur',        'role' => 'editor'],
             ['type' => 'docent',         'role' => 'editor'],
@@ -37,8 +41,39 @@ class ClientRoleMappingSeeder extends Seeder
             ['type' => 'donateur',       'role' => 'subscriber'],
             ['type' => 'vrijwilliger',   'role' => 'subscriber'],
             ['type' => 'contactpersoon', 'role' => 'subscriber'],
-        ];
+        ]);
+    }
 
+    private function seedMuziekMappings(): void
+    {
+        $client = Client::where('name', 'Soli Muziekbibliotheek')->first();
+
+        if (! $client) {
+            return;
+        }
+
+        $setting = OauthClientSetting::updateOrCreate(
+            ['client_id' => $client->id],
+            [
+                'type' => 'laravel',
+                'default_role' => ClientRoleResolver::NO_ACCESS,
+            ]
+        );
+
+        // dirigent/docent can manage sheets, lid can view/download
+        $this->createMappings($setting, [
+            ['type' => 'dirigent', 'role' => 'editor'],
+            ['type' => 'docent',   'role' => 'editor'],
+            ['type' => 'bestuur',  'role' => 'editor'],
+            ['type' => 'lid',      'role' => 'viewer'],
+        ]);
+    }
+
+    /**
+     * @param  array<int, array{type: string, role: string}>  $mappings
+     */
+    private function createMappings(OauthClientSetting $setting, array $mappings): void
+    {
         foreach ($mappings as $priority => $mapping) {
             $type = RelatieType::where('naam', $mapping['type'])->first();
 
