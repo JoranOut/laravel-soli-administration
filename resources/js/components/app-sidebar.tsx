@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Coins, Globe, Guitar, LayoutGrid, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
+import { Coins, Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
@@ -118,6 +118,14 @@ export function AppSidebar() {
     }
 
     const adminNavItems: NavItem[] = [];
+
+    if (canAny(['instrumentsoorten.view'])) {
+        adminNavItems.push({
+            title: t('Instrument types'),
+            href: '/admin/instrumentsoorten',
+            icon: ListMusic,
+        });
+    }
 
     if (hasRole('admin')) {
         adminNavItems.push({

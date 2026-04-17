@@ -11,7 +11,7 @@ export type User = {
     [key: string]: unknown;
 };
 
-export type PermissionResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'financieel' | 'users';
+export type PermissionResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'instrumentsoorten' | 'financieel' | 'users';
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete';
 export type Permission = `${PermissionResource}.${PermissionAction}`;
 export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'member';

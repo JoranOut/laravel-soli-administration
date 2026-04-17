@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Jobs\SyncGoogleContactsJob;
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Observers\GoogleContactSyncObserver;
 use Carbon\Carbon;
@@ -21,6 +23,8 @@ class ImportSadMembers extends Command
         {--fresh : Clear existing relatie data before import}';
 
     protected $description = 'Import members from SAD system JSON export';
+
+    private Collection $instrumentSoortLookup;
 
     /**
      * Known base codes for onderdeel decomposition.
@@ -91,12 +95,12 @@ class ImportSadMembers extends Command
         'tuba' => 'Tuba', 'sousafoon' => 'Sousafoon',
         'bes bas' => 'Besbas', 'besbas' => 'Besbas',
         'bes bas trompet' => ['Besbas', 'Trompet'],
-        'es bas' => 'Esbas', 'bas' => 'Bas',
+        'es bas' => 'Esbas', 'bas' => 'Tuba',
         'contrabas' => 'Contrabas', 'bassist' => 'Contrabas', 'bas gitaar' => 'Basgitaar',
 
         // Koper — bariton / euphonium
         'bariton' => 'Bariton',
-        'bariton bas' => ['Bariton', 'Bas'],
+        'bariton bas' => ['Bariton', 'Tuba'],
         'euphonium' => 'Euphonium',
 
         // Houtblazers
@@ -174,6 +178,7 @@ class ImportSadMembers extends Command
 
         $onderdelen = Onderdeel::whereNotNull('afkorting')->get()->keyBy('afkorting');
         $lidType = RelatieType::where('naam', 'lid')->firstOrFail();
+        $this->instrumentSoortLookup = InstrumentSoort::all()->keyBy('naam');
 
         // Validate every combined code can be fully decomposed
         $errors = $this->validateDecompositions($members, $onderdelen);
@@ -874,14 +879,23 @@ class ImportSadMembers extends Command
             $latest = end($overlapping);
 
             foreach ($latest['soorten'] as $soort) {
-                $key = $pivot->onderdeel_id.':'.$soort;
+                $instrumentSoort = $this->instrumentSoortLookup->get($soort);
+                if (! $instrumentSoort) {
+                    // Auto-create unknown instrument soorts with self-family fallback
+                    $familie = \App\Models\InstrumentFamilie::firstOrCreate(['naam' => $soort]);
+                    $instrumentSoort = InstrumentSoort::create(['naam' => $soort, 'instrument_familie_id' => $familie->id]);
+                    $this->instrumentSoortLookup->put($soort, $instrumentSoort);
+                }
+
+                $key = $pivot->onderdeel_id.':'.$instrumentSoort->id;
                 if (isset($assigned[$key])) {
                     continue;
                 }
 
-                $relatie->relatieInstrumenten()->create([
+                RelatieInstrument::firstOrCreate([
+                    'relatie_id' => $relatie->id,
                     'onderdeel_id' => $pivot->onderdeel_id,
-                    'instrument_soort' => $soort,
+                    'instrument_soort_id' => $instrumentSoort->id,
                 ]);
                 $assigned[$key] = true;
             }

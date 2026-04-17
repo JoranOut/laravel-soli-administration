@@ -1,9 +1,11 @@
 <?php
 
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
 use App\Models\User;
+use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
+    $this->seed(InstrumentSoortSeeder::class);
 });
 
 // --- Relatie Types ---

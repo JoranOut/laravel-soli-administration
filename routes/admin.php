@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ContributieController;
 use App\Http\Controllers\Admin\InstrumentBespelerController;
 use App\Http\Controllers\Admin\InstrumentController;
 use App\Http\Controllers\Admin\InstrumentReparatieController;
+use App\Http\Controllers\Admin\InstrumentSoortController;
 use App\Http\Controllers\Admin\OnderdeelController;
 use App\Http\Controllers\Admin\RelatieContactController;
 use App\Http\Controllers\Admin\RelatieController;
@@ -146,6 +147,24 @@ Route::middleware(['auth', 'verified', 'permission:instrumenten.view'])->group(f
         Route::put('admin/instrumenten/{instrument}/reparaties/{reparatie}', [InstrumentReparatieController::class, 'update'])->name('admin.instrumenten.reparaties.update');
         Route::delete('admin/instrumenten/{instrument}/reparaties/{reparatie}', [InstrumentReparatieController::class, 'destroy'])->name('admin.instrumenten.reparaties.destroy');
     });
+});
+
+// Instrument soorten
+Route::middleware(['auth', 'verified', 'permission:instrumentsoorten.view'])->group(function () {
+    Route::get('admin/instrumentsoorten', [InstrumentSoortController::class, 'index'])->name('admin.instrumentsoorten.index');
+    Route::post('admin/instrumentsoorten', [InstrumentSoortController::class, 'store'])->name('admin.instrumentsoorten.store')
+        ->middleware('permission:instrumentsoorten.create');
+    Route::put('admin/instrumentsoorten/{instrumentSoort}', [InstrumentSoortController::class, 'update'])->name('admin.instrumentsoorten.update')
+        ->middleware('permission:instrumentsoorten.edit');
+    Route::delete('admin/instrumentsoorten/{instrumentSoort}', [InstrumentSoortController::class, 'destroy'])->name('admin.instrumentsoorten.destroy')
+        ->middleware('permission:instrumentsoorten.delete');
+
+    Route::post('admin/instrumentsoorten/families', [InstrumentSoortController::class, 'storeFamily'])->name('admin.instrumentsoorten.families.store')
+        ->middleware('permission:instrumentsoorten.create');
+    Route::put('admin/instrumentsoorten/families/{instrumentFamilie}', [InstrumentSoortController::class, 'updateFamily'])->name('admin.instrumentsoorten.families.update')
+        ->middleware('permission:instrumentsoorten.edit');
+    Route::delete('admin/instrumentsoorten/families/{instrumentFamilie}', [InstrumentSoortController::class, 'destroyFamily'])->name('admin.instrumentsoorten.families.destroy')
+        ->middleware('permission:instrumentsoorten.delete');
 });
 
 // Financieel

@@ -17,7 +17,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Reset cached roles and permissions
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $resources = ['relaties', 'onderdelen', 'instrumenten', 'financieel', 'users'];
+        $resources = ['relaties', 'onderdelen', 'instrumenten', 'instrumentsoorten', 'financieel', 'users'];
         $actions = ['view', 'create', 'edit', 'delete'];
 
         // Create permissions for each resource-action combination
@@ -37,6 +37,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'relaties.view',
                 'onderdelen.view',
                 'instrumenten.view',
+                'instrumentsoorten.view',
                 'financieel.view',
             ]);
 

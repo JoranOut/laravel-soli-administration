@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\VerifyInstrumentsApiKey;
 use App\Http\Middleware\VerifySyncApiKey;
 use Laravel\Passport\Http\Middleware\CheckToken;
 use Spatie\Permission\Middleware\PermissionMiddleware;
@@ -47,6 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
             'client' => CheckToken::class,
             'sync.api_key' => VerifySyncApiKey::class,
+            'instruments.api_key' => VerifyInstrumentsApiKey::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

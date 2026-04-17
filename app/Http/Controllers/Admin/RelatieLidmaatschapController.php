@@ -54,7 +54,8 @@ class RelatieLidmaatschapController extends Controller
         $validated = $request->validate([
             'onderdeel_id' => ['required', 'exists:soli_onderdelen,id'],
             'functie' => ['nullable', 'string', 'max:255'],
-            'instrument_soort' => ['nullable', 'string', 'max:255'],
+            'instrument_soort_ids' => ['nullable', 'array'],
+            'instrument_soort_ids.*' => ['integer', 'exists:soli_instrument_soorten,id'],
             'van' => ['required', 'date'],
             'tot' => ['nullable', 'date', 'after_or_equal:van'],
         ]);
@@ -65,16 +66,12 @@ class RelatieLidmaatschapController extends Controller
             'tot' => $validated['tot'] ?? null,
         ]);
 
-        if (! empty($validated['instrument_soort'])) {
-            $soorten = array_map('trim', explode(',', $validated['instrument_soort']));
-            foreach ($soorten as $soort) {
-                if ($soort === '') continue;
-                RelatieInstrument::firstOrCreate([
-                    'relatie_id' => $relatie->id,
-                    'onderdeel_id' => $validated['onderdeel_id'],
-                    'instrument_soort' => $soort,
-                ]);
-            }
+        foreach ($validated['instrument_soort_ids'] ?? [] as $instrumentSoortId) {
+            RelatieInstrument::firstOrCreate([
+                'relatie_id' => $relatie->id,
+                'onderdeel_id' => $validated['onderdeel_id'],
+                'instrument_soort_id' => $instrumentSoortId,
+            ]);
         }
 
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
@@ -86,7 +83,8 @@ class RelatieLidmaatschapController extends Controller
     {
         $validated = $request->validate([
             'functie' => ['nullable', 'string', 'max:255'],
-            'instrument_soort' => ['nullable', 'string', 'max:255'],
+            'instrument_soort_ids' => ['nullable', 'array'],
+            'instrument_soort_ids.*' => ['integer', 'exists:soli_instrument_soorten,id'],
             'van' => ['required', 'date'],
             'tot' => ['nullable', 'date', 'after_or_equal:van'],
         ]);
@@ -100,21 +98,17 @@ class RelatieLidmaatschapController extends Controller
             'tot' => $validated['tot'] ?? null,
         ]);
 
-        if (array_key_exists('instrument_soort', $validated)) {
+        if (array_key_exists('instrument_soort_ids', $validated)) {
             RelatieInstrument::where('relatie_id', $relatie->id)
                 ->where('onderdeel_id', $onderdeel->id)
                 ->delete();
 
-            if (! empty($validated['instrument_soort'])) {
-                $soorten = array_map('trim', explode(',', $validated['instrument_soort']));
-                foreach ($soorten as $soort) {
-                    if ($soort === '') continue;
-                    RelatieInstrument::create([
-                        'relatie_id' => $relatie->id,
-                        'onderdeel_id' => $onderdeel->id,
-                        'instrument_soort' => $soort,
-                    ]);
-                }
+            foreach ($validated['instrument_soort_ids'] ?? [] as $instrumentSoortId) {
+                RelatieInstrument::create([
+                    'relatie_id' => $relatie->id,
+                    'onderdeel_id' => $onderdeel->id,
+                    'instrument_soort_id' => $instrumentSoortId,
+                ]);
             }
         }
 

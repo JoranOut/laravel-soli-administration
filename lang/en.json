@@ -209,7 +209,8 @@
     "Add section": "Add section",
     "Function": "Function",
     "Instrument type": "Instrument type",
-    "e.g. Trumpet, Clarinet": "e.g. Trumpet, Clarinet",
+    "Select instruments": "Select instruments",
+    "No results.": "No results.",
     "No sections.": "No sections.",
 
     "Training": "Training",
@@ -596,5 +597,25 @@
     "Your email address": "Your email address",
     "Your role": "Your role",
     "Why do I see this?": "Why do I see this?",
-    "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.": "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli."
+    "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.": "You are logging in to a Soli website. No data is shared with third parties. All Soli servers and websites are managed by Soli.",
+
+    "Instrument types": "Instrument types",
+    "Add instrument type": "Add instrument type",
+    "Edit instrument type": "Edit instrument type",
+    "Delete instrument type": "Delete instrument type",
+    "Family": "Family",
+    "Instrument type created.": "Instrument type created.",
+    "Instrument type updated.": "Instrument type updated.",
+    "Instrument type deleted.": "Instrument type deleted.",
+    "Cannot delete an instrument type with linked members.": "Cannot delete an instrument type with linked members.",
+    "This instrument type may be linked to the music library. Removing it here does not remove it from the music library.": "This instrument type may be linked to the music library. Removing it here does not remove it from the music library.",
+    "Type ':name' to confirm.": "Type ':name' to confirm.",
+
+    "Manage families": "Manage families",
+    "Add family": "Add family",
+    "Edit family": "Edit family",
+    "Family created.": "Family created.",
+    "Family updated.": "Family updated.",
+    "Family deleted.": "Family deleted.",
+    "Cannot delete a family with linked instrument types.": "Cannot delete a family with linked instrument types."
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRelatieRequest;
 use App\Http\Requests\UpdateRelatieRequest;
 use App\Jobs\SyncGoogleContactsJob;
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
@@ -177,6 +178,7 @@ class RelatieController extends Controller
             'relatieSinds' => fn ($q) => $q->orderByDesc('lid_sinds'),
             'onderdelen' => fn ($q) => $q->orderByDesc('soli_relatie_onderdeel.van'),
             'relatieInstrumenten.onderdeel',
+            'relatieInstrumenten.instrumentSoort',
             'instrumentBespelers.instrument',
             'opleidingen' => fn ($q) => $q->orderByDesc('datum_start'),
             'uniformen' => fn ($q) => $q->orderByDesc('van'),
@@ -196,6 +198,7 @@ class RelatieController extends Controller
             'relatie' => $relatie,
             'relatieTypes' => RelatieType::all(),
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
+            'instrumentSoorten' => InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get(),
         ];
 
         if ($user->can('users.edit')) {

@@ -10,7 +10,7 @@ beforeEach(function () {
 });
 
 test('seeder creates all expected permissions', function () {
-    $resources = ['relaties', 'onderdelen', 'instrumenten', 'financieel', 'users'];
+    $resources = ['relaties', 'onderdelen', 'instrumenten', 'instrumentsoorten', 'financieel', 'users'];
     $actions = ['view', 'create', 'edit', 'delete'];
 
     foreach ($resources as $resource) {
@@ -19,7 +19,7 @@ test('seeder creates all expected permissions', function () {
         }
     }
 
-    expect(Permission::count())->toBe(20);
+    expect(Permission::count())->toBe(24);
 });
 
 test('seeder creates all expected roles', function () {
@@ -33,7 +33,7 @@ test('seeder creates all expected roles', function () {
 test('admin role has all permissions', function () {
     $admin = Role::findByName('admin');
 
-    expect($admin->permissions->count())->toBe(20);
+    expect($admin->permissions->count())->toBe(24);
 });
 
 test('bestuur role has view-only permissions', function () {
@@ -44,6 +44,7 @@ test('bestuur role has view-only permissions', function () {
         'relaties.view',
         'onderdelen.view',
         'instrumenten.view',
+        'instrumentsoorten.view',
         'financieel.view',
     ];
 
@@ -58,6 +59,7 @@ test('ledenadministratie role has all permissions except users', function () {
         'relaties.view', 'relaties.create', 'relaties.edit', 'relaties.delete',
         'onderdelen.view', 'onderdelen.create', 'onderdelen.edit', 'onderdelen.delete',
         'instrumenten.view', 'instrumenten.create', 'instrumenten.edit', 'instrumenten.delete',
+        'instrumentsoorten.view', 'instrumentsoorten.create', 'instrumentsoorten.edit', 'instrumentsoorten.delete',
         'financieel.view', 'financieel.create', 'financieel.edit', 'financieel.delete',
     ];
 
@@ -88,6 +90,6 @@ test('seeder is idempotent', function () {
     // Run seeder again
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    expect(Permission::count())->toBe(20);
+    expect(Permission::count())->toBe(24);
     expect(Role::count())->toBe(4);
 });

@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RelatieTypeSeeder::class,
             OnderdeelSeeder::class,
+            InstrumentSoortSeeder::class,
             TariefgroepSeeder::class,
             SoortContributieSeeder::class,
             SampleDataSeeder::class,

@@ -64,10 +64,12 @@ class SoliIdentityEntity implements IdentityEntityInterface
             $relatieIds = $this->user->relaties()->pluck('id');
 
             $claims['assignments'] = RelatieInstrument::whereIn('relatie_id', $relatieIds)
-                ->get(['onderdeel_id', 'instrument_soort'])
+                ->with('instrumentSoort.instrumentFamilie')
+                ->get()
                 ->map(fn ($ri) => [
                     'onderdeel_id' => $ri->onderdeel_id,
-                    'instrument_soort' => $ri->instrument_soort,
+                    'instrument_soort' => $ri->instrumentSoort->naam,
+                    'instrument_familie' => $ri->instrumentSoort->instrumentFamilie?->naam,
                 ])
                 ->values()
                 ->toArray();
