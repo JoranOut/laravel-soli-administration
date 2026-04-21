@@ -10,32 +10,28 @@ class OnderdeelSeeder extends Seeder
     public function run(): void
     {
         $onderdelen = [
-            // Orkesten
-            ['naam' => 'Harmonie orkest', 'afkorting' => 'HA', 'type' => 'orkest', 'actief' => true],
-            ['naam' => 'Klein Orkest', 'afkorting' => 'KO', 'type' => 'orkest', 'actief' => true],
-            ['naam' => 'Bigband', 'afkorting' => 'BB', 'type' => 'orkest', 'actief' => true],
-            ['naam' => 'Slagwerkgroep', 'afkorting' => 'SG', 'type' => 'orkest', 'actief' => true],
-            ['naam' => 'Drumfanfare', 'afkorting' => 'DF', 'type' => 'orkest', 'actief' => false],
-
-            // Ensembles
-            ['naam' => 'Kerstensembles', 'afkorting' => null, 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'Pietenband', 'afkorting' => null, 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'Marsorkest', 'afkorting' => 'MO', 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'Funband', 'afkorting' => 'FB', 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'Oud Goud', 'afkorting' => 'OU', 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'Oude Glorie', 'afkorting' => 'OG', 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'TwirlTeam', 'afkorting' => 'TW', 'type' => 'ensemble', 'actief' => true],
-            ['naam' => 'Stil Orkest', 'afkorting' => null, 'type' => 'ensemble', 'actief' => true],
-
-            // Opleidingsgroepen
-            ['naam' => 'Blokfluitklas', 'afkorting' => null, 'type' => 'opleidingsgroep', 'actief' => true],
-            ['naam' => 'Slagwerkklas', 'afkorting' => 'SK', 'type' => 'opleidingsgroep', 'actief' => true],
-            ['naam' => 'Volwassenen opstapklas', 'afkorting' => 'SV', 'type' => 'opleidingsgroep', 'actief' => true],
-            ['naam' => 'Samenspelklas', 'afkorting' => 'SA', 'type' => 'opleidingsgroep', 'actief' => true],
-            ['naam' => 'Opleidingsorkest', 'afkorting' => 'OL', 'type' => 'opleidingsgroep', 'actief' => true],
-            ['naam' => 'Opstapklas', 'afkorting' => 'OK', 'type' => 'opleidingsgroep', 'actief' => true],
-            ['naam' => 'Leerlingen', 'afkorting' => 'LL', 'type' => 'opleidingsgroep', 'actief' => false],
-            ['naam' => 'Kennismakingsklas', 'afkorting' => 'KK', 'type' => 'opleidingsgroep', 'actief' => false],
+            // Muziekgroepen
+            ['naam' => 'Harmonie orkest', 'afkorting' => 'HA', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Klein Orkest', 'afkorting' => 'KO', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Bigband', 'afkorting' => 'BB', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Slagwerkgroep', 'afkorting' => 'SG', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Drumfanfare', 'afkorting' => 'DF', 'type' => 'muziekgroep', 'actief' => false],
+            ['naam' => 'Kerstensembles', 'afkorting' => null, 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Pietenband', 'afkorting' => null, 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Marsorkest', 'afkorting' => 'MO', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Funband', 'afkorting' => 'FB', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Oud Goud', 'afkorting' => 'OU', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Oude Glorie', 'afkorting' => 'OG', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'TwirlTeam', 'afkorting' => 'TW', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Stil Orkest', 'afkorting' => null, 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Blokfluitklas', 'afkorting' => null, 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Slagwerkklas', 'afkorting' => 'SK', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Volwassenen opstapklas', 'afkorting' => 'SV', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Samenspelklas', 'afkorting' => 'SA', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Opleidingsorkest', 'afkorting' => 'OL', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Opstapklas', 'afkorting' => 'OK', 'type' => 'muziekgroep', 'actief' => true],
+            ['naam' => 'Leerlingen', 'afkorting' => 'LL', 'type' => 'muziekgroep', 'actief' => false],
+            ['naam' => 'Kennismakingsklas', 'afkorting' => 'KK', 'type' => 'muziekgroep', 'actief' => false],
 
             // Bestuur & commissies
             ['naam' => 'Bestuur', 'afkorting' => null, 'type' => 'bestuur', 'actief' => true],

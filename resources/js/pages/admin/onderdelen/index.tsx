@@ -68,7 +68,7 @@ export default function OnderdelenIndex({ onderdelen, filters }: Props) {
     const { data, setData, post, processing, reset, errors } = useForm({
         naam: '',
         afkorting: '',
-        type: 'orkest',
+        type: 'muziekgroep',
         beschrijving: '',
     });
 

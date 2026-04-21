@@ -93,7 +93,7 @@ export type Onderdeel = {
     id: number;
     naam: string;
     afkorting: string | null;
-    type: 'orkest' | 'opleidingsgroep' | 'ensemble' | 'commissie' | 'bestuur' | 'staff' | 'overig';
+    type: 'muziekgroep' | 'commissie' | 'bestuur' | 'staff' | 'overig';
     beschrijving: string | null;
     actief: boolean;
     created_at: string;

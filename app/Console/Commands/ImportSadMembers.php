@@ -265,7 +265,7 @@ class ImportSadMembers extends Command
         // Close open onderdelen for ex-members at their lidmaatschap end date
         $this->closeOnderdelenForExMembers();
 
-        // Mark orkesten/ensembles without any members as inactive
+        // Mark muziekgroepen without any members as inactive
         $this->deactivateEmptyOnderdelen();
 
         activity()->enableLogging();
@@ -364,7 +364,7 @@ class ImportSadMembers extends Command
 
     private function deactivateEmptyOnderdelen(): void
     {
-        $onderdelen = Onderdeel::whereIn('type', ['orkest', 'ensemble'])
+        $onderdelen = Onderdeel::where('type', 'muziekgroep')
             ->where('actief', true)
             ->get();
 
@@ -387,9 +387,9 @@ class ImportSadMembers extends Command
     private function ensureOnderdelen(): void
     {
         $missing = [
-            ['naam' => 'Drumfanfare', 'afkorting' => 'DF', 'type' => 'orkest', 'actief' => false],
-            ['naam' => 'Leerlingen', 'afkorting' => 'LL', 'type' => 'opleidingsgroep', 'actief' => false],
-            ['naam' => 'Kennismakingsklas', 'afkorting' => 'KK', 'type' => 'opleidingsgroep', 'actief' => false],
+            ['naam' => 'Drumfanfare', 'afkorting' => 'DF', 'type' => 'muziekgroep', 'actief' => false],
+            ['naam' => 'Leerlingen', 'afkorting' => 'LL', 'type' => 'muziekgroep', 'actief' => false],
+            ['naam' => 'Kennismakingsklas', 'afkorting' => 'KK', 'type' => 'muziekgroep', 'actief' => false],
             ['naam' => 'VL', 'afkorting' => 'VL', 'type' => 'overig', 'actief' => false],
             ['naam' => 'MA', 'afkorting' => 'MA', 'type' => 'overig', 'actief' => false],
             ['naam' => 'TA', 'afkorting' => 'TA', 'type' => 'overig', 'actief' => false],

@@ -13,7 +13,7 @@ class Onderdeel extends Model
 {
     use HasFactory, LogsActivity, SoftDeletes;
 
-    public const TYPES = ['orkest', 'opleidingsgroep', 'ensemble', 'commissie', 'bestuur', 'staff', 'overig'];
+    public const TYPES = ['muziekgroep', 'commissie', 'bestuur', 'staff', 'overig'];
 
     protected $table = 'soli_onderdelen';
 

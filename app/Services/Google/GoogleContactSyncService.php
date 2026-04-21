@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleContactSyncService
 {
-    private const CONTACT_GROUP_TYPES = ['orkest', 'ensemble', 'opleidingsgroep'];
+    private const CONTACT_GROUP_TYPES = ['muziekgroep'];
 
     private const GROUP_PREFIX = 'Soli - ';
 

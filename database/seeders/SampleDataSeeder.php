@@ -91,7 +91,7 @@ class SampleDataSeeder extends Seeder
 
             // Assign to random onderdeel(en) with instrument soort
             $selectedOnderdelen = $onderdelen
-                ->whereIn('type', ['orkest', 'ensemble'])
+                ->where('type', 'muziekgroep')
                 ->random(rand(1, 3));
 
             // Pick a primary instrument soort for this lid (consistent across onderdelen)
@@ -144,7 +144,7 @@ class SampleDataSeeder extends Seeder
         }
 
         // Create 3 docenten (1 is also lid)
-        $opleidingsgroepen = $onderdelen->where('type', 'opleidingsgroep')->where('actief', true);
+        $opleidingsgroepen = $onderdelen->where('type', 'muziekgroep')->where('actief', true);
         $docenten = Relatie::factory(3)->create();
         foreach ($docenten as $i => $docent) {
             $docent->types()->attach($docentType->id, [

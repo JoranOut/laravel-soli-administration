@@ -76,7 +76,7 @@ class DashboardController extends Controller
 
     private function getOnderdeelHistory(): array
     {
-        $onderdelen = Onderdeel::whereIn('type', ['orkest', 'ensemble'])
+        $onderdelen = Onderdeel::where('type', 'muziekgroep')
             ->orderBy('naam')
             ->get(['id', 'naam']);
 
