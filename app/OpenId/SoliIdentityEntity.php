@@ -68,6 +68,7 @@ class SoliIdentityEntity implements IdentityEntityInterface
                 ->get()
                 ->map(fn ($ri) => [
                     'onderdeel_id' => $ri->onderdeel_id,
+                    'instrument_soort_id' => $ri->instrumentSoort->id,
                     'instrument_soort' => $ri->instrumentSoort->naam,
                     'instrument_familie' => $ri->instrumentSoort->instrumentFamilie?->naam,
                 ])
