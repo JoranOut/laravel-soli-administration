@@ -27,14 +27,14 @@ test('admin can create onderdeel', function () {
 
     $response = $this->actingAs($admin)->post('/admin/onderdelen', [
         'naam' => 'Harmonie orkest',
-        'type' => 'orkest',
+        'type' => 'muziekgroep',
         'beschrijving' => 'Het hoofdorkest',
     ]);
 
     $response->assertRedirect();
     $this->assertDatabaseHas('soli_onderdelen', [
         'naam' => 'Harmonie orkest',
-        'type' => 'orkest',
+        'type' => 'muziekgroep',
     ]);
 });
 
@@ -57,7 +57,7 @@ test('admin can update onderdeel', function () {
 
     $response = $this->actingAs($admin)->put("/admin/onderdelen/{$onderdeel->id}", [
         'naam' => 'Bijgewerkt Orkest',
-        'type' => 'ensemble',
+        'type' => 'commissie',
         'beschrijving' => 'Nieuwe beschrijving',
     ]);
 
@@ -65,7 +65,7 @@ test('admin can update onderdeel', function () {
     $this->assertDatabaseHas('soli_onderdelen', [
         'id' => $onderdeel->id,
         'naam' => 'Bijgewerkt Orkest',
-        'type' => 'ensemble',
+        'type' => 'commissie',
     ]);
 });
 
@@ -123,7 +123,7 @@ test('admin can create onderdeel with afkorting', function () {
     $response = $this->actingAs($admin)->post('/admin/onderdelen', [
         'naam' => 'Harmonie',
         'afkorting' => 'HA',
-        'type' => 'orkest',
+        'type' => 'muziekgroep',
     ]);
 
     $response->assertRedirect();
@@ -172,7 +172,7 @@ test('afkorting must be unique on create', function () {
     $response = $this->actingAs($admin)->post('/admin/onderdelen', [
         'naam' => 'Duplicate',
         'afkorting' => 'HA',
-        'type' => 'orkest',
+        'type' => 'muziekgroep',
     ]);
 
     $response->assertSessionHasErrors('afkorting');
@@ -203,7 +203,7 @@ test('afkorting cannot exceed 10 characters', function () {
     $response = $this->actingAs($admin)->post('/admin/onderdelen', [
         'naam' => 'Long Afkorting',
         'afkorting' => 'ABCDEFGHIJK',
-        'type' => 'orkest',
+        'type' => 'muziekgroep',
     ]);
 
     $response->assertSessionHasErrors('afkorting');

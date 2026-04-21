@@ -215,7 +215,7 @@ test('computeDataHash changes when email changes', function () {
 
 test('computeDataHash changes when onderdeel changes', function () {
     $relatie = Relatie::factory()->create();
-    $onderdeel = Onderdeel::factory()->create(['type' => 'orkest']);
+    $onderdeel = Onderdeel::factory()->create(['type' => 'muziekgroep']);
     $relatie->load(['emails', 'onderdelen', 'types']);
 
     $service = app(GoogleContactSyncService::class);
@@ -230,10 +230,9 @@ test('computeDataHash changes when onderdeel changes', function () {
 
 // --- Contact groups ---
 
-test('contact groups created for orkest ensemble and opleidingsgroep only', function () {
-    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Test Orkest']);
-    $ensemble = Onderdeel::factory()->create(['type' => 'ensemble', 'naam' => 'Test Ensemble']);
-    $opleidingsgroep = Onderdeel::factory()->create(['type' => 'opleidingsgroep', 'naam' => 'Test Opleiding']);
+test('contact groups created for muziekgroep only', function () {
+    $muziekgroep1 = Onderdeel::factory()->create(['type' => 'muziekgroep', 'naam' => 'Test Orkest']);
+    $muziekgroep2 = Onderdeel::factory()->create(['type' => 'muziekgroep', 'naam' => 'Test Ensemble']);
     $commissie = Onderdeel::factory()->create(['type' => 'commissie', 'naam' => 'Test Commissie']);
     $bestuur = Onderdeel::factory()->create(['type' => 'bestuur', 'naam' => 'Test Bestuur']);
 
@@ -241,16 +240,12 @@ test('contact groups created for orkest ensemble and opleidingsgroep only', func
     Relatie::factory()->create();
 
     $groupOrkest = new ContactGroup;
-    $groupOrkest->setResourceName('contactGroups/orkest1');
+    $groupOrkest->setResourceName('contactGroups/muziekgroep1');
     $groupOrkest->setName('Soli - Test Orkest');
 
     $groupEnsemble = new ContactGroup;
-    $groupEnsemble->setResourceName('contactGroups/ensemble1');
+    $groupEnsemble->setResourceName('contactGroups/muziekgroep2');
     $groupEnsemble->setName('Soli - Test Ensemble');
-
-    $groupOpleiding = new ContactGroup;
-    $groupOpleiding->setResourceName('contactGroups/opleiding1');
-    $groupOpleiding->setName('Soli - Test Opleiding');
 
     $createdPerson = new Person;
     $createdPerson->setResourceName('people/c1');
@@ -266,10 +261,6 @@ test('contact groups created for orkest ensemble and opleidingsgroep only', func
         ->with($this->mockService, 'Soli - Test Ensemble')
         ->once()
         ->andReturn($groupEnsemble);
-    $this->mockApiClient->shouldReceive('createContactGroup')
-        ->with($this->mockService, 'Soli - Test Opleiding')
-        ->once()
-        ->andReturn($groupOpleiding);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
     $this->mockApiClient->shouldReceive('batchCreateContacts')->andReturn([$createdPerson]);
     $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
@@ -278,10 +269,9 @@ test('contact groups created for orkest ensemble and opleidingsgroep only', func
     $service = app(GoogleContactSyncService::class);
     $service->syncForUser($this->googleEmail);
 
-    // Groups created for orkest, ensemble, opleidingsgroep
-    $this->assertDatabaseHas('soli_google_contact_groups', ['onderdeel_id' => $orkest->id]);
-    $this->assertDatabaseHas('soli_google_contact_groups', ['onderdeel_id' => $ensemble->id]);
-    $this->assertDatabaseHas('soli_google_contact_groups', ['onderdeel_id' => $opleidingsgroep->id]);
+    // Groups created for muziekgroep onderdelen
+    $this->assertDatabaseHas('soli_google_contact_groups', ['onderdeel_id' => $muziekgroep1->id]);
+    $this->assertDatabaseHas('soli_google_contact_groups', ['onderdeel_id' => $muziekgroep2->id]);
 
     // No groups for commissie or bestuur
     $this->assertDatabaseMissing('soli_google_contact_groups', ['onderdeel_id' => $commissie->id]);
@@ -305,7 +295,7 @@ test('computeDataHash changes when type changes', function () {
 
 test('stale contact groups are cleaned up', function () {
     // Create an onderdeel that was previously active and has a group, but is now inactive
-    $inactiveOnderdeel = Onderdeel::factory()->create(['type' => 'orkest', 'actief' => false, 'naam' => 'Oud Orkest']);
+    $inactiveOnderdeel = Onderdeel::factory()->create(['type' => 'muziekgroep', 'actief' => false, 'naam' => 'Oud Orkest']);
 
     GoogleContactGroup::create([
         'onderdeel_id' => $inactiveOnderdeel->id,

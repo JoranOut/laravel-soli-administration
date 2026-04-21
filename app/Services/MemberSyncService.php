@@ -169,24 +169,24 @@ class MemberSyncService
             $this->syncUserEmail($relatie, $data['email']);
         }
 
-        // Ensure "lid" type is active
-        $lidType = $this->getLidType();
-        if ($lidType) {
-            $hasActiveLidType = $relatie->types()
-                ->where('soli_relatie_relatie_type.relatie_type_id', $lidType->id)
-                ->where(function ($q) {
-                    $q->whereNull('soli_relatie_relatie_type.tot')
-                        ->orWhere('soli_relatie_relatie_type.tot', '>=', now()->toDateString());
-                })
-                ->exists();
+        // Only assign "lid" type if the relatie has no active type at all.
+        // If they already have a different active type (e.g. dirigent), don't override it.
+        $hasAnyActiveType = $relatie->types()
+            ->where(function ($q) {
+                $q->whereNull('soli_relatie_relatie_type.tot')
+                    ->orWhere('soli_relatie_relatie_type.tot', '>=', now()->toDateString());
+            })
+            ->exists();
 
-            if (! $hasActiveLidType) {
+        if (! $hasAnyActiveType) {
+            $lidType = $this->getLidType();
+            if ($lidType) {
                 $relatie->types()->attach($lidType->id, [
                     'van' => now()->toDateString(),
                 ]);
+            } else {
+                $warnings[] = 'RelatieType "lid" not found; skipped type assignment.';
             }
-        } else {
-            $warnings[] = 'RelatieType "lid" not found; skipped type assignment.';
         }
 
         // Sync onderdelen

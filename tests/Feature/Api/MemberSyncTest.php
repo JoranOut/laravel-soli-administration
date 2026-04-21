@@ -366,6 +366,48 @@ test('creates user account for relatie without one on update', function () {
     expect($relatie->user->email)->toBe('jan@test.nl');
 });
 
+test('does not add lid type when relatie already has a different active type', function () {
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'user_id' => null,
+    ]);
+    $relatie->emails()->create(['email' => 'dirigent@test.nl']);
+
+    $dirigentType = RelatieType::where('naam', 'dirigent')->first();
+    $relatie->types()->attach($dirigentType->id, ['van' => now()->subYear()->toDateString()]);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'dirigent@test.nl',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $lidType = RelatieType::where('naam', 'lid')->first();
+    expect($relatie->types()->where('relatie_type_id', $lidType->id)->exists())->toBeFalse();
+    expect($relatie->types()->where('relatie_type_id', $dirigentType->id)->exists())->toBeTrue();
+});
+
+test('adds lid type when relatie has no active types', function () {
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'user_id' => null,
+    ]);
+    $relatie->emails()->create(['email' => 'jan@test.nl']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'jan@test.nl',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $lidType = RelatieType::where('naam', 'lid')->first();
+    expect($relatie->types()->where('relatie_type_id', $lidType->id)->exists())->toBeTrue();
+});
+
 // --- Deactivate ---
 
 test('deactivates member and deletes user account', function () {

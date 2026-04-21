@@ -1,7 +1,5 @@
 export const ONDERDEEL_TYPES = [
-    'orkest',
-    'opleidingsgroep',
-    'ensemble',
+    'muziekgroep',
     'commissie',
     'bestuur',
     'staff',

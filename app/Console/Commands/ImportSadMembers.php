@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Jobs\SyncGoogleContactsJob;
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Observers\GoogleContactSyncObserver;
 use Carbon\Carbon;
@@ -21,6 +23,8 @@ class ImportSadMembers extends Command
         {--fresh : Clear existing relatie data before import}';
 
     protected $description = 'Import members from SAD system JSON export';
+
+    private Collection $instrumentSoortLookup;
 
     /**
      * Known base codes for onderdeel decomposition.
@@ -91,12 +95,12 @@ class ImportSadMembers extends Command
         'tuba' => 'Tuba', 'sousafoon' => 'Sousafoon',
         'bes bas' => 'Besbas', 'besbas' => 'Besbas',
         'bes bas trompet' => ['Besbas', 'Trompet'],
-        'es bas' => 'Esbas', 'bas' => 'Bas',
+        'es bas' => 'Esbas', 'bas' => 'Tuba',
         'contrabas' => 'Contrabas', 'bassist' => 'Contrabas', 'bas gitaar' => 'Basgitaar',
 
         // Koper — bariton / euphonium
         'bariton' => 'Bariton',
-        'bariton bas' => ['Bariton', 'Bas'],
+        'bariton bas' => ['Bariton', 'Tuba'],
         'euphonium' => 'Euphonium',
 
         // Houtblazers
@@ -174,6 +178,7 @@ class ImportSadMembers extends Command
 
         $onderdelen = Onderdeel::whereNotNull('afkorting')->get()->keyBy('afkorting');
         $lidType = RelatieType::where('naam', 'lid')->firstOrFail();
+        $this->instrumentSoortLookup = InstrumentSoort::all()->keyBy('naam');
 
         // Validate every combined code can be fully decomposed
         $errors = $this->validateDecompositions($members, $onderdelen);
@@ -260,7 +265,7 @@ class ImportSadMembers extends Command
         // Close open onderdelen for ex-members at their lidmaatschap end date
         $this->closeOnderdelenForExMembers();
 
-        // Mark orkesten/ensembles without any members as inactive
+        // Mark muziekgroepen without any members as inactive
         $this->deactivateEmptyOnderdelen();
 
         activity()->enableLogging();
@@ -359,7 +364,7 @@ class ImportSadMembers extends Command
 
     private function deactivateEmptyOnderdelen(): void
     {
-        $onderdelen = Onderdeel::whereIn('type', ['orkest', 'ensemble'])
+        $onderdelen = Onderdeel::where('type', 'muziekgroep')
             ->where('actief', true)
             ->get();
 
@@ -382,9 +387,9 @@ class ImportSadMembers extends Command
     private function ensureOnderdelen(): void
     {
         $missing = [
-            ['naam' => 'Drumfanfare', 'afkorting' => 'DF', 'type' => 'orkest', 'actief' => false],
-            ['naam' => 'Leerlingen', 'afkorting' => 'LL', 'type' => 'opleidingsgroep', 'actief' => false],
-            ['naam' => 'Kennismakingsklas', 'afkorting' => 'KK', 'type' => 'opleidingsgroep', 'actief' => false],
+            ['naam' => 'Drumfanfare', 'afkorting' => 'DF', 'type' => 'muziekgroep', 'actief' => false],
+            ['naam' => 'Leerlingen', 'afkorting' => 'LL', 'type' => 'muziekgroep', 'actief' => false],
+            ['naam' => 'Kennismakingsklas', 'afkorting' => 'KK', 'type' => 'muziekgroep', 'actief' => false],
             ['naam' => 'VL', 'afkorting' => 'VL', 'type' => 'overig', 'actief' => false],
             ['naam' => 'MA', 'afkorting' => 'MA', 'type' => 'overig', 'actief' => false],
             ['naam' => 'TA', 'afkorting' => 'TA', 'type' => 'overig', 'actief' => false],
@@ -874,14 +879,23 @@ class ImportSadMembers extends Command
             $latest = end($overlapping);
 
             foreach ($latest['soorten'] as $soort) {
-                $key = $pivot->onderdeel_id.':'.$soort;
+                $instrumentSoort = $this->instrumentSoortLookup->get($soort);
+                if (! $instrumentSoort) {
+                    // Auto-create unknown instrument soorts with self-family fallback
+                    $familie = \App\Models\InstrumentFamilie::firstOrCreate(['naam' => $soort]);
+                    $instrumentSoort = InstrumentSoort::create(['naam' => $soort, 'instrument_familie_id' => $familie->id]);
+                    $this->instrumentSoortLookup->put($soort, $instrumentSoort);
+                }
+
+                $key = $pivot->onderdeel_id.':'.$instrumentSoort->id;
                 if (isset($assigned[$key])) {
                     continue;
                 }
 
-                $relatie->relatieInstrumenten()->create([
+                RelatieInstrument::firstOrCreate([
+                    'relatie_id' => $relatie->id,
                     'onderdeel_id' => $pivot->onderdeel_id,
-                    'instrument_soort' => $soort,
+                    'instrument_soort_id' => $instrumentSoort->id,
                 ]);
                 $assigned[$key] = true;
             }

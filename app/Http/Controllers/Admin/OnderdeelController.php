@@ -61,9 +61,10 @@ class OnderdeelController extends Controller
         ]);
 
         $instrumentsByRelatie = RelatieInstrument::where('onderdeel_id', $onderdeel->id)
+            ->with('instrumentSoort')
             ->get()
             ->groupBy('relatie_id')
-            ->map(fn ($items) => $items->pluck('instrument_soort')->toArray());
+            ->map(fn ($items) => $items->pluck('instrumentSoort.naam')->toArray());
 
         return Inertia::render('admin/onderdelen/show', [
             'onderdeel' => $onderdeel,

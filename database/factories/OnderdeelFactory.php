@@ -16,7 +16,7 @@ class OnderdeelFactory extends Factory
     {
         return [
             'naam' => $this->faker->unique()->words(2, true),
-            'type' => $this->faker->randomElement(['orkest', 'opleidingsgroep', 'ensemble', 'commissie', 'bestuur', 'staff', 'overig']),
+            'type' => $this->faker->randomElement(['muziekgroep', 'commissie', 'bestuur', 'staff', 'overig']),
             'afkorting' => null,
             'beschrijving' => $this->faker->optional()->sentence(),
             'actief' => true,

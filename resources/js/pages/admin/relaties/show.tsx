@@ -18,7 +18,7 @@ import RelatieOpleidingTab from '@/pages/admin/relaties/tabs/opleiding-tab';
 import RelatieFinancieelTab from '@/pages/admin/relaties/tabs/financieel-tab';
 import RelatieInstrumentenTab from '@/pages/admin/relaties/tabs/instrumenten-tab';
 import RelatieAccountTab from '@/pages/admin/relaties/tabs/account-tab';
-import type { Onderdeel, Relatie, RelatieType } from '@/types/admin';
+import type { InstrumentSoort, Onderdeel, Relatie, RelatieType } from '@/types/admin';
 import type { User } from '@/types/auth';
 
 type RelatieSummary = Pick<Relatie, 'id' | 'voornaam' | 'tussenvoegsel' | 'achternaam' | 'relatie_nummer'>;
@@ -27,6 +27,7 @@ type Props = {
     relatie: Relatie;
     relatieTypes: RelatieType[];
     onderdelen: Onderdeel[];
+    instrumentSoorten?: InstrumentSoort[];
     users?: Pick<User, 'id' | 'name' | 'email'>[];
     userRelaties?: RelatieSummary[];
 };
@@ -35,7 +36,7 @@ function formatName(r: RelatieSummary): string {
     return [r.voornaam, r.tussenvoegsel, r.achternaam].filter(Boolean).join(' ');
 }
 
-export default function RelatieShow({ relatie, relatieTypes, onderdelen, users, userRelaties }: Props) {
+export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrumentSoorten, users, userRelaties }: Props) {
     const [activeTab, setActiveTab] = useState('overview');
     const { can, hasRole } = usePermissions();
     const { t } = useTranslation();
@@ -119,7 +120,7 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, users, 
                             <RelatieContactTab relatie={relatie} />
                         )}
                         {activeTab === 'lidmaatschap' && (
-                            <RelatieLidmaatschapTab relatie={relatie} onderdelen={onderdelen} />
+                            <RelatieLidmaatschapTab relatie={relatie} onderdelen={onderdelen} instrumentSoorten={instrumentSoorten ?? []} />
                         )}
                         {activeTab === 'opleiding' && (
                             <RelatieOpleidingTab relatie={relatie} />

@@ -93,7 +93,7 @@ export type Onderdeel = {
     id: number;
     naam: string;
     afkorting: string | null;
-    type: 'orkest' | 'opleidingsgroep' | 'ensemble' | 'commissie' | 'bestuur' | 'staff' | 'overig';
+    type: 'muziekgroep' | 'commissie' | 'bestuur' | 'staff' | 'overig';
     beschrijving: string | null;
     actief: boolean;
     created_at: string;
@@ -127,11 +127,24 @@ export type Instrument = {
     reparaties?: InstrumentReparatie[];
 };
 
+export type InstrumentFamilie = {
+    id: number;
+    naam: string;
+};
+
+export type InstrumentSoort = {
+    id: number;
+    naam: string;
+    instrument_familie_id: number;
+    instrument_familie?: InstrumentFamilie;
+};
+
 export type RelatieInstrument = {
     id: number;
     relatie_id: number;
     onderdeel_id: number;
-    instrument_soort: string;
+    instrument_soort_id: number;
+    instrument_soort?: InstrumentSoort;
     onderdeel?: Onderdeel;
 };
 

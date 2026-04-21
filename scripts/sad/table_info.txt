@@ -1,0 +1,344 @@
+
+################################################
+#  Database information  admin
+################################################
++-----------------------------+
+| Tables_in_admin             |
++-----------------------------+
+| adressen                    |
+| alle_leden                  |
+| andere_vereniging           |
+| bespelers                   |
+| betalingen                  |
+| bijzonderheden              |
+| contributie                 |
+| email                       |
+| giro_gegevens               |
+| insigne                     |
+| instrum                     |
+| instrument                  |
+| laatst                      |
+| lid_sinds                   |
+| onderdeel                   |
+| opleiding                   |
+| reparaties                  |
+| soort_contributie           |
+| systeem                     |
+| tariefgroep                 |
+| te_betalen_contributie      |
+| te_betalen_contributie_2001 |
+| te_betalen_eigenbijdrage    |
+| telefoon                    |
+| uniformen                   |
+| user                        |
++-----------------------------+
+
+## adressen ##
++----------+------------------+------+-----+---------+----------------+
+| Field    | Type             | Null | Key | Default | Extra          |
++----------+------------------+------+-----+---------+----------------+
+| id       | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id   | int(11)          | YES  | MUL | NULL    |                |
+| straat   | varchar(50)      | YES  |     | NULL    |                |
+| postcode | varchar(10)      | YES  |     | NULL    |                |
+| plaats   | varchar(50)      | YES  |     | NULL    |                |
+| van      | date             | YES  |     | NULL    |                |
+| tot      | date             | YES  |     | NULL    |                |
++----------+------------------+------+-----+---------+----------------+
+
+## alle_leden ##
++--------+------------------+------+-----+---------+----------------+
+| Field  | Type             | Null | Key | Default | Extra          |
++--------+------------------+------+-----+---------+----------------+
+| lid_id | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| vnaam  | varchar(50)      | YES  |     | NULL    |                |
+| tussen | varchar(10)      | YES  |     | NULL    |                |
+| anaam  | varchar(50)      | YES  |     | NULL    |                |
+| gebdat | date             | YES  |     | NULL    |                |
++--------+------------------+------+-----+---------+----------------+
+
+## andere_vereniging ##
++--------------+------------------+------+-----+---------+----------------+
+| Field        | Type             | Null | Key | Default | Extra          |
++--------------+------------------+------+-----+---------+----------------+
+| id           | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id       | int(11)          | YES  | MUL | NULL    |                |
+| jaar         | int(11)          | YES  |     | NULL    |                |
+| omschrijving | varchar(80)      | YES  |     | NULL    |                |
+| datum        | date             | YES  |     | NULL    |                |
++--------------+------------------+------+-----+---------+----------------+
+
+## bespelers ##
++---------+------------------+------+-----+---------+----------------+
+| Field   | Type             | Null | Key | Default | Extra          |
++---------+------------------+------+-----+---------+----------------+
+| id      | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| inst_id | int(11)          | YES  |     | NULL    |                |
+| vnaam   | varchar(50)      | YES  |     | NULL    |                |
+| tussen  | varchar(10)      | YES  |     | NULL    |                |
+| anaam   | varchar(50)      | YES  |     | NULL    |                |
+| van     | date             | YES  |     | NULL    |                |
+| tot     | date             | YES  |     | NULL    |                |
++---------+------------------+------+-----+---------+----------------+
+
+## betalingen ##
++-------------+------------------+------+-----+---------+----------------+
+| Field       | Type             | Null | Key | Default | Extra          |
++-------------+------------------+------+-----+---------+----------------+
+| id          | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id      | int(11)          | YES  |     | NULL    |                |
+| datum       | date             | YES  |     | NULL    |                |
+| wijze       | smallint(6)      | YES  |     | NULL    |                |
+| soort       | smallint(6)      | YES  |     | NULL    |                |
+| bedrag      | float            | YES  |     | NULL    |                |
+| opmerkingen | varchar(50)      | YES  |     | NULL    |                |
++-------------+------------------+------+-----+---------+----------------+
+
+## bijzonderheden ##
++----------------+------------------+------+-----+---------+----------------+
+| Field          | Type             | Null | Key | Default | Extra          |
++----------------+------------------+------+-----+---------+----------------+
+| id             | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| inst_id        | int(11)          | YES  |     | NULL    |                |
+| bijzonderheden | varchar(100)     | YES  |     | NULL    |                |
+| datum          | date             | YES  |     | NULL    |                |
++----------------+------------------+------+-----+---------+----------------+
+
+## contributie ##
++---------------+------------------+------+-----+---------+----------------+
+| Field         | Type             | Null | Key | Default | Extra          |
++---------------+------------------+------+-----+---------+----------------+
+| id            | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| soort_contrib | varchar(15)      | YES  |     | NULL    |                |
+| periode_1     | float            | YES  |     | NULL    |                |
+| periode_2     | float            | YES  |     | NULL    |                |
+| jaar          | int(11)          | YES  |     | NULL    |                |
++---------------+------------------+------+-----+---------+----------------+
+
+## email ##
++--------+------------------+------+-----+---------+----------------+
+| Field  | Type             | Null | Key | Default | Extra          |
++--------+------------------+------+-----+---------+----------------+
+| id     | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id | int(11)          | YES  |     | NULL    |                |
+| email  | varchar(40)      | YES  |     | NULL    |                |
+| van    | date             | YES  |     | NULL    |                |
+| tot    | date             | YES  |     | NULL    |                |
++--------+------------------+------+-----+---------+----------------+
+
+## giro_gegevens ##
++--------+------------------+------+-----+---------+----------------+
+| Field  | Type             | Null | Key | Default | Extra          |
++--------+------------------+------+-----+---------+----------------+
+| id     | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id | int(11)          | YES  |     | NULL    |                |
+| giro   | varchar(20)      | YES  |     | NULL    |                |
++--------+------------------+------+-----+---------+----------------+
+
+## insigne ##
++--------------+------------------+------+-----+---------+----------------+
+| Field        | Type             | Null | Key | Default | Extra          |
++--------------+------------------+------+-----+---------+----------------+
+| id           | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id       | int(11)          | YES  | MUL | NULL    |                |
+| 10jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 10datum      | date             | YES  |     | NULL    |                |
+| 15jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 15datum      | date             | YES  |     | NULL    |                |
+| 25jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 25datum      | date             | YES  |     | NULL    |                |
+| 40jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 40datum      | date             | YES  |     | NULL    |                |
+| 50jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 50datum      | date             | YES  |     | NULL    |                |
+| 60jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 60datum      | date             | YES  |     | NULL    |                |
+| 70jaar       | tinyint(4)       | YES  |     | NULL    |                |
+| 70datum      | date             | YES  |     | NULL    |                |
+| jaar         | int(11)          | YES  |     | NULL    |                |
+| omschrijving | varchar(80)      | YES  |     | NULL    |                |
+| datum        | date             | YES  |     | NULL    |                |
++--------------+------------------+------+-----+---------+----------------+
+
+## instrum ##
++----------------------+------------------+------+-----+---------+----------------+
+| Field                | Type             | Null | Key | Default | Extra          |
++----------------------+------------------+------+-----+---------+----------------+
+| id                   | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| instrument           | varchar(25)      | YES  |     | NULL    |                |
+| inst_id              | int(11)          | YES  |     | NULL    |                |
+| formulier            | varchar(5)       | YES  |     | NULL    |                |
+| merk                 | varchar(15)      | YES  |     | NULL    |                |
+| type                 | varchar(15)      | YES  |     | NULL    |                |
+| ser_nr               | varchar(15)      | YES  |     | NULL    |                |
+| n_prijs              | decimal(6,2)     | YES  |     | NULL    |                |
+| a_datum              | date             | YES  |     | NULL    |                |
+| nieuw                | varchar(5)       | YES  |     | NULL    |                |
+| afschrijvingstermijn | smallint(6)      | YES  |     | NULL    |                |
+| verzekerd            | varchar(5)       | YES  |     | NULL    |                |
+| tot                  | date             | YES  |     | NULL    |                |
++----------------------+------------------+------+-----+---------+----------------+
+
+## instrument ##
++------------+------------------+------+-----+---------+----------------+
+| Field      | Type             | Null | Key | Default | Extra          |
++------------+------------------+------+-----+---------+----------------+
+| id         | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id     | int(11)          | YES  |     | NULL    |                |
+| instrument | varchar(20)      | YES  |     | NULL    |                |
+| van        | date             | YES  |     | NULL    |                |
+| tot        | date             | YES  |     | NULL    |                |
++------------+------------------+------+-----+---------+----------------+
+
+## laatst ##
++-----------+------------------+------+-----+---------+-------+
+| Field     | Type             | Null | Key | Default | Extra |
++-----------+------------------+------+-----+---------+-------+
+| id        | int(10) unsigned |      | PRI | 0       |       |
+| wijziging | date             | YES  |     | NULL    |       |
++-----------+------------------+------+-----+---------+-------+
+
+## lid_sinds ##
++--------+------------------+------+-----+---------+----------------+
+| Field  | Type             | Null | Key | Default | Extra          |
++--------+------------------+------+-----+---------+----------------+
+| id     | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id | int(11)          | YES  | MUL | NULL    |                |
+| van    | date             | YES  |     | NULL    |                |
+| tot    | date             | YES  |     | NULL    |                |
++--------+------------------+------+-----+---------+----------------+
+
+## onderdeel ##
++-----------+------------------+------+-----+---------+----------------+
+| Field     | Type             | Null | Key | Default | Extra          |
++-----------+------------------+------+-----+---------+----------------+
+| id        | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id    | int(11)          | YES  | MUL | NULL    |                |
+| onderdeel | varchar(12)      | YES  |     | NULL    |                |
+| van       | date             | YES  |     | NULL    |                |
+| tot       | date             | YES  |     | NULL    |                |
++-----------+------------------+------+-----+---------+----------------+
+
+## opleiding ##
++-------------+------------------+------+-----+---------+----------------+
+| Field       | Type             | Null | Key | Default | Extra          |
++-------------+------------------+------+-----+---------+----------------+
+| id          | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id      | int(11)          | YES  | MUL | NULL    |                |
+| opleiding   | varchar(20)      | YES  |     | NULL    |                |
+| tariefgroep | varchar(10)      | YES  |     | NULL    |                |
+| van         | date             | YES  |     | NULL    |                |
+| tot         | date             | YES  |     | NULL    |                |
++-------------+------------------+------+-----+---------+----------------+
+
+## reparaties ##
++--------------+------------------+------+-----+---------+----------------+
+| Field        | Type             | Null | Key | Default | Extra          |
++--------------+------------------+------+-----+---------+----------------+
+| id           | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| inst_id      | int(11)          | YES  |     | NULL    |                |
+| datum        | date             | YES  |     | NULL    |                |
+| omschrijving | varchar(100)     | YES  |     | NULL    |                |
+| prijs        | decimal(6,2)     | YES  |     | NULL    |                |
++--------------+------------------+------+-----+---------+----------------+
+
+## soort_contributie ##
++---------------+------------------+------+-----+---------+----------------+
+| Field         | Type             | Null | Key | Default | Extra          |
++---------------+------------------+------+-----+---------+----------------+
+| id            | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id        | int(11)          | YES  |     | NULL    |                |
+| soort_contrib | varchar(15)      | YES  |     | NULL    |                |
+| van           | date             | YES  |     | NULL    |                |
+| tot           | date             | YES  |     | NULL    |                |
++---------------+------------------+------+-----+---------+----------------+
+
+## systeem ##
++---------+------------------+------+-----+---------+----------------+
+| Field   | Type             | Null | Key | Default | Extra          |
++---------+------------------+------+-----+---------+----------------+
+| id      | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| inst_id | int(11)          | YES  |     | NULL    |                |
+| systeem | varchar(20)      | YES  |     | NULL    |                |
++---------+------------------+------+-----+---------+----------------+
+
+## tariefgroep ##
++-------------+------------------+------+-----+---------+----------------+
+| Field       | Type             | Null | Key | Default | Extra          |
++-------------+------------------+------+-----+---------+----------------+
+| id          | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| tariefgroep | varchar(15)      | YES  |     | NULL    |                |
+| zonder_btw  | float            | YES  |     | NULL    |                |
+| met_btw     | float            | YES  |     | NULL    |                |
++-------------+------------------+------+-----+---------+----------------+
+
+## te_betalen_contributie ##
++--------+------------------+------+-----+---------+----------------+
+| Field  | Type             | Null | Key | Default | Extra          |
++--------+------------------+------+-----+---------+----------------+
+| id     | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id | int(11)          | YES  |     | NULL    |                |
+| c2002  | float            | YES  |     | NULL    |                |
+| c2003  | float            | YES  |     | NULL    |                |
+| c2004  | float            | YES  |     | NULL    |                |
+| c2005  | float            | YES  |     | NULL    |                |
+| c2006  | float            | YES  |     | NULL    |                |
+| c2007  | float            | YES  |     | NULL    |                |
+| c2008  | float            | YES  |     | NULL    |                |
+| c2009  | float            | YES  |     | NULL    |                |
+| c2010  | float            | YES  |     | NULL    |                |
++--------+------------------+------+-----+---------+----------------+
+
+## te_betalen_contributie_2001 ##
++-------------+------------------+------+-----+---------+----------------+
+| Field       | Type             | Null | Key | Default | Extra          |
++-------------+------------------+------+-----+---------+----------------+
+| id          | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id      | int(11)          | YES  |     | NULL    |                |
+| c2001       | float            | YES  |     | NULL    |                |
+| opmerkingen | varchar(50)      | YES  |     | NULL    |                |
++-------------+------------------+------+-----+---------+----------------+
+
+## te_betalen_eigenbijdrage ##
++--------------+------------------+------+-----+---------+----------------+
+| Field        | Type             | Null | Key | Default | Extra          |
++--------------+------------------+------+-----+---------+----------------+
+| id           | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id       | int(11)          | YES  |     | NULL    |                |
+| datum        | date             | YES  |     | NULL    |                |
+| te_bet       | float            | YES  |     | NULL    |                |
+| omschrijving | varchar(50)      | YES  |     | NULL    |                |
++--------------+------------------+------+-----+---------+----------------+
+
+## telefoon ##
++----------+------------------+------+-----+---------+----------------+
+| Field    | Type             | Null | Key | Default | Extra          |
++----------+------------------+------+-----+---------+----------------+
+| id       | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id   | int(11)          | YES  | MUL | NULL    |                |
+| telefoon | varchar(40)      | YES  |     | NULL    |                |
+| van      | date             | YES  |     | NULL    |                |
+| tot      | date             | YES  |     | NULL    |                |
++----------+------------------+------+-----+---------+----------------+
+
+## uniformen ##
++---------+------------------+------+-----+---------+----------------+
+| Field   | Type             | Null | Key | Default | Extra          |
++---------+------------------+------+-----+---------+----------------+
+| id      | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| lid_id  | int(11)          | YES  |     | NULL    |                |
+| uniform | int(11)          | YES  |     | NULL    |                |
+| van     | date             | YES  |     | NULL    |                |
+| tot     | date             | YES  |     | NULL    |                |
++---------+------------------+------+-----+---------+----------------+
+
+## user ##
++--------+------------------+------+-----+---------+----------------+
+| Field  | Type             | Null | Key | Default | Extra          |
++--------+------------------+------+-----+---------+----------------+
+| id     | int(10) unsigned |      | PRI | NULL    | auto_increment |
+| user   | varchar(20)      | YES  |     | NULL    |                |
+| passwd | varchar(50)      | YES  |     | NULL    |                |
+| date   | date             | YES  |     | NULL    |                |
+| priv   | varchar(6)       | YES  |     | NULL    |                |
++--------+------------------+------+-----+---------+----------------+

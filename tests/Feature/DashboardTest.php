@@ -53,7 +53,7 @@ test('admin dashboard includes onderdeel history chart data', function () {
 
     $admin = User::factory()->create()->assignRole('admin');
 
-    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
+    $orkest = Onderdeel::factory()->create(['type' => 'muziekgroep', 'naam' => 'Harmonie']);
     $relatie = Relatie::factory()->create();
 
     DB::table('soli_relatie_onderdeel')->insert([
@@ -78,7 +78,7 @@ test('onderdeel history counts active members correctly per month', function () 
 
     $admin = User::factory()->create()->assignRole('admin');
 
-    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
+    $orkest = Onderdeel::factory()->create(['type' => 'muziekgroep', 'naam' => 'Harmonie']);
     $relatie1 = Relatie::factory()->create();
     $relatie2 = Relatie::factory()->create();
 
@@ -119,7 +119,7 @@ test('onderdeel history includes old data for all-years toggle', function () {
 
     $admin = User::factory()->create()->assignRole('admin');
 
-    $orkest = Onderdeel::factory()->create(['type' => 'orkest', 'naam' => 'Harmonie']);
+    $orkest = Onderdeel::factory()->create(['type' => 'muziekgroep', 'naam' => 'Harmonie']);
     $relatie = Relatie::factory()->create();
 
     // Record that ended 6 years ago — should still be included in full history

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Instrument;
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
@@ -52,6 +53,7 @@ class DashboardController extends Controller
             'relatieSinds' => fn ($q) => $q->orderByDesc('lid_sinds'),
             'onderdelen' => fn ($q) => $q->orderByDesc('soli_relatie_onderdeel.van'),
             'relatieInstrumenten.onderdeel',
+            'relatieInstrumenten.instrumentSoort',
             'instrumentBespelers.instrument',
             'opleidingen' => fn ($q) => $q->orderByDesc('datum_start'),
             'uniformen' => fn ($q) => $q->orderByDesc('van'),
@@ -67,13 +69,14 @@ class DashboardController extends Controller
             'relatie' => $relatie,
             'relatieTypes' => RelatieType::all(),
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
+            'instrumentSoorten' => InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get(),
             'userRelaties' => $userRelaties,
         ]);
     }
 
     private function getOnderdeelHistory(): array
     {
-        $onderdelen = Onderdeel::whereIn('type', ['orkest', 'ensemble'])
+        $onderdelen = Onderdeel::where('type', 'muziekgroep')
             ->orderBy('naam')
             ->get(['id', 'naam']);
 

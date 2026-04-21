@@ -3,6 +3,7 @@
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieInstrument;
+use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -12,6 +13,7 @@ beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
     $this->seed(OnderdeelSeeder::class);
+    $this->seed(InstrumentSoortSeeder::class);
     $this->fixturePath = base_path('tests/fixtures/sad-members-sample.json');
 });
 
@@ -105,20 +107,20 @@ test('import assigns latest instrument per onderdeel', function () {
     $ha = Onderdeel::where('afkorting', 'HA')->first();
     $ko = Onderdeel::where('afkorting', 'KO')->first();
 
-    $instruments = $relatie->relatieInstrumenten()->get();
+    $instruments = $relatie->relatieInstrumenten()->with('instrumentSoort')->get();
 
     // Harmonie should have Bariton (latest overlapping, van=2009)
     $haInstrument = $instruments->where('onderdeel_id', $ha->id)->first();
     expect($haInstrument)->not->toBeNull();
-    expect($haInstrument->instrument_soort)->toBe('Bariton');
+    expect($haInstrument->instrumentSoort->naam)->toBe('Bariton');
 
     // Klein Orkest should have Bariton (only overlapping instrument)
     $koInstrument = $instruments->where('onderdeel_id', $ko->id)->first();
     expect($koInstrument)->not->toBeNull();
-    expect($koInstrument->instrument_soort)->toBe('Bariton');
+    expect($koInstrument->instrumentSoort->naam)->toBe('Bariton');
 
     // Should NOT have Trompet on any onderdeel
-    $trompetRecords = $instruments->where('instrument_soort', 'Trompet');
+    $trompetRecords = $instruments->filter(fn ($ri) => $ri->instrumentSoort->naam === 'Trompet');
     expect($trompetRecords)->toBeEmpty();
 });
 

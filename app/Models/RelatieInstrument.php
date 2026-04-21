@@ -12,7 +12,7 @@ class RelatieInstrument extends Model
     protected $fillable = [
         'relatie_id',
         'onderdeel_id',
-        'instrument_soort',
+        'instrument_soort_id',
     ];
 
     public function relatie(): BelongsTo
@@ -23,5 +23,10 @@ class RelatieInstrument extends Model
     public function onderdeel(): BelongsTo
     {
         return $this->belongsTo(Onderdeel::class);
+    }
+
+    public function instrumentSoort(): BelongsTo
+    {
+        return $this->belongsTo(InstrumentSoort::class);
     }
 }
