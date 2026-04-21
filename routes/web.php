@@ -25,5 +25,20 @@ Route::post('locale/{locale}', function (string $locale) {
     return back();
 })->middleware('auth')->name('locale.switch');
 
+Route::get('/oauth/logout', function (\Illuminate\Http\Request $request) {
+    $redirectUri = $request->query('redirect_uri');
+
+    auth()->guard('web')->logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    if ($redirectUri && filter_var($redirectUri, FILTER_VALIDATE_URL)) {
+        return redirect($redirectUri);
+    }
+
+    return redirect('/');
+})->name('oauth.logout');
+
 require __DIR__.'/settings.php';
 require __DIR__.'/admin.php';

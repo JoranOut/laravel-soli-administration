@@ -17,8 +17,9 @@ class OauthClientSeeder extends Seeder
     private function seedWebsiteClient(): void
     {
         $client = Client::updateOrCreate(
-            ['name' => 'Soli Website'],
+            ['id' => '00000000-0000-0000-0000-000000000001'],
             [
+                'name' => 'Soli Website',
                 'secret' => 'test-secret',
                 'redirect_uris' => ['http://localhost:8080/callback'],
                 'grant_types' => ['authorization_code', 'refresh_token'],
@@ -38,8 +39,9 @@ class OauthClientSeeder extends Seeder
     private function seedMuziekClient(): void
     {
         $client = Client::updateOrCreate(
-            ['name' => 'Soli Muziekbibliotheek'],
+            ['id' => '00000000-0000-0000-0000-000000000002'],
             [
+                'name' => 'Soli Muziekbibliotheek',
                 'secret' => 'muziek-test-secret',
                 'redirect_uris' => ['http://localhost:8001/auth/callback'],
                 'grant_types' => ['authorization_code', 'refresh_token'],
