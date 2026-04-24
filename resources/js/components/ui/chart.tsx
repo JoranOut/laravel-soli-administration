@@ -241,7 +241,7 @@ function ChartTooltipContent({
                     )}
                     <div
                       className={cn(
-                        "flex flex-1 justify-between leading-none",
+                        "flex flex-1 justify-between gap-4 leading-none",
                         nestLabel ? "items-end" : "items-center"
                       )}
                     >
@@ -277,9 +277,13 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
+  activeKey,
+  onToggle,
 }: React.ComponentProps<"div"> & {
   hideIcon?: boolean
   nameKey?: string
+  activeKey?: string | null
+  onToggle?: (key: string) => void
 } & RechartsPrimitive.DefaultLegendContentProps) {
   const { config } = useChart()
 
@@ -300,13 +304,17 @@ function ChartLegendContent({
         .map((item, index) => {
           const key = `${nameKey ?? item.dataKey ?? "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
+          const isDimmed = activeKey != null && key !== activeKey
 
           return (
             <div
               key={index}
               className={cn(
-                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
+                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+                onToggle && "cursor-pointer select-none",
+                isDimmed && "opacity-50"
               )}
+              onClick={() => onToggle?.(key)}
             >
               {itemConfig?.icon && !hideIcon ? (
                 <itemConfig.icon />

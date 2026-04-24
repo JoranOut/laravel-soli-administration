@@ -76,6 +76,7 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
     ];
 
     const [showAllYears, setShowAllYears] = useState(false);
+    const [activeKey, setActiveKey] = useState<string | null>(null);
 
     const { chartConfig, chartData, chartKeys } = useMemo(() => {
         if (!onderdeel_names?.length || !onderdeel_history?.length) {
@@ -193,6 +194,7 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
                                     />
                                     <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} scale="sqrt" domain={[0, 'auto']} />
                                     <ChartTooltip
+                                        wrapperStyle={{ zIndex: 10 }}
                                         content={<ChartTooltipContent />}
                                         labelFormatter={(label) => {
                                             const str = String(label);
@@ -201,7 +203,7 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
                                             return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
                                         }}
                                     />
-                                    <ChartLegend content={<ChartLegendContent className="flex-wrap" />} />
+                                    <ChartLegend content={<ChartLegendContent className="flex-wrap" activeKey={activeKey} onToggle={(key) => setActiveKey((prev) => prev === key ? null : key)} />} />
                                     {chartKeys.map((key) => (
                                         <Line
                                             key={key}
@@ -209,6 +211,7 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
                                             dataKey={key}
                                             stroke={`var(--color-${key})`}
                                             strokeWidth={2}
+                                            strokeOpacity={activeKey == null || activeKey === key ? 1 : 0.05}
                                             dot={false}
                                         />
                                     ))}
