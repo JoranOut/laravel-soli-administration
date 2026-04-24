@@ -46,6 +46,11 @@ class UserRelatieLinkController extends Controller
         $relatie->user_id = $user->id;
         $relatie->save();
 
+        // Ensure the user's email exists in the relatie's email records
+        if (! $relatie->emails()->where('email', $user->email)->exists()) {
+            $relatie->emails()->create(['email' => $user->email]);
+        }
+
         return back();
     }
 
