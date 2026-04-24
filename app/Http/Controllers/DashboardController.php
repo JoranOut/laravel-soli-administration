@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Instrument;
-use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
-use App\Models\RelatieType;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -44,7 +42,6 @@ class DashboardController extends Controller
         $relatie = $relatie ? Relatie::find($relatie->id) : Relatie::find($userRelaties->first()->id);
 
         $relatie->load([
-            'user',
             'types',
             'adressen' => fn ($q) => $q->orderByDesc('created_at'),
             'emails' => fn ($q) => $q->orderByDesc('created_at'),
@@ -67,9 +64,6 @@ class DashboardController extends Controller
 
         return Inertia::render('admin/relaties/show', [
             'relatie' => $relatie,
-            'relatieTypes' => RelatieType::all(),
-            'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
-            'instrumentSoorten' => InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get(),
             'userRelaties' => $userRelaties,
         ]);
     }

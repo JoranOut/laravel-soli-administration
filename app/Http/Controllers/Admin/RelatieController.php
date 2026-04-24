@@ -168,8 +168,7 @@ class RelatieController extends Controller
             abort(403);
         }
 
-        $relatie->load([
-            'user',
+        $eagerLoads = [
             'types',
             'adressen' => fn ($q) => $q->orderByDesc('created_at'),
             'emails' => fn ($q) => $q->orderByDesc('created_at'),
@@ -188,18 +187,27 @@ class RelatieController extends Controller
             'teBetakenContributies.contributie.soortContributie',
             'teBetakenContributies.contributie.tariefgroep',
             'teBetakenContributies.betalingen',
-        ]);
+        ];
 
-        if ($relatie->user) {
+        if ($user->can('users.edit')) {
+            $eagerLoads[] = 'user';
+        }
+
+        $relatie->load($eagerLoads);
+
+        if ($relatie->relationLoaded('user') && $relatie->user) {
             $relatie->user->loadCount('relaties');
         }
 
         $props = [
             'relatie' => $relatie,
-            'relatieTypes' => RelatieType::all(),
-            'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
-            'instrumentSoorten' => InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get(),
         ];
+
+        if ($user->can('relaties.edit')) {
+            $props['relatieTypes'] = RelatieType::all();
+            $props['onderdelen'] = Onderdeel::actief()->orderBy('naam')->get();
+            $props['instrumentSoorten'] = InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get();
+        }
 
         if ($user->can('users.edit')) {
             $props['users'] = User::orderBy('name')->get(['id', 'name', 'email']);
