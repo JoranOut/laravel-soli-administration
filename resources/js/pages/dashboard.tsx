@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
 import { Music, Users, Wrench, Heart, AlertTriangle } from 'lucide-react';
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
@@ -9,13 +9,16 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, DashboardStats, DashboardAlerts, OnderdeelHistoryEntry } from '@/types';
+import type { BreadcrumbItem, DashboardStats, DashboardAlerts, OnderdeelHistoryEntry, ResidenceStats, InstrumentStat, AgeDistribution } from '@/types';
 
 type Props = {
     stats: DashboardStats;
     alerts?: DashboardAlerts;
     onderdeel_history?: OnderdeelHistoryEntry[];
     onderdeel_names?: string[];
+    residence_stats?: ResidenceStats;
+    instrument_stats?: InstrumentStat[];
+    age_distribution?: AgeDistribution;
 };
 
 const CHART_COLORS = [
@@ -30,7 +33,7 @@ function slugify(name: string): string {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_names }: Props) {
+export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_names, residence_stats, instrument_stats, age_distribution }: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -216,6 +219,79 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
                                         />
                                     ))}
                                 </LineChart>
+                            </ChartContainer>
+                        </CardContent>
+                    </Card>
+                )}
+
+                <div className="grid gap-4 lg:grid-cols-2">
+                    {residence_stats && residence_stats.top.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t('Place of residence')}</CardTitle>
+                                <p className="text-muted-foreground text-sm">
+                                    <span className="text-green-600 dark:text-green-400">{residence_stats.inside_velsen}</span>
+                                    {' ' + t('inside Velsen') + ' / '}
+                                    <span className="text-amber-600 dark:text-amber-400">{residence_stats.outside_velsen}</span>
+                                    {' ' + t('outside Velsen')}
+                                </p>
+                            </CardHeader>
+                            <CardContent>
+                                <ChartContainer config={{ count: { label: t('Members'), color: 'var(--chart-1)' } }} className="aspect-auto h-[200px] w-full">
+                                    <BarChart data={residence_stats.top} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                                        <CartesianGrid horizontal={false} />
+                                        <YAxis dataKey="plaats" type="category" tickLine={false} axisLine={false} tickMargin={8} width={120} />
+                                        <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {age_distribution && age_distribution.brackets.length > 0 && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>{t('Age distribution')}</CardTitle>
+                                {age_distribution.average_age !== null && (
+                                    <p className="text-muted-foreground text-sm">
+                                        {t('Average age')}: <span className="font-medium">{age_distribution.average_age}</span>
+                                    </p>
+                                )}
+                            </CardHeader>
+                            <CardContent>
+                                <ChartContainer config={{ count: { label: t('Members'), color: 'var(--chart-2)' } }} className="aspect-auto h-[200px] w-full">
+                                    <BarChart data={age_distribution.brackets} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis dataKey="bracket" tickLine={false} axisLine={false} tickMargin={8} />
+                                        <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
+
+                {instrument_stats && instrument_stats.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{t('Instruments played')}</CardTitle>
+                            <p className="text-muted-foreground text-sm">{t('Instrument types played by active members')}</p>
+                        </CardHeader>
+                        <CardContent>
+                            <ChartContainer config={{ total: { label: t('Total'), color: 'var(--chart-3)' }, over_60: { label: '60+', color: 'var(--chart-4)' } }} className="aspect-auto h-[300px] w-full">
+                                <BarChart data={instrument_stats} barCategoryGap="20%" barGap={-30} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis dataKey="naam" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-45} textAnchor="end" height={80} />
+                                    <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
+                                    <ChartTooltip content={<ChartTooltipContent />} />
+                                    <ChartLegend content={<ChartLegendContent />} />
+                                    <Bar dataKey="total" fill="var(--chart-3)" radius={[4, 4, 0, 0]} barSize={30} />
+                                    <Bar dataKey="over_60" fill="var(--chart-4)" radius={[4, 4, 0, 0]} barSize={30} />
+                                </BarChart>
                             </ChartContainer>
                         </CardContent>
                     </Card>

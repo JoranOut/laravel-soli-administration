@@ -349,6 +349,23 @@ export type DashboardAlerts = {
     unlinked_relaties: number;
 };
 
+export type ResidenceStats = {
+    top: { plaats: string; count: number }[];
+    inside_velsen: number;
+    outside_velsen: number;
+};
+
+export type InstrumentStat = {
+    naam: string;
+    total: number;
+    over_60: number;
+};
+
+export type AgeDistribution = {
+    brackets: { bracket: string; count: number }[];
+    average_age: number | null;
+};
+
 // Wizard form data types for relatie creation
 export type RelatieTypeEntry = {
     type_id: string;

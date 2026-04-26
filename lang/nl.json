@@ -620,5 +620,14 @@
     "Family created.": "Familie aangemaakt.",
     "Family updated.": "Familie bijgewerkt.",
     "Family deleted.": "Familie verwijderd.",
-    "Cannot delete a family with linked instrument types.": "Kan familie met gekoppelde instrumentsoorten niet verwijderen."
+    "Cannot delete a family with linked instrument types.": "Kan familie met gekoppelde instrumentsoorten niet verwijderen.",
+
+    "Place of residence": "Woonplaats",
+    "inside Velsen": "binnen Velsen",
+    "outside Velsen": "buiten Velsen",
+    "Age distribution": "Leeftijdsverdeling",
+    "Average age": "Gemiddelde leeftijd",
+    "Instruments played": "Bespeelde instrumenten",
+    "Instrument types played by active members": "Instrumentsoorten bespeeld door actieve leden",
+    "Total": "Totaal"
 }

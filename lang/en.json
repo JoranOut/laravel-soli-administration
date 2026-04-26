@@ -617,5 +617,14 @@
     "Family created.": "Family created.",
     "Family updated.": "Family updated.",
     "Family deleted.": "Family deleted.",
-    "Cannot delete a family with linked instrument types.": "Cannot delete a family with linked instrument types."
+    "Cannot delete a family with linked instrument types.": "Cannot delete a family with linked instrument types.",
+
+    "Place of residence": "Place of residence",
+    "inside Velsen": "inside Velsen",
+    "outside Velsen": "outside Velsen",
+    "Age distribution": "Age distribution",
+    "Average age": "Average age",
+    "Instruments played": "Instruments played",
+    "Instrument types played by active members": "Instrument types played by active members",
+    "Total": "Total"
 }
