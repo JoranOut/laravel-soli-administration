@@ -35,8 +35,6 @@ class DatabaseSeeder extends Seeder
             RelatieTypeSeeder::class,
             OnderdeelSeeder::class,
             InstrumentSoortSeeder::class,
-            TariefgroepSeeder::class,
-            SoortContributieSeeder::class,
             SampleDataSeeder::class,
             OauthClientSeeder::class,
             ClientRoleMappingSeeder::class,

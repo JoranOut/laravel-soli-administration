@@ -35,7 +35,7 @@ test('bestuur user receives only view permissions', function () {
             $perms = collect($permissions);
 
             return $perms->contains('relaties.view')
-                && $perms->contains('financieel.view')
+                && $perms->contains('instrumenten.view')
                 && ! $perms->contains('relaties.create')
                 && ! $perms->contains('relaties.edit')
                 && ! $perms->contains('users.view');
@@ -58,7 +58,7 @@ test('ledenadministratie user receives all permissions except users', function (
 
             return $perms->contains('relaties.view')
                 && $perms->contains('relaties.create')
-                && $perms->contains('financieel.edit')
+                && $perms->contains('instrumenten.edit')
                 && ! $perms->contains('users.view');
         })
     );

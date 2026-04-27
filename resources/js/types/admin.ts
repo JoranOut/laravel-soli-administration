@@ -31,7 +31,6 @@ export type Relatie = {
     andere_verenigingen?: AndereVereniging[];
     relatie_instrumenten?: RelatieInstrument[];
     instrument_bespelers?: InstrumentBespeler[];
-    te_betaken_contributies?: TeBetakenContributie[];
 };
 
 export type RelatieType = {
@@ -174,49 +173,6 @@ export type InstrumentReparatie = {
     kosten: string | null;
     datum_in: string;
     datum_uit: string | null;
-};
-
-export type Tariefgroep = {
-    id: number;
-    naam: string;
-    beschrijving: string | null;
-    contributies?: Contributie[];
-};
-
-export type SoortContributie = {
-    id: number;
-    naam: string;
-    beschrijving: string | null;
-};
-
-export type Contributie = {
-    id: number;
-    tariefgroep_id: number;
-    soort_contributie_id: number;
-    jaar: number;
-    bedrag: string;
-    tariefgroep?: Tariefgroep;
-    soort_contributie?: SoortContributie;
-};
-
-export type TeBetakenContributie = {
-    id: number;
-    relatie_id: number;
-    contributie_id: number;
-    jaar: number;
-    bedrag: string;
-    status: 'open' | 'betaald' | 'kwijtgescholden';
-    contributie?: Contributie;
-    betalingen?: Betaling[];
-};
-
-export type Betaling = {
-    id: number;
-    te_betalen_contributie_id: number;
-    bedrag: string;
-    datum: string;
-    methode: string | null;
-    opmerking: string | null;
 };
 
 export type Opleiding = {

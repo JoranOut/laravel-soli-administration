@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Adres;
-use App\Models\Contributie;
 use App\Models\Email;
 use App\Models\Instrument;
 use App\Models\InstrumentBespeler;
@@ -12,9 +11,6 @@ use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
-use App\Models\SoortContributie;
-use App\Models\Tariefgroep;
-use App\Models\TeBetakenContributie;
 use App\Models\Telefoon;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -261,69 +257,5 @@ class SampleDataSeeder extends Seeder
 
         // Create 3 instruments in repair
         Instrument::factory(3)->inReparatie()->create();
-
-        // Create contribution rates for current year
-        $tariefgroepen = Tariefgroep::all();
-        $soortContributies = SoortContributie::all();
-        $currentYear = now()->year;
-
-        foreach ($tariefgroepen as $tariefgroep) {
-            foreach ($soortContributies as $soort) {
-                $bedrag = match ($tariefgroep->naam) {
-                    'Jeugd' => match ($soort->naam) {
-                        'Lidmaatschap' => 75.00,
-                        'Lesgeld' => 150.00,
-                        'Instrument huur' => 50.00,
-                        default => 0,
-                    },
-                    'Volwassen' => match ($soort->naam) {
-                        'Lidmaatschap' => 120.00,
-                        'Lesgeld' => 200.00,
-                        'Instrument huur' => 75.00,
-                        default => 0,
-                    },
-                    'Senior' => match ($soort->naam) {
-                        'Lidmaatschap' => 90.00,
-                        'Lesgeld' => 150.00,
-                        'Instrument huur' => 50.00,
-                        default => 0,
-                    },
-                    'Donateur' => match ($soort->naam) {
-                        'Lidmaatschap' => 25.00,
-                        default => 0,
-                    },
-                    default => 0,
-                };
-
-                if ($bedrag > 0) {
-                    Contributie::create([
-                        'tariefgroep_id' => $tariefgroep->id,
-                        'soort_contributie_id' => $soort->id,
-                        'jaar' => $currentYear,
-                        'bedrag' => $bedrag,
-                    ]);
-                }
-            }
-        }
-
-        // Create outstanding contributions for some leden
-        $lidmaatschap = $soortContributies->firstWhere('naam', 'Lidmaatschap');
-        $volwassenTariefgroep = $tariefgroepen->firstWhere('naam', 'Volwassen');
-        $contributie = Contributie::where('tariefgroep_id', $volwassenTariefgroep->id)
-            ->where('soort_contributie_id', $lidmaatschap->id)
-            ->where('jaar', $currentYear)
-            ->first();
-
-        if ($contributie) {
-            foreach ($leden->take(10) as $lid) {
-                TeBetakenContributie::create([
-                    'relatie_id' => $lid->id,
-                    'contributie_id' => $contributie->id,
-                    'jaar' => $currentYear,
-                    'bedrag' => $contributie->bedrag,
-                    'status' => fake()->randomElement(['open', 'open', 'betaald']),
-                ]);
-            }
-        }
     }
 }
