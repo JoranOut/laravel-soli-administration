@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Instrument;
-use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
-use App\Models\RelatieType;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -44,7 +42,6 @@ class DashboardController extends Controller
         $relatie = $relatie ? Relatie::find($relatie->id) : Relatie::find($userRelaties->first()->id);
 
         $relatie->load([
-            'user',
             'types',
             'adressen' => fn ($q) => $q->orderByDesc('created_at'),
             'emails' => fn ($q) => $q->orderByDesc('created_at'),
@@ -67,9 +64,6 @@ class DashboardController extends Controller
 
         return Inertia::render('admin/relaties/show', [
             'relatie' => $relatie,
-            'relatieTypes' => RelatieType::all(),
-            'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
-            'instrumentSoorten' => InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get(),
             'userRelaties' => $userRelaties,
         ]);
     }
@@ -150,6 +144,113 @@ class DashboardController extends Controller
         ];
     }
 
+    private function getResidenceStats(): array
+    {
+        $velsenPlaces = ['driehuis', 'ijmuiden', 'santpoort-noord', 'santpoort-zuid', 'velserbroek', 'velsen-noord', 'velsen-zuid'];
+
+        $activeLidIds = Relatie::actief()->ofType('lid')->pluck('soli_relaties.id');
+
+        if ($activeLidIds->isEmpty()) {
+            return ['top' => [], 'inside_velsen' => 0, 'outside_velsen' => 0];
+        }
+
+        // Get the latest address per relatie
+        $latestAddresses = DB::table('soli_adressen as a')
+            ->joinSub(
+                DB::table('soli_adressen')
+                    ->select('relatie_id', DB::raw('MAX(id) as max_id'))
+                    ->whereIn('relatie_id', $activeLidIds)
+                    ->groupBy('relatie_id'),
+                'latest',
+                fn ($join) => $join->on('a.id', '=', 'latest.max_id')
+            )
+            ->select('a.plaats')
+            ->get();
+
+        $grouped = $latestAddresses->groupBy(fn ($row) => $row->plaats ?: '');
+        $top = $grouped->map->count()
+            ->sortDesc()
+            ->take(5)
+            ->map(fn ($count, $plaats) => ['plaats' => $plaats, 'count' => $count])
+            ->values()
+            ->all();
+
+        $insideVelsen = $latestAddresses->filter(
+            fn ($row) => in_array(mb_strtolower($row->plaats ?? ''), $velsenPlaces)
+        )->count();
+
+        return [
+            'top' => $top,
+            'inside_velsen' => $insideVelsen,
+            'outside_velsen' => $latestAddresses->count() - $insideVelsen,
+        ];
+    }
+
+    private function getInstrumentStats(): array
+    {
+        $today = now()->toDateString();
+
+        $rows = DB::table('soli_relatie_instrument as ri')
+            ->join('soli_instrument_soorten as s', 'ri.instrument_soort_id', '=', 's.id')
+            ->join('soli_relaties as r', 'ri.relatie_id', '=', 'r.id')
+            ->join('soli_relatie_relatie_type as rt', 'rt.relatie_id', '=', 'r.id')
+            ->join('soli_relatie_types as t', 'rt.relatie_type_id', '=', 't.id')
+            ->where('r.actief', true)
+            ->where('t.naam', 'lid')
+            ->where('rt.van', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('rt.tot')->orWhere('rt.tot', '>=', $today))
+            ->select(
+                's.naam',
+                DB::raw('COUNT(*) as total'),
+                DB::raw('SUM(CASE WHEN r.geboortedatum IS NOT NULL AND TIMESTAMPDIFF(YEAR, r.geboortedatum, CURDATE()) >= 60 THEN 1 ELSE 0 END) as over_60')
+            )
+            ->groupBy('s.naam')
+            ->orderByDesc('total')
+            ->get();
+
+        return $rows->map(fn ($row) => [
+            'naam' => $row->naam,
+            'total' => (int) $row->total,
+            'over_60' => (int) $row->over_60,
+        ])->all();
+    }
+
+    private function getAgeDistribution(): array
+    {
+        $members = Relatie::actief()->ofType('lid')
+            ->whereNotNull('soli_relaties.geboortedatum')
+            ->pluck('soli_relaties.geboortedatum');
+
+        $brackets = ['0-17' => 0, '18-29' => 0, '30-44' => 0, '45-59' => 0, '60-74' => 0, '75+' => 0];
+        $totalAge = 0;
+
+        foreach ($members as $geboortedatum) {
+            $age = Carbon::parse($geboortedatum)->age;
+            $totalAge += $age;
+
+            if ($age < 18) {
+                $brackets['0-17']++;
+            } elseif ($age < 30) {
+                $brackets['18-29']++;
+            } elseif ($age < 45) {
+                $brackets['30-44']++;
+            } elseif ($age < 60) {
+                $brackets['45-59']++;
+            } elseif ($age < 75) {
+                $brackets['60-74']++;
+            } else {
+                $brackets['75+']++;
+            }
+        }
+
+        $count = $members->count();
+
+        return [
+            'brackets' => collect($brackets)->map(fn ($c, $label) => ['bracket' => $label, 'count' => $c])->values()->all(),
+            'average_age' => $count > 0 ? round($totalAge / $count, 1) : null,
+        ];
+    }
+
     private function statisticsDashboard(): Response
     {
         $actieveLeden = Relatie::actief()->ofType('lid')->count();
@@ -184,6 +285,9 @@ class DashboardController extends Controller
                 'leden_joined_12m' => $ledenJoined,
                 'leden_left_12m' => $ledenLeft,
             ],
+            'residence_stats' => $this->getResidenceStats(),
+            'instrument_stats' => $this->getInstrumentStats(),
+            'age_distribution' => $this->getAgeDistribution(),
         ];
 
         if (auth()->user()->hasRole('admin')) {

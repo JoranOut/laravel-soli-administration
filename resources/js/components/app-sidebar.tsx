@@ -1,5 +1,6 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link } from '@inertiajs/react';
 import { Coins, Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
 import { NavFooter } from '@/components/nav-footer';
@@ -18,12 +19,22 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
 import type { NavItem } from '@/types';
+import type { RelatieType } from '@/types/admin';
+
+let cachedRelatieTypes: Pick<RelatieType, 'id' | 'naam'>[] | null = null;
 
 export function AppSidebar() {
     const { canAny, hasRole } = usePermissions();
     const { t } = useTranslation();
-    const { sidebarRelatieTypes } = usePage().props;
+    const [relatieTypes, setRelatieTypes] = useState(cachedRelatieTypes ?? []);
     const isMember = hasRole('member') && !hasRole('admin') && !hasRole('bestuur') && !hasRole('ledenadministratie');
+
+    useEffect(() => {
+        if (cachedRelatieTypes) return;
+        fetch('/admin/relatie-types', { headers: { 'Accept': 'application/json' } })
+            .then((r) => r.ok ? r.json() : [])
+            .then((data) => { cachedRelatieTypes = data; setRelatieTypes(data); });
+    }, []);
 
     const mainNavItems: NavItem[] = [];
 
@@ -73,7 +84,7 @@ export function AppSidebar() {
     const dataNavItems: NavItem[] = [];
 
     if (canAny(['relaties.view']) && !isMember) {
-        const typeChildren: NavItem[] = (sidebarRelatieTypes ?? []).map((type) => ({
+        const typeChildren: NavItem[] = relatieTypes.map((type) => ({
             title: type.naam.charAt(0).toUpperCase() + type.naam.slice(1),
             href: `/admin/relaties?type=${type.naam}`,
         }));

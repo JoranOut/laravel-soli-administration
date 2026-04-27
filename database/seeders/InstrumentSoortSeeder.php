@@ -80,13 +80,7 @@ class InstrumentSoortSeeder extends Seeder
             ['naam' => 'Vibrafoon', 'familie' => 'Slagwerk'],
             ['naam' => 'Xylofoon', 'familie' => 'Slagwerk'],
             ['naam' => 'Tamboer-maître', 'familie' => 'Tamboer-maître'],
-            ['naam' => 'Percussion 1', 'familie' => 'Slagwerk'],
-            ['naam' => 'Percussion 2', 'familie' => 'Slagwerk'],
-            ['naam' => 'Percussion 3', 'familie' => 'Slagwerk'],
-            ['naam' => 'Percussion 4', 'familie' => 'Slagwerk'],
-            ['naam' => 'Percussion 5', 'familie' => 'Slagwerk'],
-            ['naam' => 'Percussion 6', 'familie' => 'Slagwerk'],
-            ['naam' => 'Percussion 7', 'familie' => 'Slagwerk'],
+            ['naam' => 'Percussion', 'familie' => 'Slagwerk'],
 
             // Majorette
             ['naam' => 'Majorette', 'familie' => 'Majorette'],
@@ -101,6 +95,9 @@ class InstrumentSoortSeeder extends Seeder
 
             // Zang
             ['naam' => 'Zang', 'familie' => 'Zang'],
+
+            // Partituur
+            ['naam' => 'Partituur', 'familie' => 'Partituur'],
         ];
 
         // Create families first

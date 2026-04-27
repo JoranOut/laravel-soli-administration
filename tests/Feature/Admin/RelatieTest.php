@@ -125,9 +125,10 @@ test('admin can create a relatie', function () {
     expect($relatie->user_id)->toBe($user->id);
 });
 
-test('admin can view a relatie detail', function () {
+test('admin can view a relatie detail with all props', function () {
     $admin = User::factory()->create()->assignRole('admin');
-    $relatie = Relatie::factory()->create();
+    $linkedUser = User::factory()->create()->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $response = $this->actingAs($admin)->get("/admin/relaties/{$relatie->id}");
 
@@ -135,8 +136,48 @@ test('admin can view a relatie detail', function () {
     $response->assertInertia(fn ($page) => $page
         ->component('admin/relaties/show')
         ->has('relatie')
+        ->has('relatie.user')
         ->has('relatieTypes')
         ->has('onderdelen')
+        ->has('instrumentSoorten')
+        ->has('users')
+    );
+});
+
+test('bestuur does not receive edit props on relatie show', function () {
+    $bestuur = User::factory()->create()->assignRole('bestuur');
+    $linkedUser = User::factory()->create()->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+
+    $response = $this->actingAs($bestuur)->get("/admin/relaties/{$relatie->id}");
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/relaties/show')
+        ->has('relatie')
+        ->missing('relatie.user')
+        ->missing('relatieTypes')
+        ->missing('onderdelen')
+        ->missing('instrumentSoorten')
+        ->missing('users')
+    );
+});
+
+test('member does not receive edit props on own relatie show', function () {
+    $member = User::factory()->create()->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $member->id]);
+
+    $response = $this->actingAs($member)->get("/admin/relaties/{$relatie->id}");
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('admin/relaties/show')
+        ->has('relatie')
+        ->missing('relatie.user')
+        ->missing('relatieTypes')
+        ->missing('onderdelen')
+        ->missing('instrumentSoorten')
+        ->missing('users')
     );
 });
 
@@ -234,6 +275,29 @@ test('member cannot delete relaties', function () {
 test('guest is redirected to login', function () {
     $response = $this->get('/admin/relaties');
     $response->assertRedirect('/login');
+});
+
+test('relatie-types API requires relaties.view permission', function () {
+    $user = User::factory()->create(); // no roles, no permissions
+
+    $this->actingAs($user)
+        ->getJson('/admin/relatie-types')
+        ->assertForbidden();
+});
+
+test('relatie-types API returns types for authorized users', function () {
+    $bestuur = User::factory()->create()->assignRole('bestuur');
+
+    $response = $this->actingAs($bestuur)
+        ->getJson('/admin/relatie-types');
+
+    $response->assertOk();
+    $response->assertJsonStructure([['id', 'naam']]);
+});
+
+test('guest cannot access relatie-types API', function () {
+    $this->getJson('/admin/relatie-types')
+        ->assertUnauthorized();
 });
 
 test('bestuur can view relaties', function () {

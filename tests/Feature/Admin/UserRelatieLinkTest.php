@@ -44,6 +44,41 @@ test('admin can link a user to a relatie', function () {
     expect($relatie->user_id)->toBe($user->id);
 });
 
+test('linking user via koppelingen creates email record if missing', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $user = User::factory()->create(['email' => 'link@example.com']);
+    $relatie = Relatie::factory()->create();
+
+    $this->actingAs($admin)
+        ->post('/admin/koppelingen', [
+            'user_id' => $user->id,
+            'relatie_id' => $relatie->id,
+        ])
+        ->assertRedirect();
+
+    expect($relatie->emails()->where('email', 'link@example.com')->exists())->toBeTrue();
+});
+
+test('linking user via koppelingen does not duplicate existing email', function () {
+    $admin = User::factory()->create();
+    $admin->assignRole('admin');
+
+    $user = User::factory()->create(['email' => 'exists@example.com']);
+    $relatie = Relatie::factory()->create();
+    $relatie->emails()->create(['email' => 'exists@example.com']);
+
+    $this->actingAs($admin)
+        ->post('/admin/koppelingen', [
+            'user_id' => $user->id,
+            'relatie_id' => $relatie->id,
+        ])
+        ->assertRedirect();
+
+    expect($relatie->emails()->where('email', 'exists@example.com')->count())->toBe(1);
+});
+
 test('can link a user that is already linked to another relatie', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');

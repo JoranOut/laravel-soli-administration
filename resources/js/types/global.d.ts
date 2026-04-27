@@ -1,4 +1,3 @@
-import type { RelatieType } from '@/types/admin';
 import type { Auth } from '@/types/auth';
 
 declare module '@inertiajs/core' {
@@ -8,8 +7,6 @@ declare module '@inertiajs/core' {
             auth: Auth;
             sidebarOpen: boolean;
             locale: string;
-            translations: Record<string, string>;
-            sidebarRelatieTypes: RelatieType[];
             [key: string]: unknown;
         };
     }
