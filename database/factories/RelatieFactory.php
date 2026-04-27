@@ -12,7 +12,7 @@ class RelatieFactory extends Factory
 {
     protected $model = Relatie::class;
 
-    private static int $relatieNummer = 1000;
+    private static int $relatieNummer = 10000;
 
     public function definition(): array
     {

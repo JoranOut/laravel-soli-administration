@@ -69,7 +69,7 @@ class RelatieController extends Controller
 
         return Inertia::render('admin/relaties/create', [
             'relatieTypes' => RelatieType::all(),
-            'nextRelatieNummer' => (Relatie::withTrashed()->max('relatie_nummer') ?? 999) + 1,
+            'nextRelatieNummer' => (Relatie::withTrashed()->max('relatie_nummer') ?? 9999) + 1,
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
             'preselectedTypeId' => $preselectedTypeId,
         ]);
