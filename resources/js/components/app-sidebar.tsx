@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { Coins, Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
+import { Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -117,14 +117,6 @@ export function AppSidebar() {
             title: t('Instruments'),
             href: '/admin/instrumenten',
             icon: Guitar,
-        });
-    }
-
-    if (canAny(['financieel.view'])) {
-        dataNavItems.push({
-            title: t('Financial'),
-            href: '/admin/financieel/tariefgroepen',
-            icon: Coins,
         });
     }
 

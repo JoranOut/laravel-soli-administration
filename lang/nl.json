@@ -125,7 +125,6 @@
     "Relations": "Relaties",
     "Sections": "Onderdelen",
     "Instruments": "Instrumenten",
-    "Financial": "Financieel",
     "Authentication": "Authenticatie",
     "Management": "Beheer",
     "Platform": "Platform",
@@ -240,13 +239,6 @@
     "Diploma deleted.": "Diploma verwijderd.",
     "No diploma's.": "Geen diploma's.",
 
-    "You do not have access to financial data.": "Je hebt geen toegang tot financiele gegevens.",
-    "Outstanding contributions": "Openstaande contributies",
-    "Contribution": "Contributie",
-    "Rate group": "Tariefgroep",
-    "Payments:": "Betalingen:",
-    "No outstanding contributions.": "Geen openstaande contributies.",
-
     "Soli instruments": "Soli instrumenten",
     "Previous instruments": "Eerdere instrumenten",
     "Unknown instrument": "Onbekend instrument",
@@ -284,29 +276,14 @@
     "Serial number": "Serienummer",
     "Ownership": "Eigendom",
 
-    "Rate groups": "Tariefgroepen",
-    "Contributions": "Contributies",
-    "Rate groups, contributions and payments": "Tariefgroepen, contributies en betalingen",
     "Add": "Toevoegen",
-    "Add rate group": "Tariefgroep toevoegen",
-    "No rate groups.": "Geen tariefgroepen.",
-
-    "Contribution rate": "Contributie tarief",
-    "Add rate": "Tarief toevoegen",
     "Amount": "Bedrag",
     "Year": "Jaar",
-    "No rates for :year.": "Geen tarieven voor :year.",
     "Select...": "Selecteer...",
 
-    "Register payment": "Betaling registreren",
-    "Payment": "Betaling",
-    "Method": "Methode",
-    "e.g. iDEAL, cash, transfer": "bijv. iDEAL, contant, overboeking",
-    "Register": "Registreren",
     "All": "Alle",
     "Open": "Open",
     "Paid": "Betaald",
-    "Waived": "Kwijtgescholden",
     "No items found.": "Geen items gevonden.",
 
     ":from–:to of :total results": ":from–:to van :total resultaten",
@@ -415,13 +392,6 @@
     "Repair added.": "Reparatie toegevoegd.",
     "Repair updated.": "Reparatie bijgewerkt.",
     "Repair deleted.": "Reparatie verwijderd.",
-    "Fee group created.": "Tariefgroep aangemaakt.",
-    "Fee group updated.": "Tariefgroep bijgewerkt.",
-    "Fee group deleted.": "Tariefgroep verwijderd.",
-    "Contribution saved.": "Contributie opgeslagen.",
-    "Contribution deleted.": "Contributie verwijderd.",
-    "Payment registered.": "Betaling geregistreerd.",
-
     "My data": "Mijn gegevens",
     "Your profile is not linked yet. Contact an administrator.": "Uw profiel is nog niet gekoppeld. Neem contact op met een beheerder.",
 
@@ -528,8 +498,6 @@
     "Delete section": "Onderdeel verwijderen",
     "Are you sure you want to delete :name?": "Weet je zeker dat je :name wilt verwijderen?",
     "Cannot delete a section with active members.": "Kan onderdeel met actieve leden niet verwijderen.",
-    "Cannot delete a fee group with linked contributions.": "Kan tariefgroep met gekoppelde contributies niet verwijderen.",
-
     "Sections membership over time": "Onderdelen bezetting over tijd",
     "Last 5 years": "Laatste 5 jaar",
     "All years": "Alle jaren",
@@ -540,6 +508,7 @@
 
     "OAuth clients": "OAuth-clients",
     "Manage client types and role mappings": "Beheer clienttypes en roltoewijzingen",
+    "Muziekbibliotheek": "Muziekbibliotheek",
     "Client type": "Clienttype",
     "Default role": "Standaardrol",
     "Role mappings": "Roltoewijzingen",

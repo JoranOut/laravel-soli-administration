@@ -57,9 +57,6 @@ class DashboardController extends Controller
             'insignes' => fn ($q) => $q->orderByDesc('datum'),
             'diplomas' => fn ($q) => $q->orderBy('naam'),
             'andereVerenigingen' => fn ($q) => $q->orderByDesc('van'),
-            'teBetakenContributies.contributie.soortContributie',
-            'teBetakenContributies.contributie.tariefgroep',
-            'teBetakenContributies.betalingen',
         ]);
 
         return Inertia::render('admin/relaties/show', [

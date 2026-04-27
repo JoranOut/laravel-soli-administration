@@ -134,11 +134,6 @@ class Relatie extends Model
         return $this->hasMany(AndereVereniging::class);
     }
 
-    public function teBetakenContributies(): HasMany
-    {
-        return $this->hasMany(TeBetakenContributie::class);
-    }
-
     public function scopeActief($query)
     {
         return $query->where('actief', true);

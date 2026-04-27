@@ -17,6 +17,7 @@ class RelatieTypeSeeder extends Seeder
             ['naam' => 'bestuur', 'onderdeel_koppelbaar' => false],
             ['naam' => 'contactpersoon', 'onderdeel_koppelbaar' => true],
             ['naam' => 'vrijwilliger', 'onderdeel_koppelbaar' => false],
+            ['naam' => 'projectdeelnemer', 'onderdeel_koppelbaar' => false],
         ];
 
         foreach ($types as $type) {

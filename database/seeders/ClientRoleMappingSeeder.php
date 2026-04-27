@@ -55,17 +55,17 @@ class ClientRoleMappingSeeder extends Seeder
         $setting = OauthClientSetting::updateOrCreate(
             ['client_id' => $client->id],
             [
-                'type' => 'laravel',
+                'type' => 'muziek_bibliotheek',
                 'default_role' => ClientRoleResolver::NO_ACCESS,
             ]
         );
 
-        // dirigent/docent can manage sheets, lid can view/download
+        // Map relatie types to muziekbibliotheek roles
         $this->createMappings($setting, [
-            ['type' => 'dirigent', 'role' => 'editor'],
-            ['type' => 'docent',   'role' => 'editor'],
-            ['type' => 'bestuur',  'role' => 'editor'],
-            ['type' => 'lid',      'role' => 'viewer'],
+            ['type' => 'dirigent', 'role' => 'dirigent'],
+            ['type' => 'docent',   'role' => 'muziekbeheer'],
+            ['type' => 'bestuur',  'role' => 'muziekbeheer'],
+            ['type' => 'lid',      'role' => 'member'],
         ]);
     }
 

@@ -124,7 +124,6 @@
     "Relations": "Relations",
     "Sections": "Sections",
     "Instruments": "Instruments",
-    "Financial": "Financial",
     "Authentication": "Authentication",
     "Management": "Management",
     "Platform": "Platform",
@@ -239,13 +238,6 @@
     "Diploma deleted.": "Diploma deleted.",
     "No diploma's.": "No diploma's.",
 
-    "You do not have access to financial data.": "You do not have access to financial data.",
-    "Outstanding contributions": "Outstanding contributions",
-    "Contribution": "Contribution",
-    "Rate group": "Rate group",
-    "Payments:": "Payments:",
-    "No outstanding contributions.": "No outstanding contributions.",
-
     "Soli instruments": "Soli instruments",
     "Previous instruments": "Previous instruments",
     "Unknown instrument": "Unknown instrument",
@@ -283,28 +275,13 @@
     "Serial number": "Serial number",
     "Ownership": "Ownership",
 
-    "Rate groups": "Rate groups",
-    "Contributions": "Contributions",
-    "Rate groups, contributions and payments": "Rate groups, contributions and payments",
-    "Add": "Add",
-    "Add rate group": "Add rate group",
-    "No rate groups.": "No rate groups.",
-
-    "Contribution rate": "Contribution rate",
-    "Add rate": "Add rate",
     "Amount": "Amount",
     "Year": "Year",
-    "No rates for :year.": "No rates for :year.",
     "Select...": "Select...",
 
-    "Register payment": "Register payment",
-    "Payment": "Payment",
-    "Method": "Method",
-    "e.g. iDEAL, cash, transfer": "e.g. iDEAL, cash, transfer",
     "All": "All",
     "Open": "Open",
     "Paid": "Paid",
-    "Waived": "Waived",
     "No items found.": "No items found.",
 
     ":from–:to of :total results": ":from–:to of :total results",
@@ -413,13 +390,6 @@
     "Repair added.": "Repair added.",
     "Repair updated.": "Repair updated.",
     "Repair deleted.": "Repair deleted.",
-    "Fee group created.": "Fee group created.",
-    "Fee group updated.": "Fee group updated.",
-    "Fee group deleted.": "Fee group deleted.",
-    "Contribution saved.": "Contribution saved.",
-    "Contribution deleted.": "Contribution deleted.",
-    "Payment registered.": "Payment registered.",
-
     "My data": "My data",
     "Your profile is not linked yet. Contact an administrator.": "Your profile is not linked yet. Contact an administrator.",
 
@@ -525,8 +495,6 @@
     "Delete section": "Delete section",
     "Are you sure you want to delete :name?": "Are you sure you want to delete :name?",
     "Cannot delete a section with active members.": "Cannot delete a section with active members.",
-    "Cannot delete a fee group with linked contributions.": "Cannot delete a fee group with linked contributions.",
-
     "Sections membership over time": "Sections membership over time",
     "Last 5 years": "Last 5 years",
     "All years": "All years",
@@ -537,6 +505,7 @@
 
     "OAuth clients": "OAuth clients",
     "Manage client types and role mappings": "Manage client types and role mappings",
+    "Muziekbibliotheek": "Music library",
     "Client type": "Client type",
     "Default role": "Default role",
     "Role mappings": "Role mappings",

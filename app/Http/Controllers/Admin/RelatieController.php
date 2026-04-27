@@ -69,7 +69,7 @@ class RelatieController extends Controller
 
         return Inertia::render('admin/relaties/create', [
             'relatieTypes' => RelatieType::all(),
-            'nextRelatieNummer' => (Relatie::withTrashed()->max('relatie_nummer') ?? 999) + 1,
+            'nextRelatieNummer' => (Relatie::withTrashed()->max('relatie_nummer') ?? 9999) + 1,
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
             'preselectedTypeId' => $preselectedTypeId,
         ]);
@@ -184,9 +184,6 @@ class RelatieController extends Controller
             'insignes' => fn ($q) => $q->orderByDesc('datum'),
             'diplomas' => fn ($q) => $q->orderBy('naam'),
             'andereVerenigingen' => fn ($q) => $q->orderByDesc('van'),
-            'teBetakenContributies.contributie.soortContributie',
-            'teBetakenContributies.contributie.tariefgroep',
-            'teBetakenContributies.betalingen',
         ];
 
         if ($user->can('users.edit')) {

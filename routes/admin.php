@@ -4,8 +4,6 @@ use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\GoogleContactSyncController;
 use App\Http\Controllers\Admin\LedenverloopController;
 use App\Http\Controllers\Admin\OauthClientSettingController;
-use App\Http\Controllers\Admin\BetalingController;
-use App\Http\Controllers\Admin\ContributieController;
 use App\Http\Controllers\Admin\InstrumentBespelerController;
 use App\Http\Controllers\Admin\InstrumentController;
 use App\Http\Controllers\Admin\InstrumentReparatieController;
@@ -19,7 +17,6 @@ use App\Http\Controllers\Admin\RelatieLidmaatschapController;
 use App\Http\Controllers\Admin\RelatieOpleidingController;
 use App\Http\Controllers\Admin\RelatieTypeController;
 use App\Http\Controllers\Admin\RolePermissionController;
-use App\Http\Controllers\Admin\TariefgroepController;
 use App\Http\Controllers\Admin\UserRelatieLinkController;
 use App\Http\Controllers\Admin\UserRoleController;
 use Illuminate\Support\Facades\Route;
@@ -171,23 +168,3 @@ Route::middleware(['auth', 'verified', 'permission:instrumentsoorten.view'])->gr
         ->middleware('permission:instrumentsoorten.delete');
 });
 
-// Financieel
-Route::middleware(['auth', 'verified', 'permission:financieel.view'])->group(function () {
-    Route::get('admin/financieel/tariefgroepen', [TariefgroepController::class, 'index'])->name('admin.financieel.tariefgroepen');
-    Route::post('admin/financieel/tariefgroepen', [TariefgroepController::class, 'store'])->name('admin.financieel.tariefgroepen.store')
-        ->middleware('permission:financieel.create');
-    Route::put('admin/financieel/tariefgroepen/{tariefgroep}', [TariefgroepController::class, 'update'])->name('admin.financieel.tariefgroepen.update')
-        ->middleware('permission:financieel.edit');
-    Route::delete('admin/financieel/tariefgroepen/{tariefgroep}', [TariefgroepController::class, 'destroy'])->name('admin.financieel.tariefgroepen.destroy')
-        ->middleware('permission:financieel.delete');
-
-    Route::get('admin/financieel/contributies', [ContributieController::class, 'index'])->name('admin.financieel.contributies');
-    Route::post('admin/financieel/contributies', [ContributieController::class, 'store'])->name('admin.financieel.contributies.store')
-        ->middleware('permission:financieel.create');
-    Route::delete('admin/financieel/contributies/{contributie}', [ContributieController::class, 'destroy'])->name('admin.financieel.contributies.destroy')
-        ->middleware('permission:financieel.delete');
-
-    Route::get('admin/financieel/betalingen', [BetalingController::class, 'index'])->name('admin.financieel.betalingen');
-    Route::post('admin/financieel/betalingen/{teBetakenContributie}', [BetalingController::class, 'store'])->name('admin.financieel.betalingen.store')
-        ->middleware('permission:financieel.edit');
-});

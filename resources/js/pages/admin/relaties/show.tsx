@@ -15,7 +15,6 @@ import RelatieTypesTab from '@/pages/admin/relaties/tabs/types-tab';
 import RelatieContactTab from '@/pages/admin/relaties/tabs/contact-tab';
 import RelatieLidmaatschapTab from '@/pages/admin/relaties/tabs/lidmaatschap-tab';
 import RelatieOpleidingTab from '@/pages/admin/relaties/tabs/opleiding-tab';
-import RelatieFinancieelTab from '@/pages/admin/relaties/tabs/financieel-tab';
 import RelatieInstrumentenTab from '@/pages/admin/relaties/tabs/instrumenten-tab';
 import RelatieAccountTab from '@/pages/admin/relaties/tabs/account-tab';
 import type { InstrumentSoort, Onderdeel, Relatie, RelatieType } from '@/types/admin';
@@ -53,7 +52,6 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         { key: 'contact', label: t('Contact') },
         { key: 'lidmaatschap', label: t('Membership') },
         { key: 'opleiding', label: t('Education') },
-        { key: 'financieel', label: t('Financial') },
         { key: 'instrumenten', label: t('Instruments') },
         ...(can('users.edit') ? [{ key: 'account', label: t('Account') }] : []),
     ];
@@ -124,9 +122,6 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
                         )}
                         {activeTab === 'opleiding' && (
                             <RelatieOpleidingTab relatie={relatie} />
-                        )}
-                        {activeTab === 'financieel' && (
-                            <RelatieFinancieelTab relatie={relatie} />
                         )}
                         {activeTab === 'instrumenten' && (
                             <RelatieInstrumentenTab relatie={relatie} />

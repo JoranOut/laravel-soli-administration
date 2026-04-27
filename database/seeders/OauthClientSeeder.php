@@ -52,7 +52,7 @@ class OauthClientSeeder extends Seeder
         OauthClientSetting::updateOrCreate(
             ['client_id' => $client->id],
             [
-                'type' => 'laravel',
+                'type' => 'muziek_bibliotheek',
                 'skip_authorization' => true,
             ]
         );
