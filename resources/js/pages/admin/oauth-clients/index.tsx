@@ -52,6 +52,19 @@ const WORDPRESS_ROLES = [
     { value: 'subscriber', label: 'Subscriber' },
 ];
 
+const MUZIEK_BIBLIOTHEEK_ROLES = [
+    { value: NO_ACCESS, label: 'No access' },
+    { value: 'admin', label: 'Admin' },
+    { value: 'muziekbeheer', label: 'Muziekbeheer' },
+    { value: 'dirigent', label: 'Dirigent' },
+    { value: 'member', label: 'Member' },
+];
+
+const PREDEFINED_ROLES: Record<string, { value: string; label: string }[]> = {
+    wordpress: WORDPRESS_ROLES,
+    muziek_bibliotheek: MUZIEK_BIBLIOTHEEK_ROLES,
+};
+
 function UserCombobox({
     users,
     value,
@@ -373,19 +386,20 @@ export default function OauthClients({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="wordpress">WordPress</SelectItem>
+                                        <SelectItem value="muziek_bibliotheek">{t('Muziekbibliotheek')}</SelectItem>
                                         <SelectItem value="other">{t('Other')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label>{t('Default role')}</Label>
-                                {type === 'wordpress' ? (
+                                {PREDEFINED_ROLES[type] ? (
                                     <Select value={defaultRole} onValueChange={setDefaultRole}>
                                         <SelectTrigger>
                                             <SelectValue placeholder={t('Select...')} />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {WORDPRESS_ROLES.map((r) => (
+                                            {PREDEFINED_ROLES[type].map((r) => (
                                                 <SelectItem key={r.value} value={r.value}>
                                                     {r.label}
                                                 </SelectItem>
@@ -482,7 +496,7 @@ export default function OauthClients({
                                         </SelectContent>
                                     </Select>
                                     <span className="text-muted-foreground">&rarr;</span>
-                                    {type === 'wordpress' ? (
+                                    {PREDEFINED_ROLES[type] ? (
                                         <Select
                                             value={mapping.mapped_role}
                                             onValueChange={(v) => updateMapping(index, 'mapped_role', v)}
@@ -491,7 +505,7 @@ export default function OauthClients({
                                                 <SelectValue placeholder={t('Select...')} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {WORDPRESS_ROLES.map((r) => (
+                                                {PREDEFINED_ROLES[type].map((r) => (
                                                     <SelectItem key={r.value} value={r.value}>
                                                         {r.label}
                                                     </SelectItem>
@@ -546,7 +560,7 @@ export default function OauthClients({
                                         placeholder={t('Select user')}
                                     />
                                     <span className="text-muted-foreground">&rarr;</span>
-                                    {type === 'wordpress' ? (
+                                    {PREDEFINED_ROLES[type] ? (
                                         <Select
                                             value={userRole.mapped_role}
                                             onValueChange={(v) => updateUserRole(index, 'mapped_role', v)}
@@ -555,7 +569,7 @@ export default function OauthClients({
                                                 <SelectValue placeholder={t('Select...')} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {WORDPRESS_ROLES.map((r) => (
+                                                {PREDEFINED_ROLES[type].map((r) => (
                                                     <SelectItem key={r.value} value={r.value}>
                                                         {r.label}
                                                     </SelectItem>
