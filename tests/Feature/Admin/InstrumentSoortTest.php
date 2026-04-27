@@ -400,6 +400,7 @@ test('seeder creates all expected families', function () {
         'Trompet', 'Klarinet', 'Saxofoon', 'Dwarsfluit', 'Trombone',
         'Hoorn', 'Bas', 'Bariton', 'Hobo', 'Fagot', 'Slagwerk',
         'Majorette', 'Gitaar', 'Piano', 'Zang', 'Tamboer-maître',
+        'Partituur',
     ];
 
     foreach ($expectedFamilies as $naam) {
@@ -409,14 +410,20 @@ test('seeder creates all expected families', function () {
     expect(InstrumentFamilie::count())->toBe(count($expectedFamilies));
 });
 
-test('seeder creates percussion 1 through 7 under slagwerk', function () {
+test('seeder creates percussion instruments under slagwerk', function () {
     $this->seed(\Database\Seeders\InstrumentSoortSeeder::class);
 
     $slagwerk = InstrumentFamilie::where('naam', 'Slagwerk')->first();
 
-    for ($i = 1; $i <= 7; $i++) {
+    $expectedSoorten = [
+        'Slagwerk', 'Melodisch slagwerk', 'Paradetrom', 'Kleine trom',
+        'Trom', 'Trio tom', 'Bekken', 'Pauken', 'Marimba',
+        'Vibrafoon', 'Xylofoon', 'Percussion',
+    ];
+
+    foreach ($expectedSoorten as $naam) {
         $this->assertDatabaseHas('soli_instrument_soorten', [
-            'naam' => "Percussion $i",
+            'naam' => $naam,
             'instrument_familie_id' => $slagwerk->id,
         ]);
     }
