@@ -14,7 +14,7 @@ export type User = {
 export type PermissionResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'instrumentsoorten' | 'users';
 export type PermissionAction = 'view' | 'create' | 'edit' | 'delete';
 export type Permission = `${PermissionResource}.${PermissionAction}`;
-export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'member';
+export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'muziekbeheer' | 'member';
 
 export type Auth = {
     user: User;
