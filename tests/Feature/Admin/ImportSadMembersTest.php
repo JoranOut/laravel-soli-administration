@@ -291,6 +291,28 @@ test('fresh flag preserves admin-managed relaties', function () {
     expect(Relatie::where('relatie_nummer', 9001)->exists())->toBeTrue();
 });
 
+test('admin-managed relatie not in SAD data stays active after import', function () {
+    // Pre-create an active admin-managed relatie that does NOT exist in the SAD fixture
+    $relatie = Relatie::create([
+        'relatie_nummer' => 7777,
+        'voornaam' => 'Beheerd',
+        'achternaam' => 'InAdmin',
+        'actief' => true,
+        'beheerd_in_admin' => true,
+    ]);
+
+    $this->artisan('import:sad-members', [
+        'path' => $this->fixturePath,
+        '--fresh' => true,
+    ])->assertExitCode(0);
+
+    $relatie->refresh();
+    expect($relatie->actief)->toBeTrue();
+    expect($relatie->voornaam)->toBe('Beheerd');
+    expect($relatie->achternaam)->toBe('InAdmin');
+    expect($relatie->beheerd_in_admin)->toBeTrue();
+});
+
 test('dry-run flag does not persist', function () {
     $this->artisan('import:sad-members', [
         'path' => $this->fixturePath,

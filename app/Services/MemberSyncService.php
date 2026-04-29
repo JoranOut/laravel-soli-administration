@@ -72,8 +72,9 @@ class MemberSyncService
     public function reconcileMembers(array $activeLidIds): array
     {
         return DB::transaction(function () use ($activeLidIds) {
-            $totalActive = Relatie::where('actief', true)->lockForUpdate()->count();
+            $totalActive = Relatie::where('actief', true)->where('beheerd_in_admin', false)->lockForUpdate()->count();
             $relatiesToDeactivate = Relatie::where('actief', true)
+                ->where('beheerd_in_admin', false)
                 ->whereNotIn('relatie_nummer', $activeLidIds)
                 ->lockForUpdate()
                 ->get();
