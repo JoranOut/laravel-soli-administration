@@ -27,6 +27,10 @@ class RolesAndPermissionsSeeder extends Seeder
             }
         }
 
+        // Standalone view-only permissions (no CRUD needed)
+        Permission::findOrCreate('dashboard.view');
+        Permission::findOrCreate('contact.view');
+
         // Admin: all permissions
         Role::findOrCreate('admin')
             ->syncPermissions(Permission::all());
@@ -34,6 +38,8 @@ class RolesAndPermissionsSeeder extends Seeder
         // Bestuur: view-only on all resources (except users)
         Role::findOrCreate('bestuur')
             ->syncPermissions([
+                'dashboard.view',
+                'contact.view',
                 'relaties.view',
                 'onderdelen.view',
                 'instrumenten.view',

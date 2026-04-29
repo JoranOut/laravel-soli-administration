@@ -10,7 +10,7 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('contact', [ContactController::class, 'index'])->name('contact');
+    Route::get('contact', [ContactController::class, 'index'])->name('contact')->middleware('permission:contact.view');
 });
 
 Route::post('locale/{locale}', function (string $locale) {

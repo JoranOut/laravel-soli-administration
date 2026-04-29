@@ -11,9 +11,10 @@ export type User = {
     [key: string]: unknown;
 };
 
-export type PermissionResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'instrumentsoorten' | 'users';
-export type PermissionAction = 'view' | 'create' | 'edit' | 'delete';
-export type Permission = `${PermissionResource}.${PermissionAction}`;
+export type CrudResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'instrumentsoorten' | 'users';
+export type CrudAction = 'view' | 'create' | 'edit' | 'delete';
+export type StandalonePermission = 'dashboard.view' | 'contact.view';
+export type Permission = `${CrudResource}.${CrudAction}` | StandalonePermission;
 export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'muziekbeheer' | 'member';
 
 export type Auth = {
