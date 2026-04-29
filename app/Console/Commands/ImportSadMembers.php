@@ -193,32 +193,57 @@ class ImportSadMembers extends Command
 
         // Handle --fresh
         if ($this->option('fresh')) {
+            $adminRelatieIds = Relatie::where('beheerd_in_admin', true)->pluck('id');
+
             if ($dryRun) {
-                $this->warn('[DRY RUN] Would clear all existing relatie data.');
+                $this->warn('[DRY RUN] Would clear existing relatie data (preserving '.$adminRelatieIds->count().' admin-managed relaties).');
             } else {
-                $this->warn('Clearing existing relatie data...');
+                $this->warn('Clearing existing relatie data (preserving '.$adminRelatieIds->count().' admin-managed relaties)...');
+
+                $subResourceTables = [
+                    'soli_betalingen' => 'te_betalen_contributie_id',
+                    'soli_te_betalen_contributies' => 'relatie_id',
+                    'soli_relatie_onderdeel' => 'relatie_id',
+                    'soli_relatie_relatie_type' => 'relatie_id',
+                    'soli_relatie_sinds' => 'relatie_id',
+                    'soli_relatie_instrument' => 'relatie_id',
+                    'soli_instrument_bespelers' => 'relatie_id',
+                    'soli_adressen' => 'relatie_id',
+                    'soli_emails' => 'relatie_id',
+                    'soli_telefoons' => 'relatie_id',
+                    'soli_giro_gegevens' => 'relatie_id',
+                    'soli_opleidingen' => 'relatie_id',
+                    'soli_uniformen' => 'relatie_id',
+                    'soli_insignes' => 'relatie_id',
+                    'soli_diplomas' => 'relatie_id',
+                    'soli_andere_verenigingen' => 'relatie_id',
+                ];
+
                 Schema::disableForeignKeyConstraints();
-                foreach ([
-                    'soli_betalingen',
-                    'soli_te_betalen_contributies',
-                    'soli_relatie_onderdeel',
-                    'soli_relatie_relatie_type',
-                    'soli_relatie_sinds',
-                    'soli_relatie_instrument',
-                    'soli_instrument_bespelers',
-                    'soli_adressen',
-                    'soli_emails',
-                    'soli_telefoons',
-                    'soli_giro_gegevens',
-                    'soli_opleidingen',
-                    'soli_uniformen',
-                    'soli_insignes',
-                    'soli_diplomas',
-                    'soli_andere_verenigingen',
-                    'soli_relaties',
-                ] as $table) {
-                    DB::table($table)->truncate();
+
+                if ($adminRelatieIds->isEmpty()) {
+                    // No admin-managed relaties — fast truncate
+                    foreach (array_keys($subResourceTables) as $table) {
+                        DB::table($table)->truncate();
+                    }
+                    DB::table('soli_relaties')->truncate();
+                } else {
+                    // Delete only non-admin relatie data
+                    // First handle betalingen (linked via te_betalen_contributies, not directly by relatie_id)
+                    $nonAdminContributieIds = DB::table('soli_te_betalen_contributies')
+                        ->whereNotIn('relatie_id', $adminRelatieIds)
+                        ->pluck('id');
+                    DB::table('soli_betalingen')->whereIn('te_betalen_contributie_id', $nonAdminContributieIds)->delete();
+
+                    foreach ($subResourceTables as $table => $column) {
+                        if ($table === 'soli_betalingen') {
+                            continue; // Already handled above
+                        }
+                        DB::table($table)->whereNotIn($column, $adminRelatieIds)->delete();
+                    }
+                    DB::table('soli_relaties')->where('beheerd_in_admin', false)->delete();
                 }
+
                 Schema::enableForeignKeyConstraints();
             }
         }
@@ -311,22 +336,27 @@ class ImportSadMembers extends Command
             return;
         }
 
+        $adminRelatieIds = Relatie::where('beheerd_in_admin', true)->pluck('id');
+
         // End open memberships at the KO start date
         $endedOpen = DB::table('soli_relatie_onderdeel')
             ->where('onderdeel_id', $df->id)
             ->whereNull('tot')
+            ->whereNotIn('relatie_id', $adminRelatieIds)
             ->update(['tot' => $firstKo]);
 
         // Cap memberships that extend past the KO start date
         $capped = DB::table('soli_relatie_onderdeel')
             ->where('onderdeel_id', $df->id)
             ->where('tot', '>', $firstKo)
+            ->whereNotIn('relatie_id', $adminRelatieIds)
             ->update(['tot' => $firstKo]);
 
         // Remove memberships that started after KO existed
         $removed = DB::table('soli_relatie_onderdeel')
             ->where('onderdeel_id', $df->id)
             ->where('van', '>=', $firstKo)
+            ->whereNotIn('relatie_id', $adminRelatieIds)
             ->delete();
 
         $total = $endedOpen + $capped + $removed;
@@ -338,6 +368,7 @@ class ImportSadMembers extends Command
     private function closeOnderdelenForExMembers(): void
     {
         $relaties = Relatie::whereHas('relatieSinds')
+            ->where('beheerd_in_admin', false)
             ->with(['relatieSinds', 'onderdelen'])
             ->get();
 
