@@ -590,6 +590,28 @@ test('reconcile ignores already inactive relaties', function () {
     $response->assertJson(['deactivated_count' => 0]);
 });
 
+test('reconcile skips admin-managed relaties', function () {
+    // Admin-managed relatie NOT in the active list — should NOT be deactivated
+    $adminManaged = Relatie::factory()->create([
+        'relatie_nummer' => 7777,
+        'actief' => true,
+        'beheerd_in_admin' => true,
+    ]);
+
+    // Regular relatie that IS in the active list
+    Relatie::factory()->create(['relatie_nummer' => 1000, 'actief' => true]);
+
+    $response = $this->postJson('/api/v1/sync/reconcile', [
+        'active_lid_ids' => [1000],
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+    $response->assertJson(['deactivated_count' => 0]);
+
+    $adminManaged->refresh();
+    expect($adminManaged->actief)->toBeTrue();
+});
+
 test('reconcile requires API key', function () {
     $response = $this->postJson('/api/v1/sync/reconcile', [
         'active_lid_ids' => [1000],
