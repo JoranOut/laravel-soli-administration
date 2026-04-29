@@ -215,6 +215,50 @@ test('re-import does not reassign manually removed lid type', function () {
     )->toBeFalse();
 });
 
+test('import skips relaties with beheerd_in_admin flag', function () {
+    // Pre-create a relatie with beheerd_in_admin that matches a fixture lid_id
+    $relatie = Relatie::create([
+        'relatie_nummer' => 9001,
+        'voornaam' => 'Admin',
+        'achternaam' => 'Managed',
+        'actief' => true,
+        'beheerd_in_admin' => true,
+    ]);
+
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath])
+        ->assertExitCode(0);
+
+    // Relatie should NOT have been updated with SAD data
+    $relatie->refresh();
+    expect($relatie->voornaam)->toBe('Admin');
+    expect($relatie->achternaam)->toBe('Managed');
+
+    // No sub-resources should have been added
+    expect($relatie->adressen()->count())->toBe(0);
+    expect($relatie->emails()->count())->toBe(0);
+    expect($relatie->telefoons()->count())->toBe(0);
+    expect($relatie->relatieSinds()->count())->toBe(0);
+});
+
+test('import updates relaties without beheerd_in_admin flag', function () {
+    // Pre-create a relatie WITHOUT beheerd_in_admin that matches a fixture lid_id
+    $relatie = Relatie::create([
+        'relatie_nummer' => 9001,
+        'voornaam' => 'Old',
+        'achternaam' => 'Name',
+        'actief' => true,
+        'beheerd_in_admin' => false,
+    ]);
+
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath])
+        ->assertExitCode(0);
+
+    // Sub-resources should have been added by the import
+    $relatie->refresh();
+    expect($relatie->adressen()->count())->toBeGreaterThan(0);
+    expect($relatie->emails()->count())->toBeGreaterThan(0);
+});
+
 test('dry-run flag does not persist', function () {
     $this->artisan('import:sad-members', [
         'path' => $this->fixturePath,

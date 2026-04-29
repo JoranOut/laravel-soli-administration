@@ -27,6 +27,7 @@ class Relatie extends Model
         'geslacht',
         'geboortedatum',
         'actief',
+        'beheerd_in_admin',
         'foto_url',
         'geboorteplaats',
         'nationaliteit',
@@ -37,6 +38,7 @@ class Relatie extends Model
         return [
             'geboortedatum' => 'date',
             'actief' => 'boolean',
+            'beheerd_in_admin' => 'boolean',
         ];
     }
 

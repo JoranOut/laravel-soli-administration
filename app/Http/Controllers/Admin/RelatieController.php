@@ -87,7 +87,10 @@ class RelatieController extends Controller
         ];
 
         $relatie = DB::transaction(function () use ($validated, $baseFields) {
-            $relatie = Relatie::create(Arr::only($validated, $baseFields));
+            $relatie = Relatie::create(array_merge(
+                Arr::only($validated, $baseFields),
+                ['beheerd_in_admin' => true],
+            ));
 
             // Types (pivot)
             foreach ($validated['types'] ?? [] as $type) {

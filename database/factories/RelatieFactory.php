@@ -27,6 +27,7 @@ class RelatieFactory extends Factory
             'geslacht' => $geslacht,
             'geboortedatum' => $this->faker->dateTimeBetween('-70 years', '-8 years'),
             'actief' => true,
+            'beheerd_in_admin' => false,
             'geboorteplaats' => $this->faker->city(),
             'nationaliteit' => 'Nederlandse',
         ];
@@ -35,5 +36,10 @@ class RelatieFactory extends Factory
     public function inactief(): static
     {
         return $this->state(fn () => ['actief' => false]);
+    }
+
+    public function beheerInAdmin(): static
+    {
+        return $this->state(fn () => ['beheerd_in_admin' => true]);
     }
 }
