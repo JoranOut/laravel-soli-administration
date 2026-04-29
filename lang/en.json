@@ -151,6 +151,8 @@
     "Active": "Active",
     "Inactive": "Inactive",
     "Cannot deactivate: this relation still has an active membership or is part of a group.": "Cannot deactivate: this relation still has an active membership or is part of a group.",
+    "Managed in admin": "Managed in admin",
+    "When enabled, this relation will not be overwritten by the SAD import.": "When enabled, this relation will not be overwritten by the SAD import.",
     "Status": "Status",
     "Relation": "Relation",
     "Contact": "Contact",
