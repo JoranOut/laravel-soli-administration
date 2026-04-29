@@ -141,10 +141,37 @@ class DashboardController extends Controller
         ];
     }
 
+    /**
+     * Normalize a plaats string for consistent comparison.
+     * Strips punctuation, collapses whitespace, lowercases.
+     * e.g. "SANTPOORT - ZUID" → "santpoort zuid", "VELSERBROEK ." → "velserbroek"
+     */
+    private function normalizePlaats(string $plaats): string
+    {
+        $plaats = mb_strtolower(trim($plaats));
+        $plaats = preg_replace('/[^a-z\s]/', '', $plaats);
+
+        return preg_replace('/\s+/', ' ', trim($plaats));
+    }
+
+    private function isVelsenPlaats(string $normalized): bool
+    {
+        $velsenPlaces = [
+            'driehuis',
+            'ijmuiden',
+            'santpoort noord',
+            'santpoort zuid',
+            'santpoort',
+            'velserbroek',
+            'velsen noord',
+            'velsen zuid',
+        ];
+
+        return in_array($normalized, $velsenPlaces);
+    }
+
     private function getResidenceStats(): array
     {
-        $velsenPlaces = ['driehuis', 'ijmuiden', 'santpoort-noord', 'santpoort-zuid', 'velserbroek', 'velsen-noord', 'velsen-zuid'];
-
         $activeLidIds = Relatie::actief()->ofType('lid')->pluck('soli_relaties.id');
 
         if ($activeLidIds->isEmpty()) {
@@ -173,7 +200,7 @@ class DashboardController extends Controller
             ->all();
 
         $insideVelsen = $latestAddresses->filter(
-            fn ($row) => in_array(mb_strtolower($row->plaats ?? ''), $velsenPlaces)
+            fn ($row) => $this->isVelsenPlaats($this->normalizePlaats($row->plaats ?? ''))
         )->count();
 
         return [
@@ -190,16 +217,17 @@ class DashboardController extends Controller
         $rows = DB::table('soli_relatie_instrument as ri')
             ->join('soli_instrument_soorten as s', 'ri.instrument_soort_id', '=', 's.id')
             ->join('soli_relaties as r', 'ri.relatie_id', '=', 'r.id')
-            ->join('soli_relatie_relatie_type as rt', 'rt.relatie_id', '=', 'r.id')
-            ->join('soli_relatie_types as t', 'rt.relatie_type_id', '=', 't.id')
+            ->join('soli_relatie_onderdeel as ro', function ($join) {
+                $join->on('ro.relatie_id', '=', 'ri.relatie_id')
+                    ->on('ro.onderdeel_id', '=', 'ri.onderdeel_id');
+            })
             ->where('r.actief', true)
-            ->where('t.naam', 'lid')
-            ->where('rt.van', '<=', $today)
-            ->where(fn ($q) => $q->whereNull('rt.tot')->orWhere('rt.tot', '>=', $today))
+            ->where('ro.van', '<=', $today)
+            ->where(fn ($q) => $q->whereNull('ro.tot')->orWhere('ro.tot', '>=', $today))
             ->select(
                 's.naam',
-                DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN r.geboortedatum IS NOT NULL AND TIMESTAMPDIFF(YEAR, r.geboortedatum, CURDATE()) >= 60 THEN 1 ELSE 0 END) as over_60')
+                DB::raw('COUNT(DISTINCT ri.id) as total'),
+                DB::raw('COUNT(DISTINCT CASE WHEN r.geboortedatum IS NOT NULL AND TIMESTAMPDIFF(YEAR, r.geboortedatum, CURDATE()) >= 60 THEN ri.id END) as over_60')
             )
             ->groupBy('s.naam')
             ->orderByDesc('total')
