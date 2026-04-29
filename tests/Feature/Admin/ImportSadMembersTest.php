@@ -259,6 +259,38 @@ test('import updates relaties without beheerd_in_admin flag', function () {
     expect($relatie->emails()->count())->toBeGreaterThan(0);
 });
 
+test('fresh flag preserves admin-managed relaties', function () {
+    // Pre-create an admin-managed relatie with sub-resources
+    $relatie = Relatie::create([
+        'relatie_nummer' => 8888,
+        'voornaam' => 'Admin',
+        'achternaam' => 'Managed',
+        'actief' => true,
+        'beheerd_in_admin' => true,
+    ]);
+    $relatie->emails()->create(['email' => 'admin@example.com']);
+    $relatie->adressen()->create([
+        'straat' => 'Teststraat',
+        'huisnummer' => '1',
+        'postcode' => '1234AB',
+        'plaats' => 'Test',
+    ]);
+
+    $this->artisan('import:sad-members', [
+        'path' => $this->fixturePath,
+        '--fresh' => true,
+    ])->assertExitCode(0);
+
+    // Admin-managed relatie and its sub-resources should still exist
+    expect(Relatie::where('relatie_nummer', 8888)->exists())->toBeTrue();
+    $relatie->refresh();
+    expect($relatie->emails()->count())->toBe(1);
+    expect($relatie->adressen()->count())->toBe(1);
+
+    // Fixture relaties should also be imported
+    expect(Relatie::where('relatie_nummer', 9001)->exists())->toBeTrue();
+});
+
 test('dry-run flag does not persist', function () {
     $this->artisan('import:sad-members', [
         'path' => $this->fixturePath,
