@@ -210,6 +210,81 @@ test('guest gets redirected when updating login email', function () {
         ->assertRedirect('/login');
 });
 
+test('admin can generate a user account for relatie without one', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $relatie = Relatie::factory()->create(['user_id' => null]);
+    $relatie->emails()->create(['email' => 'generate@example.com']);
+
+    $this->actingAs($admin)
+        ->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertRedirect()
+        ->assertSessionHas('success');
+
+    $relatie->refresh();
+    expect($relatie->user_id)->not->toBeNull();
+
+    $user = User::find($relatie->user_id);
+    expect($user->email)->toBe('generate@example.com');
+    expect($user->name)->toBe($relatie->volledige_naam);
+    expect($user->hasRole('member'))->toBeTrue();
+});
+
+test('generate account fails when relatie already has user', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $linkedUser = User::factory()->create()->assignRole('member');
+    $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
+
+    $this->actingAs($admin)
+        ->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertRedirect()
+        ->assertSessionHas('error');
+});
+
+test('generate account fails when relatie has no emails', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $relatie = Relatie::factory()->create(['user_id' => null]);
+
+    $this->actingAs($admin)
+        ->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    $relatie->refresh();
+    expect($relatie->user_id)->toBeNull();
+});
+
+test('generate account fails when email already taken by another user', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    User::factory()->create(['email' => 'taken@example.com']);
+    $relatie = Relatie::factory()->create(['user_id' => null]);
+    $relatie->emails()->create(['email' => 'taken@example.com']);
+
+    $this->actingAs($admin)
+        ->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    $relatie->refresh();
+    expect($relatie->user_id)->toBeNull();
+});
+
+test('non-admin gets 403 when generating user account', function () {
+    $bestuur = User::factory()->create()->assignRole('bestuur');
+    $relatie = Relatie::factory()->create(['user_id' => null]);
+    $relatie->emails()->create(['email' => 'test@example.com']);
+
+    $this->actingAs($bestuur)
+        ->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertForbidden();
+});
+
+test('guest gets redirected when generating user account', function () {
+    $relatie = Relatie::factory()->create(['user_id' => null]);
+
+    $this->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertRedirect('/login');
+});
+
 test('self-service profile delete route no longer exists', function () {
     $user = User::factory()->create()->assignRole('member');
 

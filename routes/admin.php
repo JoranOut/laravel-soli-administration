@@ -63,6 +63,8 @@ Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(funct
         ->middleware('permission:relaties.delete');
 
     // Relatie account management
+    Route::post('admin/relaties/{relatie}/account/create', [RelatieController::class, 'createAccount'])->name('admin.relaties.account.create')
+        ->middleware('permission:users.edit');
     Route::post('admin/relaties/{relatie}/account', [RelatieController::class, 'storeAccount'])->name('admin.relaties.account.store')
         ->middleware('permission:users.edit');
     Route::put('admin/relaties/{relatie}/account', [RelatieController::class, 'updateAccountEmail'])->name('admin.relaties.account.update')
