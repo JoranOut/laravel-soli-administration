@@ -25,6 +25,7 @@ export default function RelatieOverviewTab({ relatie }: Props) {
         geslacht: relatie.geslacht,
         geboortedatum: relatie.geboortedatum ?? '',
         actief: relatie.actief,
+        beheerd_in_admin: relatie.beheerd_in_admin,
         geboorteplaats: relatie.geboorteplaats ?? '',
         nationaliteit: relatie.nationaliteit ?? '',
     });
@@ -119,16 +120,27 @@ export default function RelatieOverviewTab({ relatie }: Props) {
                             <Label htmlFor="nationaliteit">{t('Nationality')}</Label>
                             <Input id="nationaliteit" value={data.nationaliteit} onChange={(e) => setData('nationaliteit', e.target.value)} />
                         </div>
-                        <div className="space-y-1 pt-6">
-                            <div className="flex items-center gap-2">
-                                <Checkbox id="actief" checked={data.actief} onCheckedChange={(checked) => setData('actief', checked === true)} disabled={cannotDeactivate} />
-                                <Label htmlFor="actief">{t('Active')}</Label>
+                        <div className="space-y-3 pt-6">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="actief" checked={data.actief} onCheckedChange={(checked) => setData('actief', checked === true)} disabled={cannotDeactivate} />
+                                    <Label htmlFor="actief">{t('Active')}</Label>
+                                </div>
+                                {cannotDeactivate && (
+                                    <p className="text-muted-foreground text-xs">
+                                        {t('Cannot deactivate: this relation still has an active membership or is part of a group.')}
+                                    </p>
+                                )}
                             </div>
-                            {cannotDeactivate && (
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="beheerd_in_admin" checked={data.beheerd_in_admin} onCheckedChange={(checked) => setData('beheerd_in_admin', checked === true)} />
+                                    <Label htmlFor="beheerd_in_admin">{t('Managed in admin')}</Label>
+                                </div>
                                 <p className="text-muted-foreground text-xs">
-                                    {t('Cannot deactivate: this relation still has an active membership or is part of a group.')}
+                                    {t('When enabled, this relation will not be overwritten by the SAD import.')}
                                 </p>
-                            )}
+                            </div>
                         </div>
                     </div>
 

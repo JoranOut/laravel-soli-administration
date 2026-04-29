@@ -152,6 +152,8 @@
     "Active": "Actief",
     "Inactive": "Inactief",
     "Cannot deactivate: this relation still has an active membership or is part of a group.": "Kan niet deactiveren: deze relatie heeft nog een actief lidmaatschap of maakt deel uit van een groep.",
+    "Managed in admin": "Beheerd in admin",
+    "When enabled, this relation will not be overwritten by the SAD import.": "Indien ingeschakeld wordt deze relatie niet overschreven door de SAD-import.",
     "Status": "Status",
     "Relation": "Relatie",
     "Contact": "Contact",
