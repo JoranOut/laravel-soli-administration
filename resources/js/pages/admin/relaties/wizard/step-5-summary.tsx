@@ -1,12 +1,13 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
-import type { Onderdeel, RelatieCreateFormData, RelatieType } from '@/types/admin';
+import type { InstrumentSoort, Onderdeel, RelatieCreateFormData, RelatieType } from '@/types/admin';
 
 type Props = {
     data: RelatieCreateFormData;
     relatieTypes: RelatieType[];
     onderdelen: Onderdeel[];
+    instrumentSoorten: InstrumentSoort[];
     onNavigateToStep: (step: number) => void;
 };
 
@@ -35,11 +36,12 @@ const genderLabel = (g: string) => {
     }
 };
 
-export default function Step5Summary({ data, relatieTypes, onderdelen, onNavigateToStep }: Props) {
+export default function Step5Summary({ data, relatieTypes, onderdelen, instrumentSoorten, onNavigateToStep }: Props) {
     const { t } = useTranslation();
 
     const resolveTypeName = (typeId: string) => relatieTypes.find((rt) => rt.id.toString() === typeId)?.naam ?? typeId;
     const resolveOnderdeelName = (id: string) => onderdelen.find((o) => o.id.toString() === id)?.naam ?? id;
+    const resolveInstrumentName = (id: number) => instrumentSoorten.find((is) => is.id === id)?.naam ?? String(id);
 
     return (
         <div className="space-y-6">
@@ -202,8 +204,11 @@ export default function Step5Summary({ data, relatieTypes, onderdelen, onNavigat
                                     {data.onderdelen.map((o, i) => (
                                         <div key={i} className="rounded-md border p-2 mb-2">
                                             <p className="font-medium">{resolveOnderdeelName(o.onderdeel_id)}</p>
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex flex-wrap items-center gap-2">
                                                 {o.functie && <Badge variant="secondary">{o.functie}</Badge>}
+                                                {o.instrument_soort_ids.map((id) => (
+                                                    <Badge key={id}>{resolveInstrumentName(id)}</Badge>
+                                                ))}
                                                 <span className="text-muted-foreground text-xs">{formatDate(o.van)} – {formatDate(o.tot)}</span>
                                             </div>
                                         </div>

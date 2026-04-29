@@ -6,14 +6,16 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import InputError from '@/components/input-error';
+import { InstrumentMultiSelect } from '@/components/admin/instrument-multi-select';
 import { useTranslation } from '@/hooks/use-translation';
-import type { LidmaatschapEntry, Onderdeel, OnderdeelEntry, RelatieCreateFormData } from '@/types/admin';
+import type { InstrumentSoort, LidmaatschapEntry, Onderdeel, OnderdeelEntry, RelatieCreateFormData } from '@/types/admin';
 
 type Props = {
     data: RelatieCreateFormData;
     setData: <K extends keyof RelatieCreateFormData>(key: K, value: RelatieCreateFormData[K]) => void;
     errors: Partial<Record<string, string>>;
     onderdelen: Onderdeel[];
+    instrumentSoorten: InstrumentSoort[];
 };
 
 const today = () => new Date().toISOString().split('T')[0];
@@ -23,10 +25,10 @@ function emptyLidmaatschap(): LidmaatschapEntry {
 }
 
 function emptyOnderdeel(): OnderdeelEntry {
-    return { onderdeel_id: '', functie: '', van: today(), tot: '' };
+    return { onderdeel_id: '', functie: '', instrument_soort_ids: [], van: today(), tot: '' };
 }
 
-export default function Step3Membership({ data, setData, errors, onderdelen }: Props) {
+export default function Step3Membership({ data, setData, errors, onderdelen, instrumentSoorten }: Props) {
     const { t } = useTranslation();
 
     const updateLidmaatschap = (index: number, field: keyof LidmaatschapEntry, value: string) => {
@@ -35,7 +37,7 @@ export default function Step3Membership({ data, setData, errors, onderdelen }: P
         setData('lidmaatschappen', updated);
     };
 
-    const updateOnderdeel = (index: number, field: keyof OnderdeelEntry, value: string) => {
+    const updateOnderdeel = (index: number, field: keyof OnderdeelEntry, value: OnderdeelEntry[keyof OnderdeelEntry]) => {
         const updated = [...data.onderdelen];
         updated[index] = { ...updated[index], [field]: value };
         setData('onderdelen', updated);
@@ -127,6 +129,15 @@ export default function Step3Membership({ data, setData, errors, onderdelen }: P
                                         <div className="space-y-2">
                                             <Label>{t('Function')}</Label>
                                             <Input value={entry.functie} onChange={(e) => updateOnderdeel(index, 'functie', e.target.value)} placeholder={t('e.g. Conductor, Chairman')} />
+                                        </div>
+                                        <div className="col-span-full space-y-2">
+                                            <Label>{t('Instrument type')}</Label>
+                                            <InstrumentMultiSelect
+                                                instrumentSoorten={instrumentSoorten}
+                                                selectedIds={entry.instrument_soort_ids}
+                                                onChange={(ids) => updateOnderdeel(index, 'instrument_soort_ids', ids)}
+                                            />
+                                            <InputError message={errors[`onderdelen.${index}.instrument_soort_ids`]} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label required>{t('From')}</Label>

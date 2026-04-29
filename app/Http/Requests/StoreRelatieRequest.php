@@ -69,6 +69,8 @@ class StoreRelatieRequest extends FormRequest
             'onderdelen' => ['nullable', 'array'],
             'onderdelen.*.onderdeel_id' => ['required', 'exists:soli_onderdelen,id'],
             'onderdelen.*.functie' => ['nullable', 'string', 'max:255'],
+            'onderdelen.*.instrument_soort_ids' => ['nullable', 'array'],
+            'onderdelen.*.instrument_soort_ids.*' => ['integer', 'exists:soli_instrument_soorten,id'],
             'onderdelen.*.van' => ['required', 'date'],
             'onderdelen.*.tot' => ['nullable', 'date'],
 
