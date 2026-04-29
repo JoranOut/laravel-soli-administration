@@ -440,6 +440,25 @@ test('admin can create relatie with all sub-resources', function () {
     expect($relatie->user_id)->toBe($user->id);
 });
 
+test('creating relatie via admin sets beheerd_in_admin', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)->post('/admin/relaties', [
+        'relatie_nummer' => 8800,
+        'voornaam' => 'Admin',
+        'achternaam' => 'Created',
+        'geslacht' => 'O',
+        'emails' => [
+            ['email' => 'admin-created@example.com'],
+        ],
+    ]);
+
+    $this->assertDatabaseHas('soli_relaties', [
+        'relatie_nummer' => 8800,
+        'beheerd_in_admin' => true,
+    ]);
+});
+
 test('store validates nested sub-resource fields', function () {
     $admin = User::factory()->create()->assignRole('admin');
 

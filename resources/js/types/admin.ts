@@ -11,6 +11,7 @@ export type Relatie = {
     geslacht: 'M' | 'V' | 'O';
     geboortedatum: string | null;
     actief: boolean;
+    beheerd_in_admin: boolean;
     foto_url: string | null;
     geboorteplaats: string | null;
     nationaliteit: string | null;

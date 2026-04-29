@@ -223,7 +223,7 @@ class ImportSadMembers extends Command
             }
         }
 
-        $stats = ['created' => 0, 'matched' => 0, 'errors' => 0];
+        $stats = ['created' => 0, 'matched' => 0, 'skipped' => 0, 'errors' => 0];
 
         // Disable activity logging and Google Contacts observers during mass import
         activity()->disableLogging();
@@ -281,6 +281,7 @@ class ImportSadMembers extends Command
             [
                 ['Created', $stats['created']],
                 ['Matched/Updated', $stats['matched']],
+                ['Skipped (admin-managed)', $stats['skipped']],
                 ['Errors', $stats['errors']],
                 ['Total processed', count($members)],
             ],
@@ -516,6 +517,12 @@ class ImportSadMembers extends Command
         $isNew = false;
 
         if ($relatie) {
+            if ($relatie->beheerd_in_admin) {
+                $stats['skipped']++;
+
+                return;
+            }
+
             $stats['matched']++;
             if ($dryRun) {
                 return;

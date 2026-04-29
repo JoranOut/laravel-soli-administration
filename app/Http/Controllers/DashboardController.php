@@ -226,8 +226,8 @@ class DashboardController extends Controller
             ->where(fn ($q) => $q->whereNull('ro.tot')->orWhere('ro.tot', '>=', $today))
             ->select(
                 's.naam',
-                DB::raw('COUNT(DISTINCT ri.id) as total'),
-                DB::raw('COUNT(DISTINCT CASE WHEN r.geboortedatum IS NOT NULL AND TIMESTAMPDIFF(YEAR, r.geboortedatum, CURDATE()) >= 60 THEN ri.id END) as over_60')
+                DB::raw('COUNT(DISTINCT ri.relatie_id) as total'),
+                DB::raw('COUNT(DISTINCT CASE WHEN r.geboortedatum IS NOT NULL AND TIMESTAMPDIFF(YEAR, r.geboortedatum, CURDATE()) >= 60 THEN ri.relatie_id END) as over_60')
             )
             ->groupBy('s.naam')
             ->orderByDesc('total')
