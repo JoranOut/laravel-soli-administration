@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AppLogo from '@/components/app-logo';
@@ -24,10 +24,11 @@ import type { RelatieType } from '@/types/admin';
 let cachedRelatieTypes: Pick<RelatieType, 'id' | 'naam'>[] | null = null;
 
 export function AppSidebar() {
-    const { canAny, hasRole } = usePermissions();
+    const { can, canAny, hasRole } = usePermissions();
     const { t } = useTranslation();
     const [relatieTypes, setRelatieTypes] = useState(cachedRelatieTypes ?? []);
-    const isMember = hasRole('member') && !hasRole('admin') && !hasRole('bestuur') && !hasRole('ledenadministratie');
+    const { relatie_ids } = usePage().props.auth;
+    const hasRelatie = relatie_ids.length > 0;
 
     useEffect(() => {
         if (cachedRelatieTypes) return;
@@ -38,13 +39,7 @@ export function AppSidebar() {
 
     const mainNavItems: NavItem[] = [];
 
-    if (isMember) {
-        mainNavItems.push({
-            title: t('My data'),
-            href: dashboard(),
-            icon: User,
-        });
-    } else if (!isMember) {
+    if (can('dashboard.view')) {
         mainNavItems.push({
             title: t('Overview'),
             href: dashboard(),
@@ -52,11 +47,21 @@ export function AppSidebar() {
         });
     }
 
-    mainNavItems.push({
-        title: t('Contact'),
-        href: '/contact',
-        icon: Mail,
-    });
+    if (hasRelatie) {
+        mainNavItems.push({
+            title: t('My data'),
+            href: can('dashboard.view') ? dashboard.url({ query: { view: 'member' } }) : dashboard(),
+            icon: User,
+        });
+    }
+
+    if (can('contact.view')) {
+        mainNavItems.push({
+            title: t('Contact'),
+            href: '/contact',
+            icon: Mail,
+        });
+    }
 
     const footerNavItems: NavItem[] = [
         {
@@ -83,7 +88,7 @@ export function AppSidebar() {
 
     const dataNavItems: NavItem[] = [];
 
-    if (canAny(['relaties.view']) && !isMember) {
+    if (canAny(['relaties.view']) && can('dashboard.view')) {
         const typeChildren: NavItem[] = relatieTypes.map((type) => ({
             title: type.naam.charAt(0).toUpperCase() + type.naam.slice(1),
             href: `/admin/relaties?type=${type.naam}`,
@@ -161,7 +166,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} label={t('Platform')} />
+                {mainNavItems.length > 0 && <NavMain items={mainNavItems} label={t('Platform')} />}
                 {dataNavItems.length > 0 && <NavMain items={dataNavItems} label={t('Management')} />}
                 {adminNavItems.length > 0 && <NavMain items={adminNavItems} label={t('System')} />}
             </SidebarContent>

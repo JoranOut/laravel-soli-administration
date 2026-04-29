@@ -18,11 +18,17 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('member') && ! $user->hasRole('admin') && ! $user->hasRole('bestuur') && ! $user->hasRole('ledenadministratie')) {
+        // Users with dashboard.view permission can request the member view via ?view=member
+        if ($user->can('dashboard.view') && $request->input('view') === 'member') {
             return $this->memberDashboard($user, $request);
         }
 
-        return $this->statisticsDashboard();
+        if ($user->can('dashboard.view')) {
+            return $this->statisticsDashboard();
+        }
+
+        // All other users: show member dashboard if they have relaties
+        return $this->memberDashboard($user, $request);
     }
 
     private function memberDashboard($user, Request $request): Response

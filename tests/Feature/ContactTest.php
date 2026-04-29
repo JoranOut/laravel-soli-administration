@@ -10,11 +10,19 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users can view the contact page', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('authenticated users without contact.view get 403', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create()->assignRole('member');
 
-    $response = $this->get(route('contact'));
+    $response = $this->actingAs($user)->get(route('contact'));
+    $response->assertForbidden();
+});
+
+test('authenticated users with contact.view can view the contact page', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $user = User::factory()->create()->assignRole('admin');
+
+    $response = $this->actingAs($user)->get(route('contact'));
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->component('contact'));
 });
@@ -23,7 +31,7 @@ test('contact page shows bestuur members with pivot functie and email', function
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
 
-    $user = User::factory()->create()->assignRole('member');
+    $user = User::factory()->create()->assignRole('admin');
 
     $bestuurType = \App\Models\RelatieType::where('naam', 'bestuur')->first();
 
