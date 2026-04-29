@@ -9,6 +9,7 @@ use App\Jobs\SyncGoogleContactsJob;
 use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -71,6 +72,7 @@ class RelatieController extends Controller
             'relatieTypes' => RelatieType::all(),
             'nextRelatieNummer' => (Relatie::withTrashed()->max('relatie_nummer') ?? 9999) + 1,
             'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
+            'instrumentSoorten' => InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get(),
             'preselectedTypeId' => $preselectedTypeId,
         ]);
     }
@@ -143,6 +145,14 @@ class RelatieController extends Controller
                     'van' => $onderdeel['van'],
                     'tot' => $onderdeel['tot'] ?? null,
                 ]);
+
+                foreach ($onderdeel['instrument_soort_ids'] ?? [] as $instrumentSoortId) {
+                    RelatieInstrument::create([
+                        'relatie_id' => $relatie->id,
+                        'onderdeel_id' => $onderdeel['onderdeel_id'],
+                        'instrument_soort_id' => $instrumentSoortId,
+                    ]);
+                }
             }
 
             // Opleidingen

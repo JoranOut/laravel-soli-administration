@@ -365,6 +365,7 @@ export type LidmaatschapEntry = {
 export type OnderdeelEntry = {
     onderdeel_id: string;
     functie: string;
+    instrument_soort_ids: number[];
     van: string;
     tot: string;
 };

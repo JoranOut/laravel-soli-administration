@@ -9,12 +9,13 @@ import Step2Contact from '@/pages/admin/relaties/wizard/step-2-contact';
 import Step3Membership from '@/pages/admin/relaties/wizard/step-3-membership';
 import Step4Education from '@/pages/admin/relaties/wizard/step-4-education';
 import Step5Summary from '@/pages/admin/relaties/wizard/step-5-summary';
-import type { EmailEntry, Onderdeel, RelatieCreateFormData, RelatieType } from '@/types/admin';
+import type { EmailEntry, InstrumentSoort, Onderdeel, RelatieCreateFormData, RelatieType } from '@/types/admin';
 
 type Props = {
     relatieTypes: RelatieType[];
     nextRelatieNummer: number;
     onderdelen: Onderdeel[];
+    instrumentSoorten: InstrumentSoort[];
     preselectedTypeId: number | null;
 };
 
@@ -69,7 +70,7 @@ function createInitialData(nextRelatieNummer: number, preselectedTypeId: number 
     };
 }
 
-export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderdelen, preselectedTypeId }: Props) {
+export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderdelen, instrumentSoorten, preselectedTypeId }: Props) {
     const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(1);
     const [data, setDataState] = useState<RelatieCreateFormData>(() => createInitialData(nextRelatieNummer, preselectedTypeId));
@@ -149,13 +150,13 @@ export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderde
                         <Step2Contact data={data} setData={setData} errors={errors} />
                     )}
                     {currentStep === 3 && (
-                        <Step3Membership data={data} setData={setData} errors={errors} onderdelen={onderdelen} />
+                        <Step3Membership data={data} setData={setData} errors={errors} onderdelen={onderdelen} instrumentSoorten={instrumentSoorten} />
                     )}
                     {currentStep === 4 && (
                         <Step4Education data={data} setData={setData} errors={errors} />
                     )}
                     {currentStep === 5 && (
-                        <Step5Summary data={data} relatieTypes={relatieTypes} onderdelen={onderdelen} onNavigateToStep={setCurrentStep} />
+                        <Step5Summary data={data} relatieTypes={relatieTypes} onderdelen={onderdelen} instrumentSoorten={instrumentSoorten} onNavigateToStep={setCurrentStep} />
                     )}
                 </div>
 
