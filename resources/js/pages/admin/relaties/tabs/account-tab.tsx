@@ -143,16 +143,34 @@ export default function RelatieAccountTab({ relatie, users }: Props) {
         }).slice(0, 20)
         : [];
 
+    const handleCreateAccount = () => {
+        router.post(`/admin/relaties/${relatie.id}/account/create`, {}, {
+            preserveScroll: true,
+        });
+    };
+
     if (!relatie.user) {
         return (
             <Card>
                 <CardHeader>
                     <CardTitle>{t('Linked user account')}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                     <p className="text-muted-foreground">{t('No linked user account.')}</p>
+
+                    {(relatie.emails ?? []).length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-sm">
+                                {t('Create a new user account using the first email address (:email).', { email: relatie.emails![0].email })}
+                            </p>
+                            <Button onClick={handleCreateAccount}>
+                                {t('Generate user account')}
+                            </Button>
+                        </div>
+                    )}
+
                     <div className="space-y-2">
-                        <Label>{t('Link to user')}</Label>
+                        <Label>{t('Link to existing user')}</Label>
                         <Input
                             placeholder={t('Search users...')}
                             value={search}

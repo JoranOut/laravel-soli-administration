@@ -290,6 +290,43 @@ class RelatieController extends Controller
             ->with('success', __('Login email updated.'));
     }
 
+    public function createAccount(Relatie $relatie): RedirectResponse
+    {
+        if ($relatie->user_id) {
+            return redirect()
+                ->back()
+                ->with('error', __('This relation already has a linked user account.'));
+        }
+
+        $email = $relatie->emails()->first();
+
+        if (! $email) {
+            return redirect()
+                ->back()
+                ->with('error', __('This relation has no email addresses. Add an email first.'));
+        }
+
+        if (User::where('email', $email->email)->exists()) {
+            return redirect()
+                ->back()
+                ->with('error', __('A user account with this email already exists. Link the existing account instead.'));
+        }
+
+        $user = User::create([
+            'name' => $relatie->volledige_naam,
+            'email' => $email->email,
+            'password' => Str::random(32),
+        ]);
+        $user->assignRole('member');
+
+        $relatie->user_id = $user->id;
+        $relatie->save();
+
+        return redirect()
+            ->back()
+            ->with('success', __('User account created.'));
+    }
+
     public function storeAccount(Request $request, Relatie $relatie): RedirectResponse
     {
         $validated = $request->validate([
