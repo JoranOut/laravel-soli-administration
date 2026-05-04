@@ -90,8 +90,9 @@ class ImportSadMembers extends Command
         'trombone' => 'Trombone',
         'bas trombone' => 'Bastrombone', 'bastrombone' => 'Bastrombone',
 
-        // Koper — hoorn / tuba / bas
-        'hoorn' => 'Hoorn',
+        // Koper — hoorn / althoorn / bugel
+        'hoorn' => 'Hoorn', 'althoorn' => 'Althoorn',
+        'bugel' => 'Bugel',
         'tuba' => 'Tuba', 'sousafoon' => 'Sousafoon',
         'bes bas' => 'Besbas', 'besbas' => 'Besbas',
         'bes bas trompet' => ['Besbas', 'Trompet'],
@@ -110,7 +111,7 @@ class ImportSadMembers extends Command
 
         // Slagwerk
         'slagwerk' => 'Slagwerk', 'slaginstrument' => 'Slagwerk',
-        'drum' => 'Slagwerk', 'drums' => 'Slagwerk', 'drumstel' => 'Slagwerk',
+        'drum' => 'Drumstel', 'drums' => 'Drumstel', 'drumstel' => 'Drumstel',
         'overslagtr' => 'Slagwerk',
         'slagwerk / saxofoon' => ['Slagwerk', 'Saxofoon'],
         'mel sw' => 'Melodisch slagwerk', 'mel. slagw' => 'Melodisch slagwerk',
@@ -120,14 +121,22 @@ class ImportSadMembers extends Command
         'trom' => 'Trom', 'trommel' => 'Trom', 'trio tom' => 'Trio tom', 'trio tom t' => 'Trio tom',
         'bekken' => 'Bekken', 'pauken' => 'Pauken',
         'marimba' => 'Marimba', 'vibrafoon' => 'Vibrafoon', 'xylofoon' => 'Xylofoon',
+        'buisklokken' => 'Buisklokken', 'bells' => 'Buisklokken',
+        'klokkenspel' => 'Klokkenspel', 'klokkenspiel' => 'Klokkenspel',
         'tamboer maitre' => 'Tamboer-maître', 'tambourmaitre' => 'Tamboer-maître',
 
         // Majorette / twirl
         'majorette' => 'Majorette', 'baton' => 'Majorette', 'twirlteam' => 'Majorette',
         'vlaggenw' => 'Vlaggenwacht', 'vlaggew' => 'Vlaggenwacht', 'vlaggewach' => 'Vlaggenwacht',
 
+        // Toetsen
+        'keyboard' => 'Keyboard', 'piano' => 'Piano', 'orgel' => 'Orgel',
+
+        // Diverse
+        'harp' => 'Harp', 'strijk' => 'Strijk',
+
         // Overig
-        'gitaar' => 'Gitaar', 'keyboard' => 'Keyboard', 'piano' => 'Piano',
+        'gitaar' => 'Gitaar',
         'zang' => 'Zang', 'zangeres' => 'Zang',
     ];
 
