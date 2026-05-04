@@ -11,93 +11,99 @@ class InstrumentSoortSeeder extends Seeder
     public function run(): void
     {
         $soorten = [
-            // Trompet
-            ['naam' => 'Trompet', 'familie' => 'Trompet'],
-            ['naam' => 'Cornet', 'familie' => 'Trompet'],
-            ['naam' => 'Bugel', 'familie' => 'Trompet'],
+            // Bas
+            ['naam' => 'Bas', 'familie' => 'Bas'],
+            ['naam' => 'BesBas', 'familie' => 'Bas'],
+            ['naam' => 'Contrabas', 'familie' => 'Bas'],
+            ['naam' => 'Esbas', 'familie' => 'Bas'],
+            ['naam' => 'Sousafoon', 'familie' => 'Bas'],
 
-            // Klarinet
-            ['naam' => 'Klarinet', 'familie' => 'Klarinet'],
-            ['naam' => 'Besklarinet', 'familie' => 'Klarinet'],
-            ['naam' => 'Basklarinet', 'familie' => 'Klarinet'],
-            ['naam' => 'Esklarinet', 'familie' => 'Klarinet'],
-            ['naam' => 'Altklarinet', 'familie' => 'Klarinet'],
-            ['naam' => 'Contrabasklarinet', 'familie' => 'Klarinet'],
+            // Directiepartijen
+            ['naam' => 'Dirigent', 'familie' => 'Directiepartijen'],
+            ['naam' => 'Partituur', 'familie' => 'Directiepartijen'],
+            ['naam' => 'Tamboer-maître', 'familie' => 'Directiepartijen'],
 
-            // Saxofoon
-            ['naam' => 'Saxofoon', 'familie' => 'Saxofoon'],
-            ['naam' => 'Altsaxofoon', 'familie' => 'Saxofoon'],
-            ['naam' => 'Tenorsaxofoon', 'familie' => 'Saxofoon'],
-            ['naam' => 'Baritonsaxofoon', 'familie' => 'Saxofoon'],
-            ['naam' => 'Sopraansaxofoon', 'familie' => 'Saxofoon'],
-            ['naam' => 'Bassaxofoon', 'familie' => 'Saxofoon'],
-            ['naam' => 'Contrabassaxofoon', 'familie' => 'Saxofoon'],
+            // Diverse
+            ['naam' => 'Harp', 'familie' => 'Diverse'],
+            ['naam' => 'Majorette', 'familie' => 'Diverse'],
+            ['naam' => 'Strijk', 'familie' => 'Diverse'],
+            ['naam' => 'Vlaggenwacht', 'familie' => 'Diverse'],
 
             // Dwarsfluit
             ['naam' => 'Dwarsfluit', 'familie' => 'Dwarsfluit'],
             ['naam' => 'Piccolo', 'familie' => 'Dwarsfluit'],
 
-            // Trombone
-            ['naam' => 'Trombone', 'familie' => 'Trombone'],
-            ['naam' => 'Bastrombone', 'familie' => 'Trombone'],
+            // Fagot
+            ['naam' => 'Contrafagot', 'familie' => 'Fagot'],
+            ['naam' => 'Fagot', 'familie' => 'Fagot'],
+
+            // Gitaar
+            ['naam' => 'Basgitaar', 'familie' => 'Gitaar'],
+            ['naam' => 'Gitaar', 'familie' => 'Gitaar'],
+
+            // Hobo
+            ['naam' => 'Althobo', 'familie' => 'Hobo'],
+            ['naam' => 'Hobo', 'familie' => 'Hobo'],
 
             // Hoorn
             ['naam' => 'Hoorn', 'familie' => 'Hoorn'],
-            ['naam' => 'Althoorn', 'familie' => 'Hoorn'],
 
-            // Tuba
-            ['naam' => 'Tuba', 'familie' => 'Bas'],
-            ['naam' => 'Sousafoon', 'familie' => 'Bas'],
+            // Klarinet
+            ['naam' => 'Altklarinet', 'familie' => 'Klarinet'],
+            ['naam' => 'Basklarinet', 'familie' => 'Klarinet'],
+            ['naam' => 'Besklarinet', 'familie' => 'Klarinet'],
+            ['naam' => 'Contrabasklarinet', 'familie' => 'Klarinet'],
+            ['naam' => 'Esklarinet', 'familie' => 'Klarinet'],
+            ['naam' => 'Klarinet', 'familie' => 'Klarinet'],
 
-            // Bariton
-            ['naam' => 'Bariton', 'familie' => 'Bariton'],
-            ['naam' => 'Euphonium', 'familie' => 'Bariton'],
+            // Klein koper
+            ['naam' => 'Bugel', 'familie' => 'Klein koper'],
+            ['naam' => 'Cornet', 'familie' => 'Klein koper'],
+            ['naam' => 'Trompet', 'familie' => 'Klein koper'],
 
-            // Bas
-            ['naam' => 'Besbas', 'familie' => 'Bas'],
-            ['naam' => 'Esbas', 'familie' => 'Bas'],
-            ['naam' => 'Contrabas', 'familie' => 'Bas'],
-            ['naam' => 'Basgitaar', 'familie' => 'Gitaar'],
-
-            // Hobo
-            ['naam' => 'Hobo', 'familie' => 'Hobo'],
-            ['naam' => 'Althobo', 'familie' => 'Hobo'],
-
-            // Fagot
-            ['naam' => 'Fagot', 'familie' => 'Fagot'],
-            ['naam' => 'Contrafagot', 'familie' => 'Fagot'],
+            // Saxofoon
+            ['naam' => 'Altsaxofoon', 'familie' => 'Saxofoon'],
+            ['naam' => 'Baritonsaxofoon', 'familie' => 'Saxofoon'],
+            ['naam' => 'Bassaxofoon', 'familie' => 'Saxofoon'],
+            ['naam' => 'Contrabassaxofoon', 'familie' => 'Saxofoon'],
+            ['naam' => 'Saxofoon', 'familie' => 'Saxofoon'],
+            ['naam' => 'Sopraansaxofoon', 'familie' => 'Saxofoon'],
+            ['naam' => 'Tenorsaxofoon', 'familie' => 'Saxofoon'],
 
             // Slagwerk
-            ['naam' => 'Slagwerk', 'familie' => 'Slagwerk'],
+            ['naam' => 'Bekken', 'familie' => 'Slagwerk'],
+            ['naam' => 'Buisklokken', 'familie' => 'Slagwerk'],
+            ['naam' => 'Drumstel', 'familie' => 'Slagwerk'],
+            ['naam' => 'Kleine trom', 'familie' => 'Slagwerk'],
+            ['naam' => 'Klokkenspel', 'familie' => 'Slagwerk'],
+            ['naam' => 'Marimba', 'familie' => 'Slagwerk'],
             ['naam' => 'Melodisch slagwerk', 'familie' => 'Slagwerk'],
             ['naam' => 'Paradetrom', 'familie' => 'Slagwerk'],
-            ['naam' => 'Kleine trom', 'familie' => 'Slagwerk'],
-            ['naam' => 'Trom', 'familie' => 'Slagwerk'],
-            ['naam' => 'Trio tom', 'familie' => 'Slagwerk'],
-            ['naam' => 'Bekken', 'familie' => 'Slagwerk'],
             ['naam' => 'Pauken', 'familie' => 'Slagwerk'],
-            ['naam' => 'Marimba', 'familie' => 'Slagwerk'],
+            ['naam' => 'Percussion', 'familie' => 'Slagwerk'],
+            ['naam' => 'Slagwerk', 'familie' => 'Slagwerk'],
+            ['naam' => 'Trio tom', 'familie' => 'Slagwerk'],
+            ['naam' => 'Trom', 'familie' => 'Slagwerk'],
             ['naam' => 'Vibrafoon', 'familie' => 'Slagwerk'],
             ['naam' => 'Xylofoon', 'familie' => 'Slagwerk'],
-            ['naam' => 'Tamboer-maître', 'familie' => 'Tamboer-maître'],
-            ['naam' => 'Percussion', 'familie' => 'Slagwerk'],
 
-            // Majorette
-            ['naam' => 'Majorette', 'familie' => 'Majorette'],
-            ['naam' => 'Vlaggenwacht', 'familie' => 'Majorette'],
+            // Toetsen
+            ['naam' => 'Keyboard', 'familie' => 'Toetsen'],
+            ['naam' => 'Orgel', 'familie' => 'Toetsen'],
+            ['naam' => 'Piano', 'familie' => 'Toetsen'],
 
-            // Gitaar
-            ['naam' => 'Gitaar', 'familie' => 'Gitaar'],
+            // Trombone
+            ['naam' => 'Bastrombone', 'familie' => 'Trombone'],
+            ['naam' => 'Trombone', 'familie' => 'Trombone'],
 
-            // Piano
-            ['naam' => 'Keyboard', 'familie' => 'Piano'],
-            ['naam' => 'Piano', 'familie' => 'Piano'],
+            // Tuba
+            ['naam' => 'Althoorn', 'familie' => 'Tuba'],
+            ['naam' => 'Bariton', 'familie' => 'Tuba'],
+            ['naam' => 'Euphonium', 'familie' => 'Tuba'],
+            ['naam' => 'Tuba', 'familie' => 'Tuba'],
 
             // Zang
             ['naam' => 'Zang', 'familie' => 'Zang'],
-
-            // Partituur
-            ['naam' => 'Partituur', 'familie' => 'Partituur'],
         ];
 
         // Create families first
