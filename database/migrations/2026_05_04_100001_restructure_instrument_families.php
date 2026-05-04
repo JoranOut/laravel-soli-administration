@@ -7,6 +7,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Fresh DB (migrate:fresh) — seeder handles everything
+        if (DB::table('soli_instrument_families')->count() === 0) {
+            return;
+        }
+
         $now = now();
 
         // ──────────────────────────────────────────────

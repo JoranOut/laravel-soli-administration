@@ -397,10 +397,10 @@ test('seeder creates all expected families', function () {
     $this->seed(\Database\Seeders\InstrumentSoortSeeder::class);
 
     $expectedFamilies = [
-        'Trompet', 'Klarinet', 'Saxofoon', 'Dwarsfluit', 'Trombone',
-        'Hoorn', 'Bas', 'Bariton', 'Hobo', 'Fagot', 'Slagwerk',
-        'Majorette', 'Gitaar', 'Piano', 'Zang', 'Tamboer-maître',
-        'Partituur',
+        'Bas', 'Directiepartijen', 'Diverse', 'Dwarsfluit',
+        'Fagot', 'Gitaar', 'Hobo', 'Hoorn', 'Klarinet',
+        'Klein koper', 'Saxofoon', 'Slagwerk', 'Toetsen',
+        'Trombone', 'Tuba', 'Zang',
     ];
 
     foreach ($expectedFamilies as $naam) {
@@ -418,7 +418,8 @@ test('seeder creates percussion instruments under slagwerk', function () {
     $expectedSoorten = [
         'Slagwerk', 'Melodisch slagwerk', 'Paradetrom', 'Kleine trom',
         'Trom', 'Trio tom', 'Bekken', 'Pauken', 'Marimba',
-        'Vibrafoon', 'Xylofoon', 'Percussion',
+        'Vibrafoon', 'Xylofoon', 'Percussion', 'Buisklokken',
+        'Drumstel', 'Klokkenspel',
     ];
 
     foreach ($expectedSoorten as $naam) {
@@ -429,10 +430,10 @@ test('seeder creates percussion instruments under slagwerk', function () {
     }
 });
 
-test('seeder places tamboer-maître in its own family', function () {
+test('seeder places tamboer-maître in directiepartijen family', function () {
     $this->seed(\Database\Seeders\InstrumentSoortSeeder::class);
 
-    $familie = InstrumentFamilie::where('naam', 'Tamboer-maître')->first();
+    $familie = InstrumentFamilie::where('naam', 'Directiepartijen')->first();
     $soort = InstrumentSoort::where('naam', 'Tamboer-maître')->first();
 
     expect($familie)->not->toBeNull();
