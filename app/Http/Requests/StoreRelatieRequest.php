@@ -19,11 +19,8 @@ class StoreRelatieRequest extends FormRequest
             'voornaam' => ['required', 'string', 'max:255'],
             'tussenvoegsel' => ['nullable', 'string', 'max:255'],
             'achternaam' => ['required', 'string', 'max:255'],
-            'geslacht' => ['required', 'in:M,V,O'],
             'geboortedatum' => ['nullable', 'date'],
             'actief' => ['boolean'],
-            'geboorteplaats' => ['nullable', 'string', 'max:255'],
-            'nationaliteit' => ['nullable', 'string', 'max:255'],
 
             // Types (pivot)
             'types' => ['nullable', 'array'],

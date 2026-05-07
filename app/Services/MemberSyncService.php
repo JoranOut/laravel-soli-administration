@@ -109,7 +109,6 @@ class MemberSyncService
             'voornaam' => $data['voornaam'],
             'tussenvoegsel' => $data['tussenvoegsel'] ?? null,
             'achternaam' => $data['achternaam'],
-            'geslacht' => 'O',
             'actief' => true,
         ]);
 

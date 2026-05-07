@@ -8,6 +8,7 @@ import InputError from '@/components/input-error';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Onderdeel, RelatieCreateFormData, RelatieType, RelatieTypeEntry } from '@/types/admin';
 
+
 type Props = {
     data: RelatieCreateFormData;
     setData: <K extends keyof RelatieCreateFormData>(key: K, value: RelatieCreateFormData[K]) => void;
@@ -59,21 +60,6 @@ export default function Step1Personal({ data, setData, errors, relatieTypes, ond
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="geslacht" required>{t('Gender')}</Label>
-                            <Select value={data.geslacht} onValueChange={(v) => setData('geslacht', v as 'M' | 'V' | 'O')}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="M">{t('Male')}</SelectItem>
-                                    <SelectItem value="V">{t('Female')}</SelectItem>
-                                    <SelectItem value="O">{t('Other')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <InputError message={errors.geslacht} />
-                        </div>
-
-                        <div className="space-y-2">
                             <Label htmlFor="voornaam" required>{t('First name')}</Label>
                             <Input
                                 id="voornaam"
@@ -114,26 +100,6 @@ export default function Step1Personal({ data, setData, errors, relatieTypes, ond
                                 onChange={(e) => setData('geboortedatum', e.target.value)}
                             />
                             <InputError message={errors.geboortedatum} />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="geboorteplaats">{t('Place of birth')}</Label>
-                            <Input
-                                id="geboorteplaats"
-                                value={data.geboorteplaats}
-                                onChange={(e) => setData('geboorteplaats', e.target.value)}
-                            />
-                            <InputError message={errors.geboorteplaats} />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="nationaliteit">{t('Nationality')}</Label>
-                            <Input
-                                id="nationaliteit"
-                                value={data.nationaliteit}
-                                onChange={(e) => setData('nationaliteit', e.target.value)}
-                            />
-                            <InputError message={errors.nationaliteit} />
                         </div>
                     </div>
                 </CardContent>

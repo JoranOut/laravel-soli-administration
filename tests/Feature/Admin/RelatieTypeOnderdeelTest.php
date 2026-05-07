@@ -166,7 +166,6 @@ test('wizard store includes onderdeel_id in type pivot', function () {
         'relatie_nummer' => 8001,
         'voornaam' => 'Test',
         'achternaam' => 'Dirigent',
-        'geslacht' => 'M',
         'emails' => [
             ['email' => 'dirigent-test@example.com'],
         ],

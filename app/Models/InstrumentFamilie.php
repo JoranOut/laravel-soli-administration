@@ -11,6 +11,7 @@ class InstrumentFamilie extends Model
 
     protected $fillable = [
         'naam',
+        'external_id',
     ];
 
     public function instrumentSoorten(): HasMany

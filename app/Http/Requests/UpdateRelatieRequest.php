@@ -17,13 +17,9 @@ class UpdateRelatieRequest extends FormRequest
             'voornaam' => ['required', 'string', 'max:255'],
             'tussenvoegsel' => ['nullable', 'string', 'max:255'],
             'achternaam' => ['required', 'string', 'max:255'],
-            'geslacht' => ['required', 'in:M,V,O'],
             'geboortedatum' => ['nullable', 'date'],
             'actief' => ['boolean'],
             'beheerd_in_admin' => ['boolean'],
-            'foto_url' => ['nullable', 'url', 'max:255'],
-            'geboorteplaats' => ['nullable', 'string', 'max:255'],
-            'nationaliteit' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

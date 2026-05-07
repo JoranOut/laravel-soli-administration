@@ -66,11 +66,11 @@ test('setting relatie inactive auto-deletes linked user account', function () {
             'voornaam' => $relatie->voornaam,
             'tussenvoegsel' => $relatie->tussenvoegsel,
             'achternaam' => $relatie->achternaam,
-            'geslacht' => $relatie->geslacht,
+
             'geboortedatum' => $relatie->geboortedatum?->format('Y-m-d'),
             'actief' => false,
-            'geboorteplaats' => $relatie->geboorteplaats,
-            'nationaliteit' => $relatie->nationaliteit,
+
+
         ])
         ->assertRedirect();
 
@@ -89,11 +89,11 @@ test('setting relatie inactive without linked user does not error', function () 
             'voornaam' => $relatie->voornaam,
             'tussenvoegsel' => $relatie->tussenvoegsel,
             'achternaam' => $relatie->achternaam,
-            'geslacht' => $relatie->geslacht,
+
             'geboortedatum' => $relatie->geboortedatum?->format('Y-m-d'),
             'actief' => false,
-            'geboorteplaats' => $relatie->geboorteplaats,
-            'nationaliteit' => $relatie->nationaliteit,
+
+
         ])
         ->assertRedirect();
 
@@ -112,11 +112,11 @@ test('keeping relatie active does not delete linked user', function () {
             'voornaam' => 'Updated',
             'tussenvoegsel' => $relatie->tussenvoegsel,
             'achternaam' => $relatie->achternaam,
-            'geslacht' => $relatie->geslacht,
+
             'geboortedatum' => $relatie->geboortedatum?->format('Y-m-d'),
             'actief' => true,
-            'geboorteplaats' => $relatie->geboorteplaats,
-            'nationaliteit' => $relatie->nationaliteit,
+
+
         ])
         ->assertRedirect();
 

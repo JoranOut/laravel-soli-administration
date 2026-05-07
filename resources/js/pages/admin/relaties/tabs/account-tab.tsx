@@ -84,18 +84,20 @@ function PasswordResetSection({ relatieId, t }: { relatieId: number; t: (key: st
                     {t('Set a new password for this user account.')}
                 </p>
             </div>
-            <div className="flex items-center gap-2">
-                <Input
-                    type="text"
-                    value={password}
-                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                    placeholder={t('New password')}
-                    className="max-w-sm font-mono"
-                />
-                <Button type="button" variant="outline" size="icon" onClick={handleGenerate} title={t('Generate password')}>
-                    <RefreshCw className="h-4 w-4" />
-                </Button>
-                <Button onClick={handleReset} disabled={!password || password.length < 8 || saving}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2">
+                    <Input
+                        type="text"
+                        value={password}
+                        onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                        placeholder={t('New password')}
+                        className="font-mono"
+                    />
+                    <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={handleGenerate} title={t('Generate password')}>
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                </div>
+                <Button className="shrink-0" onClick={handleReset} disabled={!password || password.length < 8 || saving}>
                     {t('Apply new password')}
                 </Button>
             </div>

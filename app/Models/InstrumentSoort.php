@@ -13,6 +13,7 @@ class InstrumentSoort extends Model
     protected $fillable = [
         'naam',
         'instrument_familie_id',
+        'external_id',
     ];
 
     public function instrumentFamilie(): BelongsTo

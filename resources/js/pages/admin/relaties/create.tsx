@@ -23,7 +23,7 @@ const TOTAL_STEPS = 5;
 
 // Map error key prefixes to the step they belong to
 const errorStepMap: [RegExp, number][] = [
-    [/^(relatie_nummer|voornaam|tussenvoegsel|achternaam|geslacht|geboortedatum|geboorteplaats|nationaliteit|types\.)/, 1],
+    [/^(relatie_nummer|voornaam|tussenvoegsel|achternaam|geboortedatum|types\.)/, 1],
     [/^(adressen\.|emails|telefoons\.|giro_gegevens\.)/, 2],
     [/^(lidmaatschappen\.|onderdelen\.)/, 3],
     [/^(opleidingen\.)/, 4],
@@ -55,10 +55,7 @@ function createInitialData(nextRelatieNummer: number, preselectedTypeId: number 
         voornaam: '',
         tussenvoegsel: '',
         achternaam: '',
-        geslacht: 'O',
         geboortedatum: '',
-        geboorteplaats: '',
-        nationaliteit: 'Nederlandse',
         types,
         adressen: [],
         emails: [emptyEmail()],

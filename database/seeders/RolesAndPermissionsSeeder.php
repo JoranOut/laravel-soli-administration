@@ -52,19 +52,11 @@ class RolesAndPermissionsSeeder extends Seeder
                 Permission::where('name', 'not like', 'users.%')->pluck('name')->toArray()
             );
 
-        // Muziekbeheer: manage instrument types for the music library
-        Role::findOrCreate('muziekbeheer')
-            ->syncPermissions([
-                'instrumentsoorten.view',
-                'instrumentsoorten.create',
-                'instrumentsoorten.edit',
-                'instrumentsoorten.delete',
-            ]);
-
         // Member: view own data only (enforced at policy level)
         Role::findOrCreate('member')
             ->syncPermissions([
                 'relaties.view',
+                'contact.view',
             ]);
     }
 }

@@ -2,99 +2,139 @@
 
 use App\Models\InstrumentFamilie;
 use App\Models\InstrumentSoort;
+use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
-    config(['services.soli_instruments.api_key' => 'test-instruments-api-key']);
+    $this->instrumentsResponse = [
+        'families' => [
+            ['id' => 10, 'name' => 'Houtblazers'],
+            ['id' => 20, 'name' => 'Koperblazers'],
+        ],
+        'soorten' => [
+            ['id' => 100, 'name' => 'Klarinet', 'instrument_family_id' => 10],
+            ['id' => 101, 'name' => 'Dwarsfluit', 'instrument_family_id' => 10],
+            ['id' => 200, 'name' => 'Trompet', 'instrument_family_id' => 20],
+        ],
+    ];
 });
 
-function instrumentHeaders(): array
-{
-    return ['X-API-Key' => 'test-instruments-api-key'];
-}
+test('syncs families and instrument types from music library', function () {
+    Http::fake([
+        '*/api/v1/instruments' => Http::response($this->instrumentsResponse),
+    ]);
 
-// --- Authentication ---
+    $this->artisan('sync:instruments')
+        ->expectsOutputToContain('Synced 2 families, 3 instrument types')
+        ->assertSuccessful();
 
-test('rejects request without API key', function () {
-    $response = $this->getJson('/api/v1/instruments');
+    expect(InstrumentFamilie::count())->toBe(2)
+        ->and(InstrumentSoort::count())->toBe(3);
 
-    $response->assertStatus(401);
+    $family = InstrumentFamilie::where('naam', 'Houtblazers')->first();
+    expect($family)->not->toBeNull()
+        ->and($family->external_id)->toBe(10);
+
+    $type = InstrumentSoort::where('naam', 'Klarinet')->first();
+    expect($type)->not->toBeNull()
+        ->and($type->external_id)->toBe(100)
+        ->and($type->instrument_familie_id)->toBe($family->id);
 });
 
-test('rejects request with wrong API key', function () {
-    $response = $this->getJson('/api/v1/instruments', ['X-API-Key' => 'wrong-key']);
+test('is idempotent when run twice', function () {
+    Http::fake([
+        '*/api/v1/instruments' => Http::response($this->instrumentsResponse),
+    ]);
 
-    $response->assertStatus(401);
+    $this->artisan('sync:instruments')->assertSuccessful();
+    $this->artisan('sync:instruments')->assertSuccessful();
+
+    expect(InstrumentFamilie::count())->toBe(2)
+        ->and(InstrumentSoort::count())->toBe(3);
 });
 
-test('returns 200 with correct API key', function () {
-    $response = $this->getJson('/api/v1/instruments', instrumentHeaders());
+test('updates existing records on re-sync', function () {
+    $family = InstrumentFamilie::create(['naam' => 'Koperblazers', 'external_id' => 20]);
+    InstrumentSoort::create(['naam' => 'Trompet', 'instrument_familie_id' => $family->id, 'external_id' => 200]);
 
-    $response->assertOk();
-});
-
-// --- Response Structure ---
-
-test('response contains families and soorten arrays', function () {
-    $response = $this->getJson('/api/v1/instruments', instrumentHeaders());
-
-    $response->assertOk()
-        ->assertJsonStructure([
-            'families',
-            'soorten',
-        ]);
-});
-
-test('families have correct structure', function () {
-    InstrumentFamilie::create(['naam' => 'Trompet']);
-
-    $response = $this->getJson('/api/v1/instruments', instrumentHeaders());
-
-    $response->assertOk()
-        ->assertJsonStructure([
+    Http::fake([
+        '*/api/v1/instruments' => Http::response([
             'families' => [
-                ['id', 'naam'],
+                ['id' => 20, 'name' => 'Koperblazers'],
+                ['id' => 30, 'name' => 'Slagwerk'],
             ],
-        ]);
-});
-
-test('soorten have correct structure', function () {
-    $familie = InstrumentFamilie::create(['naam' => 'Trompet']);
-    InstrumentSoort::create(['naam' => 'Cornet', 'instrument_familie_id' => $familie->id]);
-
-    $response = $this->getJson('/api/v1/instruments', instrumentHeaders());
-
-    $response->assertOk()
-        ->assertJsonStructure([
             'soorten' => [
-                ['id', 'naam', 'instrument_familie_id'],
+                ['id' => 200, 'name' => 'Trompet', 'instrument_family_id' => 20],
             ],
-        ]);
+        ]),
+    ]);
+
+    $this->artisan('sync:instruments')->assertSuccessful();
+
+    expect(InstrumentFamilie::count())->toBe(2)
+        ->and(InstrumentSoort::where('naam', 'Trompet')->count())->toBe(1);
 });
 
-// --- Data Correctness ---
+test('propagates rename when remote name changes', function () {
+    $family = InstrumentFamilie::create(['naam' => 'Koperblazers', 'external_id' => 20]);
+    $soort = InstrumentSoort::create(['naam' => 'Sousafoon', 'instrument_familie_id' => $family->id, 'external_id' => 200]);
 
-test('response data matches database records', function () {
-    $familie1 = InstrumentFamilie::create(['naam' => 'Klarinet']);
-    $familie2 = InstrumentFamilie::create(['naam' => 'Saxofoon']);
+    Http::fake([
+        '*/api/v1/instruments' => Http::response([
+            'families' => [
+                ['id' => 20, 'name' => 'Koper'],
+            ],
+            'soorten' => [
+                ['id' => 200, 'name' => 'Sousafoooon', 'instrument_family_id' => 20],
+            ],
+        ]),
+    ]);
 
-    $soort1 = InstrumentSoort::create(['naam' => 'Basklarinet', 'instrument_familie_id' => $familie1->id]);
-    $soort2 = InstrumentSoort::create(['naam' => 'Altsaxofoon', 'instrument_familie_id' => $familie2->id]);
+    $this->artisan('sync:instruments')->assertSuccessful();
 
-    $response = $this->getJson('/api/v1/instruments', instrumentHeaders());
-
-    $response->assertOk()
-        ->assertJsonCount(2, 'families')
-        ->assertJsonCount(2, 'soorten')
-        ->assertJsonFragment(['id' => $familie1->id, 'naam' => 'Klarinet'])
-        ->assertJsonFragment(['id' => $familie2->id, 'naam' => 'Saxofoon'])
-        ->assertJsonFragment(['id' => $soort1->id, 'naam' => 'Basklarinet', 'instrument_familie_id' => $familie1->id])
-        ->assertJsonFragment(['id' => $soort2->id, 'naam' => 'Altsaxofoon', 'instrument_familie_id' => $familie2->id]);
+    expect($family->fresh()->naam)->toBe('Koper')
+        ->and($soort->fresh()->naam)->toBe('Sousafoooon')
+        ->and(InstrumentFamilie::count())->toBe(1)
+        ->and(InstrumentSoort::count())->toBe(1);
 });
 
-test('returns empty arrays when no data exists', function () {
-    $response = $this->getJson('/api/v1/instruments', instrumentHeaders());
+test('handles API failure gracefully', function () {
+    Http::fake([
+        '*/api/v1/instruments' => Http::response('Internal Server Error', 500),
+    ]);
 
-    $response->assertOk()
-        ->assertJsonCount(0, 'families')
-        ->assertJsonCount(0, 'soorten');
+    $this->artisan('sync:instruments')
+        ->expectsOutputToContain('Instrument sync failed')
+        ->assertFailed();
+
+    expect(InstrumentFamilie::count())->toBe(0);
+});
+
+test('skips soorten with unknown family', function () {
+    Http::fake([
+        '*/api/v1/instruments' => Http::response([
+            'families' => [
+                ['id' => 10, 'name' => 'Houtblazers'],
+            ],
+            'soorten' => [
+                ['id' => 100, 'name' => 'Klarinet', 'instrument_family_id' => 10],
+                ['id' => 999, 'name' => 'Onbekend', 'instrument_family_id' => 99],
+            ],
+        ]),
+    ]);
+
+    $this->artisan('sync:instruments')->assertSuccessful();
+
+    expect(InstrumentSoort::count())->toBe(1)
+        ->and(InstrumentSoort::where('naam', 'Klarinet')->exists())->toBeTrue()
+        ->and(InstrumentSoort::where('naam', 'Onbekend')->exists())->toBeFalse();
+});
+
+test('returns empty result when music library has no data', function () {
+    Http::fake([
+        '*/api/v1/instruments' => Http::response(['families' => [], 'soorten' => []]),
+    ]);
+
+    $this->artisan('sync:instruments')
+        ->expectsOutputToContain('Synced 0 families, 0 instrument types')
+        ->assertSuccessful();
 });

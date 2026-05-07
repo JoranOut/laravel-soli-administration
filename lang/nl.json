@@ -164,10 +164,7 @@
     "First name": "Voornaam",
     "Prefix": "Tussenvoegsel",
     "Last name": "Achternaam",
-    "Gender": "Geslacht",
     "Date of birth": "Geboortedatum",
-    "Place of birth": "Geboorteplaats",
-    "Nationality": "Nationaliteit",
     "Edit": "Bewerken",
 
     "Add type": "Type toevoegen",
@@ -292,10 +289,6 @@
     "present": "heden",
     "No results found.": "Geen resultaten gevonden.",
 
-    "man": "man",
-    "vrouw": "vrouw",
-    "anders": "anders",
-
     "home": "woon",
     "postal": "post",
     "work": "werk",
@@ -330,9 +323,6 @@
     "Work address": "Werkadres",
     "Phone": "Telefoon",
 
-    "Male": "Man",
-    "Female": "Vrouw",
-    "Other": "Anders",
     "Work": "Werk",
     "Private": "Privé",
     "Landline": "Vast",
@@ -433,7 +423,7 @@
 
     "Let op": "Let op",
     "Please note": "Let op",
-    "All relation data is currently stored in a different system. This page only stores information needed for communication with other systems.": "Alle gegevens worden momenteel in een ander systeem opgeslagen. Deze pagina bevat alleen sommige informatie.",
+    "All relation data is currently stored in a different system. This page only stores information needed for communication with other systems.": "Dit zijn niet al je gegevens, deze worden in een ander systeem opgeslagen. Deze pagina bevat alleen sommige informatie.",
 
     "Account": "Account",
     "Linked user account": "Gekoppeld gebruikersaccount",

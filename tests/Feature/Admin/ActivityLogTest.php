@@ -40,7 +40,6 @@ test('updating a relatie creates an activity log entry', function () {
     $this->actingAs($admin)->put("/admin/relaties/{$relatie->id}", [
         'voornaam' => 'Piet',
         'achternaam' => 'Jansen',
-        'geslacht' => $relatie->geslacht,
         'actief' => $relatie->actief,
     ]);
 

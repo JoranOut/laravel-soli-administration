@@ -83,7 +83,7 @@ class RelatieController extends Controller
 
         $baseFields = [
             'relatie_nummer', 'voornaam', 'tussenvoegsel', 'achternaam',
-            'geslacht', 'geboortedatum', 'actief', 'geboorteplaats', 'nationaliteit',
+            'geboortedatum', 'actief',
         ];
 
         $relatie = DB::transaction(function () use ($validated, $baseFields) {

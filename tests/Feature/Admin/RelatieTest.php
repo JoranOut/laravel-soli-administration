@@ -105,7 +105,7 @@ test('admin can create a relatie', function () {
         'relatie_nummer' => 9999,
         'voornaam' => 'Test',
         'achternaam' => 'Persoon',
-        'geslacht' => 'M',
+
         'emails' => [
             ['email' => 'test@example.com'],
         ],
@@ -188,7 +188,7 @@ test('admin can update a relatie', function () {
     $response = $this->actingAs($admin)->put("/admin/relaties/{$relatie->id}", [
         'voornaam' => 'Updated',
         'achternaam' => 'Naam',
-        'geslacht' => 'V',
+
     ]);
 
     $response->assertRedirect();
@@ -258,7 +258,7 @@ test('member cannot update relaties', function () {
     $response = $this->actingAs($member)->put("/admin/relaties/{$relatie->id}", [
         'voornaam' => 'Hack',
         'achternaam' => 'Attempt',
-        'geslacht' => 'M',
+
     ]);
 
     $response->assertForbidden();
@@ -315,7 +315,7 @@ test('bestuur cannot create relaties', function () {
         'relatie_nummer' => 8888,
         'voornaam' => 'Bestuur',
         'achternaam' => 'Test',
-        'geslacht' => 'O',
+
         'emails' => [
             ['email' => 'bestuur-test@example.com'],
         ],
@@ -331,7 +331,7 @@ test('ledenadministratie can create relaties', function () {
         'relatie_nummer' => 8888,
         'voornaam' => 'Ledenadmin',
         'achternaam' => 'Test',
-        'geslacht' => 'O',
+
         'emails' => [
             ['email' => 'ledenadmin-test@example.com'],
         ],
@@ -353,10 +353,10 @@ test('admin can create relatie with all sub-resources', function () {
         'relatie_nummer' => 7777,
         'voornaam' => 'Wizard',
         'achternaam' => 'Test',
-        'geslacht' => 'V',
+
         'geboortedatum' => '1990-05-15',
-        'geboorteplaats' => 'Driehuis',
-        'nationaliteit' => 'Nederlandse',
+
+
         'types' => [
             ['type_id' => $lidType->id, 'van' => '2026-01-01'],
         ],
@@ -447,7 +447,7 @@ test('creating relatie via admin sets beheerd_in_admin', function () {
         'relatie_nummer' => 8800,
         'voornaam' => 'Admin',
         'achternaam' => 'Created',
-        'geslacht' => 'O',
+
         'emails' => [
             ['email' => 'admin-created@example.com'],
         ],
@@ -466,7 +466,7 @@ test('store validates nested sub-resource fields', function () {
         'relatie_nummer' => 6666,
         'voornaam' => 'Validation',
         'achternaam' => 'Test',
-        'geslacht' => 'O',
+
         'adressen' => [
             [], // missing required fields
         ],
@@ -493,7 +493,7 @@ test('store rolls back on failure within transaction', function () {
         'relatie_nummer' => 5555,
         'voornaam' => 'Rollback',
         'achternaam' => 'Test',
-        'geslacht' => 'M',
+
         'emails' => [
             ['email' => 'rollback@example.com'],
         ],
@@ -554,7 +554,7 @@ test('store requires at least one email', function () {
         'relatie_nummer' => 4444,
         'voornaam' => 'No',
         'achternaam' => 'Email',
-        'geslacht' => 'O',
+
         'emails' => [],
     ]);
 
@@ -569,7 +569,7 @@ test('store rejects email already used by existing user', function () {
         'relatie_nummer' => 3333,
         'voornaam' => 'Duplicate',
         'achternaam' => 'Email',
-        'geslacht' => 'O',
+
         'emails' => [
             ['email' => 'taken@example.com'],
         ],
@@ -586,7 +586,7 @@ test('store creates user with member role linked to relatie', function () {
         'voornaam' => 'Jan',
         'tussenvoegsel' => 'van',
         'achternaam' => 'Berg',
-        'geslacht' => 'M',
+
         'emails' => [
             ['email' => 'jan@example.com'],
         ],
@@ -611,7 +611,7 @@ test('store rolls back user creation on transaction failure', function () {
         'relatie_nummer' => 1111,
         'voornaam' => 'Rollback',
         'achternaam' => 'User',
-        'geslacht' => 'M',
+
         'emails' => [
             ['email' => 'rollback-user@example.com'],
         ],

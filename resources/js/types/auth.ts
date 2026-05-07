@@ -15,7 +15,7 @@ export type CrudResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'instrum
 export type CrudAction = 'view' | 'create' | 'edit' | 'delete';
 export type StandalonePermission = 'dashboard.view' | 'contact.view';
 export type Permission = `${CrudResource}.${CrudAction}` | StandalonePermission;
-export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'muziekbeheer' | 'member';
+export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'member';
 
 export type Auth = {
     user: User;
