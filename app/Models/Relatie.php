@@ -24,13 +24,9 @@ class Relatie extends Model
         'voornaam',
         'tussenvoegsel',
         'achternaam',
-        'geslacht',
         'geboortedatum',
         'actief',
         'beheerd_in_admin',
-        'foto_url',
-        'geboorteplaats',
-        'nationaliteit',
     ];
 
     protected function casts(): array
@@ -52,7 +48,7 @@ class Relatie extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['voornaam', 'tussenvoegsel', 'achternaam', 'geslacht', 'geboortedatum', 'actief', 'user_id'])
+            ->logOnly(['voornaam', 'tussenvoegsel', 'achternaam', 'geboortedatum', 'actief', 'user_id'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(fn (string $eventName) => "Relatie {$this->volledige_naam} {$eventName}");
     }

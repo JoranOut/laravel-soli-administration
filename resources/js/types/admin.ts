@@ -8,13 +8,9 @@ export type Relatie = {
     tussenvoegsel: string | null;
     achternaam: string;
     volledige_naam: string;
-    geslacht: 'M' | 'V' | 'O';
     geboortedatum: string | null;
     actief: boolean;
     beheerd_in_admin: boolean;
-    foto_url: string | null;
-    geboorteplaats: string | null;
-    nationaliteit: string | null;
     created_at: string;
     updated_at: string;
     user?: User;
@@ -386,10 +382,7 @@ export type RelatieCreateFormData = {
     voornaam: string;
     tussenvoegsel: string;
     achternaam: string;
-    geslacht: 'M' | 'V' | 'O';
     geboortedatum: string;
-    geboorteplaats: string;
-    nationaliteit: string;
     types: RelatieTypeEntry[];
     adressen: AdresEntry[];
     emails: EmailEntry[];

@@ -28,14 +28,6 @@ const formatDate = (date: string | null | undefined) => {
     return new Date(date).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const genderLabel = (g: string) => {
-    switch (g) {
-        case 'M': return 'Man';
-        case 'V': return 'Vrouw';
-        default: return 'Anders';
-    }
-};
-
 export default function Step5Summary({ data, relatieTypes, onderdelen, instrumentSoorten, onNavigateToStep }: Props) {
     const { t } = useTranslation();
 
@@ -66,26 +58,10 @@ export default function Step5Summary({ data, relatieTypes, onderdelen, instrumen
                                 {[data.voornaam, data.tussenvoegsel, data.achternaam].filter(Boolean).join(' ')}
                             </dd>
                         </div>
-                        <div>
-                            <dt className="text-muted-foreground text-sm">{t('Gender')}</dt>
-                            <dd>{genderLabel(data.geslacht)}</dd>
-                        </div>
                         {data.geboortedatum && (
                             <div>
                                 <dt className="text-muted-foreground text-sm">{t('Date of birth')}</dt>
                                 <dd>{formatDate(data.geboortedatum)}</dd>
-                            </div>
-                        )}
-                        {data.geboorteplaats && (
-                            <div>
-                                <dt className="text-muted-foreground text-sm">{t('Place of birth')}</dt>
-                                <dd>{data.geboorteplaats}</dd>
-                            </div>
-                        )}
-                        {data.nationaliteit && (
-                            <div>
-                                <dt className="text-muted-foreground text-sm">{t('Nationality')}</dt>
-                                <dd>{data.nationaliteit}</dd>
                             </div>
                         )}
                     </dl>

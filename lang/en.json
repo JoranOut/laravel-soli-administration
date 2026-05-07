@@ -163,10 +163,7 @@
     "First name": "First name",
     "Prefix": "Prefix",
     "Last name": "Last name",
-    "Gender": "Gender",
     "Date of birth": "Date of birth",
-    "Place of birth": "Place of birth",
-    "Nationality": "Nationality",
     "Edit": "Edit",
 
     "Add type": "Add type",
@@ -290,10 +287,6 @@
     "present": "present",
     "No results found.": "No results found.",
 
-    "man": "male",
-    "vrouw": "female",
-    "anders": "other",
-
     "home": "home",
     "postal": "postal",
     "work": "work",
@@ -328,9 +321,6 @@
     "Work address": "Work address",
     "Phone": "Phone",
 
-    "Male": "Male",
-    "Female": "Female",
-    "Other": "Other",
     "Work": "Work",
     "Private": "Private",
     "Landline": "Landline",

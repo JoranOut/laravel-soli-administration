@@ -126,7 +126,6 @@ test('creating relatie dispatches sync job', function () {
         'relatie_nummer' => 8888,
         'voornaam' => 'Sync',
         'achternaam' => 'Test',
-        'geslacht' => 'M',
         'emails' => [
             ['email' => 'sync-test@example.com'],
         ],

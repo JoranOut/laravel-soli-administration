@@ -26,9 +26,8 @@ test('seeder creates all expected roles', function () {
     expect(Role::findByName('admin'))->not->toBeNull();
     expect(Role::findByName('bestuur'))->not->toBeNull();
     expect(Role::findByName('ledenadministratie'))->not->toBeNull();
-    expect(Role::findByName('muziekbeheer'))->not->toBeNull();
     expect(Role::findByName('member'))->not->toBeNull();
-    expect(Role::count())->toBe(5);
+    expect(Role::count())->toBe(4);
 });
 
 test('admin role has all permissions', function () {
@@ -72,25 +71,11 @@ test('ledenadministratie role has all permissions except users', function () {
     expect($permissionNames)->not->toContain('users.delete');
 });
 
-test('muziekbeheer role has instrumentsoorten permissions', function () {
-    $muziekbeheer = Role::findByName('muziekbeheer');
-    $permissionNames = $muziekbeheer->permissions->pluck('name')->toArray();
-
-    $expected = [
-        'instrumentsoorten.view',
-        'instrumentsoorten.create',
-        'instrumentsoorten.edit',
-        'instrumentsoorten.delete',
-    ];
-
-    expect($permissionNames)->toEqualCanonicalizing($expected);
-});
-
 test('member role has correct permissions', function () {
     $member = Role::findByName('member');
     $permissionNames = $member->permissions->pluck('name')->toArray();
 
-    expect($permissionNames)->toEqualCanonicalizing(['relaties.view']);
+    expect($permissionNames)->toEqualCanonicalizing(['relaties.view', 'contact.view']);
 });
 
 test('user can be assigned a role', function () {
@@ -107,5 +92,5 @@ test('seeder is idempotent', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     expect(Permission::count())->toBe(22);
-    expect(Role::count())->toBe(5);
+    expect(Role::count())->toBe(4);
 });

@@ -16,20 +16,14 @@ class RelatieFactory extends Factory
 
     public function definition(): array
     {
-        $geslacht = $this->faker->randomElement(['M', 'V', 'O']);
-        $gender = $geslacht === 'M' ? 'male' : ($geslacht === 'V' ? 'female' : null);
-
         return [
             'relatie_nummer' => self::$relatieNummer++,
-            'voornaam' => $gender ? $this->faker->firstName($gender) : $this->faker->firstName(),
+            'voornaam' => $this->faker->firstName(),
             'tussenvoegsel' => $this->faker->optional(0.3)->randomElement(['van', 'de', 'van de', 'van der', 'den', 'van den']),
             'achternaam' => $this->faker->lastName(),
-            'geslacht' => $geslacht,
             'geboortedatum' => $this->faker->dateTimeBetween('-70 years', '-8 years'),
             'actief' => true,
             'beheerd_in_admin' => false,
-            'geboorteplaats' => $this->faker->city(),
-            'nationaliteit' => 'Nederlandse',
         ];
     }
 

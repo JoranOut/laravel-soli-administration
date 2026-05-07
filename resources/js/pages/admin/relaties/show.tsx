@@ -24,8 +24,8 @@ type RelatieSummary = Pick<Relatie, 'id' | 'voornaam' | 'tussenvoegsel' | 'achte
 
 type Props = {
     relatie: Relatie;
-    relatieTypes: RelatieType[];
-    onderdelen: Onderdeel[];
+    relatieTypes?: RelatieType[];
+    onderdelen?: Onderdeel[];
     instrumentSoorten?: InstrumentSoort[];
     users?: Pick<User, 'id' | 'name' | 'email'>[];
     userRelaties?: RelatieSummary[];
@@ -46,13 +46,17 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         router.get('/dashboard', { relatie: id }, { preserveState: false });
     };
 
+    const isMember = hasRole('member');
+
     const tabs: Tab[] = [
         { key: 'overview', label: t('Overview') },
         { key: 'types', label: t('Types') },
-        { key: 'contact', label: t('Contact') },
+        ...(!isMember ? [{ key: 'contact', label: t('Contact') }] : []),
         { key: 'lidmaatschap', label: t('Membership') },
-        { key: 'opleiding', label: t('Education') },
-        { key: 'instrumenten', label: t('Instruments') },
+        ...(!isMember ? [
+            { key: 'opleiding', label: t('Education') },
+            { key: 'instrumenten', label: t('Instruments') },
+        ] : []),
         ...(can('users.edit') ? [{ key: 'account', label: t('Account') }] : []),
     ];
 
@@ -60,7 +64,7 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         <AppLayout>
             <Head title={relatie.volledige_naam} />
             <div className="space-y-6 p-4">
-                    {!hasRole('member') && (
+                    {!isMember && (
                         <div className="flex items-center gap-4">
                             <Button variant="ghost" size="sm" asChild>
                                 <Link href="/admin/relaties">
@@ -112,13 +116,13 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
                             <RelatieOverviewTab relatie={relatie} />
                         )}
                         {activeTab === 'types' && (
-                            <RelatieTypesTab relatie={relatie} relatieTypes={relatieTypes} onderdelen={onderdelen} />
+                            <RelatieTypesTab relatie={relatie} relatieTypes={relatieTypes ?? []} onderdelen={onderdelen ?? []} />
                         )}
                         {activeTab === 'contact' && (
                             <RelatieContactTab relatie={relatie} />
                         )}
                         {activeTab === 'lidmaatschap' && (
-                            <RelatieLidmaatschapTab relatie={relatie} onderdelen={onderdelen} instrumentSoorten={instrumentSoorten ?? []} />
+                            <RelatieLidmaatschapTab relatie={relatie} onderdelen={onderdelen ?? []} instrumentSoorten={instrumentSoorten ?? []} />
                         )}
                         {activeTab === 'opleiding' && (
                             <RelatieOpleidingTab relatie={relatie} />
