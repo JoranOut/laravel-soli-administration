@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\InstrumentSyncController;
 use App\Http\Controllers\Api\MemberSyncController;
 use App\Http\Controllers\Api\OidcUserinfoController;
 use App\Http\Controllers\Api\OnderdeelSyncController;
@@ -21,6 +20,5 @@ Route::prefix('v1/sync')->middleware(['force.json', 'sync.api_key', 'throttle:50
 });
 
 Route::prefix('v1')->middleware(['force.json', 'instruments.api_key', 'throttle:500,30'])->group(function () {
-    Route::get('/instruments', [InstrumentSyncController::class, 'index']);
     Route::get('/onderdelen', [OnderdeelSyncController::class, 'index']);
 });

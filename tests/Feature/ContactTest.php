@@ -10,12 +10,12 @@ test('guests are redirected to the login page', function () {
     $response->assertRedirect(route('login'));
 });
 
-test('authenticated users without contact.view get 403', function () {
+test('members can view the contact page', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $user = User::factory()->create()->assignRole('member');
 
     $response = $this->actingAs($user)->get(route('contact'));
-    $response->assertForbidden();
+    $response->assertOk();
 });
 
 test('authenticated users with contact.view can view the contact page', function () {

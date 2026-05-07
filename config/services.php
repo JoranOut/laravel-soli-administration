@@ -43,6 +43,11 @@ return [
         'api_key' => env('SOLI_INSTRUMENTS_API_KEY'),
     ],
 
+    'soli_music_library' => [
+        'base_url' => env('SOLI_MUSIC_LIBRARY_API_URL', 'http://localhost:8001'),
+        'api_key' => env('SOLI_MUSIC_LIBRARY_API_KEY'),
+    ],
+
     'google' => [
         'service_account_key' => env('GOOGLE_SERVICE_ACCOUNT_KEY_PATH'),
         'workspace_domain' => env('GOOGLE_WORKSPACE_DOMAIN', 'soli.nl'),
