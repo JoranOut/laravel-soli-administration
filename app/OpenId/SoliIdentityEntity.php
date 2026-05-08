@@ -62,8 +62,19 @@ class SoliIdentityEntity implements IdentityEntityInterface
 
         if (in_array('assignments', $scopes)) {
             $relatieIds = $this->user->relaties()->pluck('id');
+            $today = now()->toDateString();
 
             $claims['assignments'] = RelatieInstrument::whereIn('relatie_id', $relatieIds)
+                ->whereExists(function ($query) use ($today) {
+                    $query->select(\DB::raw(1))
+                        ->from('soli_relatie_onderdeel')
+                        ->whereColumn('soli_relatie_onderdeel.relatie_id', 'soli_relatie_instrument.relatie_id')
+                        ->whereColumn('soli_relatie_onderdeel.onderdeel_id', 'soli_relatie_instrument.onderdeel_id')
+                        ->where(function ($q) use ($today) {
+                            $q->whereNull('soli_relatie_onderdeel.tot')
+                                ->orWhere('soli_relatie_onderdeel.tot', '>=', $today);
+                        });
+                })
                 ->with('instrumentSoort.instrumentFamilie')
                 ->get()
                 ->map(fn ($ri) => [
