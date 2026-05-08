@@ -188,7 +188,7 @@ class RelatieController extends Controller
             'telefoons' => fn ($q) => $q->orderByDesc('created_at'),
             'giroGegevens' => fn ($q) => $q->orderByDesc('created_at'),
             'relatieSinds' => fn ($q) => $q->orderByDesc('lid_sinds'),
-            'onderdelen' => fn ($q) => $q->orderByDesc('soli_relatie_onderdeel.van'),
+            'onderdelen' => fn ($q) => $q->orderByRaw('soli_relatie_onderdeel.tot IS NOT NULL')->orderByDesc('soli_relatie_onderdeel.tot'),
             'relatieInstrumenten.onderdeel',
             'relatieInstrumenten.instrumentSoort',
             'instrumentBespelers.instrument',
