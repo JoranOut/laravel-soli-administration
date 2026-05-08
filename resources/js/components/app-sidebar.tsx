@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Rocket, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
+import { Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Music2, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -80,9 +80,9 @@ export function AppSidebar() {
             icon: ShoppingCart,
         },
         {
-            title: 'dev.soli.nl',
-            href: 'https://dev.soli.nl',
-            icon: Rocket,
+            title: 'Muziektheek',
+            href: 'https://muziek.soli.nl',
+            icon: Music2,
         },
     ];
 
