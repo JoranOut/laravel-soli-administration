@@ -109,17 +109,27 @@ class InstrumentSoortSeeder extends Seeder
         // Create families first
         $familieNames = collect($soorten)->pluck('familie')->unique();
         $familieMap = [];
+        $familieIndex = 1;
         foreach ($familieNames as $naam) {
-            $familie = InstrumentFamilie::updateOrCreate(['naam' => $naam]);
+            $familie = InstrumentFamilie::updateOrCreate(
+                ['naam' => $naam],
+                ['external_id' => $familieIndex]
+            );
             $familieMap[$naam] = $familie->id;
+            $familieIndex++;
         }
 
         // Create soorten with FK
+        $soortIndex = 1;
         foreach ($soorten as $soort) {
             InstrumentSoort::updateOrCreate(
                 ['naam' => $soort['naam']],
-                ['instrument_familie_id' => $familieMap[$soort['familie']]]
+                [
+                    'instrument_familie_id' => $familieMap[$soort['familie']],
+                    'external_id' => $soortIndex,
+                ]
             );
+            $soortIndex++;
         }
     }
 }
