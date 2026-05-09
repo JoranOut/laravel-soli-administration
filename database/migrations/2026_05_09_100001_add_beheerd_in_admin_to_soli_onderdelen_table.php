@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('soli_relatie_onderdeel', function (Blueprint $table) {
-            $table->boolean('beheerd_in_admin')->default(false)->after('tot');
+        Schema::table('soli_onderdelen', function (Blueprint $table) {
+            $table->boolean('beheerd_in_admin')->default(false)->after('actief');
         });
     }
 
     public function down(): void
     {
-        Schema::table('soli_relatie_onderdeel', function (Blueprint $table) {
+        Schema::table('soli_onderdelen', function (Blueprint $table) {
             $table->dropColumn('beheerd_in_admin');
         });
     }

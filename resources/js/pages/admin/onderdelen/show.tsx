@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Mail, Pencil, Trash } from 'lucide-react';
+import { ArrowLeft, Mail, Pencil, ShieldCheck, Trash } from 'lucide-react';
 import { useState } from 'react';
 import AppLayout from '@/layouts/app-layout';
 
@@ -37,6 +37,7 @@ export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props
         type: onderdeel.type,
         beschrijving: onderdeel.beschrijving ?? '',
         actief: onderdeel.actief,
+        beheerd_in_admin: onderdeel.beheerd_in_admin,
     });
 
     const handleEditSubmit = (e: React.FormEvent) => {
@@ -74,6 +75,11 @@ export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props
                         <div className="flex items-center gap-2">
                             <Badge variant="outline">{t(onderdeel.type)}</Badge>
                             <Badge variant={onderdeel.actief ? 'default' : 'outline'}>{onderdeel.actief ? t('Active') : t('Inactive')}</Badge>
+                            {onderdeel.beheerd_in_admin && (
+                                <Badge variant="outline" className="text-blue-600 border-blue-300">
+                                    <ShieldCheck className="mr-1 h-3 w-3" />{t('Admin-managed')}
+                                </Badge>
+                            )}
                             {can('onderdelen.edit') && (
                                 <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
                                     <Pencil className="mr-2 h-4 w-4" />{t("Edit")}
@@ -126,6 +132,17 @@ export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props
                                         onCheckedChange={(checked) => setData('actief', !!checked)}
                                     />
                                     <label htmlFor="edit-actief" className="text-sm">{t("Active")}</label>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex items-center gap-2">
+                                        <Checkbox
+                                            id="edit-beheerd-in-admin"
+                                            checked={data.beheerd_in_admin}
+                                            onCheckedChange={(checked) => setData('beheerd_in_admin', !!checked)}
+                                        />
+                                        <label htmlFor="edit-beheerd-in-admin" className="text-sm">{t("Admin-managed")}</label>
+                                    </div>
+                                    <p className="text-muted-foreground text-xs">{t("When enabled, member assignments to this section will not be removed by the SAD sync.")}</p>
                                 </div>
                                 <Button type="submit" disabled={processing}>{t("Save")}</Button>
                             </form>

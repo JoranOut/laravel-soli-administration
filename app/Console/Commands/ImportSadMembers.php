@@ -230,13 +230,8 @@ class ImportSadMembers extends Command
 
                 Schema::disableForeignKeyConstraints();
 
-                // Check for any admin-managed pivot rows (on any relatie)
-                $hasAdminManagedPivots = DB::table('soli_relatie_onderdeel')
-                    ->where('beheerd_in_admin', true)
-                    ->exists();
-
-                if ($adminRelatieIds->isEmpty() && ! $hasAdminManagedPivots) {
-                    // No admin-managed relaties or pivots — fast truncate
+                if ($adminRelatieIds->isEmpty()) {
+                    // No admin-managed relaties — fast truncate
                     foreach (array_keys($subResourceTables) as $table) {
                         DB::table($table)->truncate();
                     }
@@ -252,15 +247,6 @@ class ImportSadMembers extends Command
                     foreach ($subResourceTables as $table => $column) {
                         if ($table === 'soli_betalingen') {
                             continue; // Already handled above
-                        }
-                        if ($table === 'soli_relatie_onderdeel') {
-                            // Preserve admin-managed pivot rows regardless of relatie
-                            DB::table($table)
-                                ->whereNotIn($column, $adminRelatieIds)
-                                ->where('beheerd_in_admin', false)
-                                ->delete();
-
-                            continue;
                         }
                         DB::table($table)->whereNotIn($column, $adminRelatieIds)->delete();
                     }
@@ -359,13 +345,17 @@ class ImportSadMembers extends Command
             return;
         }
 
+        // Skip if Drumfanfare is admin-managed
+        if ($df->beheerd_in_admin) {
+            return;
+        }
+
         $adminRelatieIds = Relatie::where('beheerd_in_admin', true)->pluck('id');
 
-        // End open memberships at the KO start date (skip admin-managed pivots)
+        // End open memberships at the KO start date
         $endedOpen = DB::table('soli_relatie_onderdeel')
             ->where('onderdeel_id', $df->id)
             ->whereNull('tot')
-            ->where('beheerd_in_admin', false)
             ->whereNotIn('relatie_id', $adminRelatieIds)
             ->update(['tot' => $firstKo]);
 
@@ -373,7 +363,6 @@ class ImportSadMembers extends Command
         $capped = DB::table('soli_relatie_onderdeel')
             ->where('onderdeel_id', $df->id)
             ->where('tot', '>', $firstKo)
-            ->where('beheerd_in_admin', false)
             ->whereNotIn('relatie_id', $adminRelatieIds)
             ->update(['tot' => $firstKo]);
 
@@ -381,7 +370,6 @@ class ImportSadMembers extends Command
         $removed = DB::table('soli_relatie_onderdeel')
             ->where('onderdeel_id', $df->id)
             ->where('van', '>=', $firstKo)
-            ->where('beheerd_in_admin', false)
             ->whereNotIn('relatie_id', $adminRelatieIds)
             ->delete();
 
@@ -407,7 +395,7 @@ class ImportSadMembers extends Command
 
             $latestTot = Carbon::parse($relatie->relatieSinds->max('lid_tot'))->toDateString();
 
-            foreach ($relatie->onderdelen->filter(fn ($o) => ! $o->pivot->tot) as $onderdeel) {
+            foreach ($relatie->onderdelen->filter(fn ($o) => ! $o->pivot->tot && ! $o->beheerd_in_admin) as $onderdeel) {
                 DB::table('soli_relatie_onderdeel')
                     ->where('id', $onderdeel->pivot->id)
                     ->update(['tot' => $latestTot]);

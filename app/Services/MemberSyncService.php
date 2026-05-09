@@ -307,9 +307,9 @@ class MemberSyncService
 
         $currentIds = $activeAssignments->pluck('id')->toArray();
 
-        // Only close non-admin-managed assignments not in desired list
+        // Only close assignments to non-admin-managed onderdelen
         $closableIds = $activeAssignments
-            ->filter(fn ($o) => ! $o->pivot->beheerd_in_admin)
+            ->filter(fn ($o) => ! $o->beheerd_in_admin)
             ->pluck('id')
             ->toArray();
 
@@ -317,7 +317,6 @@ class MemberSyncService
         if (! empty($toClose)) {
             $relatie->onderdelen()
                 ->wherePivotNull('tot')
-                ->wherePivot('beheerd_in_admin', false)
                 ->wherePivotIn('onderdeel_id', $toClose)
                 ->update(['soli_relatie_onderdeel.tot' => now()->toDateString()]);
         }

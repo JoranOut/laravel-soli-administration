@@ -599,5 +599,6 @@
     "Instrument types played by active members": "Instrumentsoorten bespeeld door actieve leden",
     "Total": "Totaal",
 
-    "Admin-managed": "Beheerd in admin"
+    "Admin-managed": "Beheerd in admin",
+    "When enabled, member assignments to this section will not be removed by the SAD sync.": "Indien ingeschakeld worden toewijzingen aan dit onderdeel niet verwijderd door de SAD-synchronisatie."
 }

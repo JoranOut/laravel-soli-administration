@@ -384,7 +384,7 @@ export default function RelatieLidmaatschapTab({ relatie, onderdelen, instrument
                                                 {instruments.map((soort) => (
                                                     <Badge key={soort}>{soort}</Badge>
                                                 ))}
-                                                {onderdeel.pivot?.beheerd_in_admin && (
+                                                {onderdeel.beheerd_in_admin && (
                                                     <Badge variant="outline" className="text-blue-600 border-blue-300">
                                                         <ShieldCheck className="mr-1 h-3 w-3" />{t('Admin-managed')}
                                                     </Badge>

@@ -596,5 +596,6 @@
     "Instrument types played by active members": "Instrument types played by active members",
     "Total": "Total",
 
-    "Admin-managed": "Admin-managed"
+    "Admin-managed": "Admin-managed",
+    "When enabled, member assignments to this section will not be removed by the SAD sync.": "When enabled, member assignments to this section will not be removed by the SAD sync."
 }
