@@ -597,5 +597,7 @@
     "Average age": "Gemiddelde leeftijd",
     "Instruments played": "Bespeelde instrumenten",
     "Instrument types played by active members": "Instrumentsoorten bespeeld door actieve leden",
-    "Total": "Totaal"
+    "Total": "Totaal",
+
+    "Admin-managed": "Beheerd in admin"
 }

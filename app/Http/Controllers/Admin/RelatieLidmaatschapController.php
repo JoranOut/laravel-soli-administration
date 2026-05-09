@@ -64,6 +64,7 @@ class RelatieLidmaatschapController extends Controller
             'functie' => $validated['functie'] ?? null,
             'van' => $validated['van'],
             'tot' => $validated['tot'] ?? null,
+            'beheerd_in_admin' => true,
         ]);
 
         foreach ($validated['instrument_soort_ids'] ?? [] as $instrumentSoortId) {

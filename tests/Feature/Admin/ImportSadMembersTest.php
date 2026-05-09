@@ -313,6 +313,69 @@ test('admin-managed relatie not in SAD data stays active after import', function
     expect($relatie->beheerd_in_admin)->toBeTrue();
 });
 
+test('fresh flag preserves admin-managed onderdeel pivots', function () {
+    // Create a non-admin relatie with an admin-managed onderdeel pivot
+    $relatie = Relatie::create([
+        'relatie_nummer' => 8888,
+        'voornaam' => 'Test',
+        'achternaam' => 'Person',
+        'actief' => true,
+        'beheerd_in_admin' => false,
+    ]);
+
+    $ha = Onderdeel::where('afkorting', 'HA')->first();
+    $relatie->onderdelen()->attach($ha->id, [
+        'van' => '2020-01-01',
+        'beheerd_in_admin' => true,
+    ]);
+
+    $this->artisan('import:sad-members', [
+        'path' => $this->fixturePath,
+        '--fresh' => true,
+    ])->assertExitCode(0);
+
+    // The admin-managed pivot row should be preserved
+    $pivotExists = DB::table('soli_relatie_onderdeel')
+        ->where('relatie_id', $relatie->id)
+        ->where('onderdeel_id', $ha->id)
+        ->where('beheerd_in_admin', true)
+        ->exists();
+
+    expect($pivotExists)->toBeTrue();
+});
+
+test('closeOnderdelenForExMembers also closes admin-managed pivots', function () {
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath])
+        ->assertExitCode(0);
+
+    // Member 9002 is an ex-member — add an admin-managed onderdeel assignment
+    $relatie = Relatie::where('relatie_nummer', 9002)->first();
+    $ko = Onderdeel::where('afkorting', 'KO')->first();
+
+    DB::table('soli_relatie_onderdeel')->insert([
+        'relatie_id' => $relatie->id,
+        'onderdeel_id' => $ko->id,
+        'van' => '2010-01-01',
+        'tot' => null,
+        'beheerd_in_admin' => true,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    // Re-import — closeOnderdelenForExMembers should close even admin-managed pivots
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath])
+        ->assertExitCode(0);
+
+    $pivot = DB::table('soli_relatie_onderdeel')
+        ->where('relatie_id', $relatie->id)
+        ->where('onderdeel_id', $ko->id)
+        ->where('beheerd_in_admin', true)
+        ->first();
+
+    expect($pivot)->not->toBeNull();
+    expect($pivot->tot)->not->toBeNull();
+});
+
 test('dry-run flag does not persist', function () {
     $this->artisan('import:sad-members', [
         'path' => $this->fixturePath,

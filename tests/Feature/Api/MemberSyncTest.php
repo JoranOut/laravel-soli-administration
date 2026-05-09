@@ -327,6 +327,73 @@ test('syncs onderdelen on update: adds new, closes removed', function () {
     expect($bbAssignment->pivot->tot)->not->toBeNull();
 });
 
+test('sync does not close admin-managed onderdeel assignment', function () {
+    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
+    $relatie->emails()->create(['email' => 'jan@test.nl']);
+    $user = User::factory()->create(['email' => 'jan@test.nl']);
+    $user->assignRole('member');
+    $relatie->update(['user_id' => $user->id]);
+
+    $ha = Onderdeel::where('afkorting', 'HA')->first();
+    $bb = Onderdeel::where('afkorting', 'BB')->first();
+
+    // HA is a regular assignment, BB is admin-managed
+    $relatie->onderdelen()->attach($ha->id, ['van' => now()->subYear()->toDateString()]);
+    $relatie->onderdelen()->attach($bb->id, ['van' => now()->subYear()->toDateString(), 'beheerd_in_admin' => true]);
+
+    // Sync with only HA — BB should NOT be closed because it's admin-managed
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $relatie->refresh();
+
+    // BB should still be open (admin-managed, not closed by sync)
+    $bbAssignment = $relatie->onderdelen()->where('onderdeel_id', $bb->id)->first();
+    expect($bbAssignment->pivot->tot)->toBeNull();
+    expect((bool) $bbAssignment->pivot->beheerd_in_admin)->toBeTrue();
+
+    // HA should still be active too
+    $haAssignment = $relatie->onderdelen()->where('onderdeel_id', $ha->id)->wherePivotNull('tot')->first();
+    expect($haAssignment)->not->toBeNull();
+});
+
+test('deactivation closes admin-managed onderdeel assignments too', function () {
+    $user = User::factory()->create();
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'user_id' => $user->id,
+        'actief' => true,
+    ]);
+
+    $ha = Onderdeel::where('afkorting', 'HA')->first();
+    $bb = Onderdeel::where('afkorting', 'BB')->first();
+
+    $relatie->onderdelen()->attach($ha->id, ['van' => now()->subYear()->toDateString()]);
+    $relatie->onderdelen()->attach($bb->id, ['van' => now()->subYear()->toDateString(), 'beheerd_in_admin' => true]);
+
+    $response = $this->deleteJson('/api/v1/sync/members/1000', [], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $relatie->refresh();
+    expect($relatie->actief)->toBeFalse();
+
+    // Regular assignment should be closed
+    $haAssignment = $relatie->onderdelen()->where('onderdeel_id', $ha->id)->first();
+    expect($haAssignment->pivot->tot)->not->toBeNull();
+
+    // Admin-managed assignment should also be closed
+    $bbAssignment = $relatie->onderdelen()->where('onderdeel_id', $bb->id)->first();
+    expect($bbAssignment->pivot->tot)->not->toBeNull();
+});
+
 test('reactivates inactive relatie on update', function () {
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,

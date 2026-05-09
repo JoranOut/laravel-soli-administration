@@ -220,7 +220,7 @@ class MemberSyncService
                 ->update(['soli_relatie_relatie_type.tot' => now()->toDateString()]);
         }
 
-        // Close active onderdeel assignments
+        // Close all active onderdeel assignments (including admin-managed)
         $relatie->onderdelen()
             ->wherePivotNull('tot')
             ->update(['soli_relatie_onderdeel.tot' => now()->toDateString()]);
@@ -307,16 +307,22 @@ class MemberSyncService
 
         $currentIds = $activeAssignments->pluck('id')->toArray();
 
-        // Close assignments not in desired list
-        $toClose = array_diff($currentIds, $desiredIds);
+        // Only close non-admin-managed assignments not in desired list
+        $closableIds = $activeAssignments
+            ->filter(fn ($o) => ! $o->pivot->beheerd_in_admin)
+            ->pluck('id')
+            ->toArray();
+
+        $toClose = array_diff($closableIds, $desiredIds);
         if (! empty($toClose)) {
             $relatie->onderdelen()
                 ->wherePivotNull('tot')
+                ->wherePivot('beheerd_in_admin', false)
                 ->wherePivotIn('onderdeel_id', $toClose)
                 ->update(['soli_relatie_onderdeel.tot' => now()->toDateString()]);
         }
 
-        // Add new assignments
+        // Add new assignments (skip if already active, including admin-managed)
         $toAdd = array_diff($desiredIds, $currentIds);
         foreach ($toAdd as $onderdeelId) {
             $relatie->onderdelen()->attach($onderdeelId, [
