@@ -356,7 +356,7 @@ test('sync does not close admin-managed onderdeel assignment', function () {
     // BB should still be open (admin-managed, not closed by sync)
     $bbAssignment = $relatie->onderdelen()->where('onderdeel_id', $bb->id)->first();
     expect($bbAssignment->pivot->tot)->toBeNull();
-    expect($bbAssignment->pivot->beheerd_in_admin)->toBeTrue();
+    expect((bool) $bbAssignment->pivot->beheerd_in_admin)->toBeTrue();
 
     // HA should still be active too
     $haAssignment = $relatie->onderdelen()->where('onderdeel_id', $ha->id)->wherePivotNull('tot')->first();
