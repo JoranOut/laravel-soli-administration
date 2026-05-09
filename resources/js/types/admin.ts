@@ -99,6 +99,7 @@ export type Onderdeel = {
         functie: string | null;
         van: string;
         tot: string | null;
+        beheerd_in_admin: boolean;
     };
     actieve_relaties_count?: number;
 };

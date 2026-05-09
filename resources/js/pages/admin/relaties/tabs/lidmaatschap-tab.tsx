@@ -1,5 +1,5 @@
 import { router, useForm } from '@inertiajs/react';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -384,6 +384,11 @@ export default function RelatieLidmaatschapTab({ relatie, onderdelen, instrument
                                                 {instruments.map((soort) => (
                                                     <Badge key={soort}>{soort}</Badge>
                                                 ))}
+                                                {onderdeel.pivot?.beheerd_in_admin && (
+                                                    <Badge variant="outline" className="text-blue-600 border-blue-300">
+                                                        <ShieldCheck className="mr-1 h-3 w-3" />{t('Admin-managed')}
+                                                    </Badge>
+                                                )}
                                                 {onderdeel.pivot && <DateRangeDisplay van={onderdeel.pivot.van} tot={onderdeel.pivot.tot} />}
                                             </div>
                                         </div>
