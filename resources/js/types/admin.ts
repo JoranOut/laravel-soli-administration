@@ -92,6 +92,7 @@ export type Onderdeel = {
     type: 'muziekgroep' | 'commissie' | 'bestuur' | 'staff' | 'overig';
     beschrijving: string | null;
     actief: boolean;
+    beheerd_in_admin: boolean;
     created_at: string;
     updated_at: string;
     pivot?: {
@@ -99,7 +100,6 @@ export type Onderdeel = {
         functie: string | null;
         van: string;
         tot: string | null;
-        beheerd_in_admin: boolean;
     };
     actieve_relaties_count?: number;
 };

@@ -23,19 +23,21 @@ class Onderdeel extends Model
         'type',
         'beschrijving',
         'actief',
+        'beheerd_in_admin',
     ];
 
     protected function casts(): array
     {
         return [
             'actief' => 'boolean',
+            'beheerd_in_admin' => 'boolean',
         ];
     }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['naam', 'afkorting', 'type', 'beschrijving', 'actief'])
+            ->logOnly(['naam', 'afkorting', 'type', 'beschrijving', 'actief', 'beheerd_in_admin'])
             ->logOnlyDirty()
             ->setDescriptionForEvent(fn (string $eventName) => "Onderdeel {$this->naam} {$eventName}");
     }

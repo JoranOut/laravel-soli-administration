@@ -20,6 +20,7 @@ class UpdateOnderdeelRequest extends FormRequest
             'type' => ['required', 'in:'.implode(',', Onderdeel::TYPES)],
             'beschrijving' => ['nullable', 'string'],
             'actief' => ['boolean'],
+            'beheerd_in_admin' => ['boolean'],
         ];
     }
 }

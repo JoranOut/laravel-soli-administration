@@ -147,7 +147,6 @@ class RelatieController extends Controller
                     'functie' => $onderdeel['functie'] ?? null,
                     'van' => $onderdeel['van'],
                     'tot' => $onderdeel['tot'] ?? null,
-                    'beheerd_in_admin' => true,
                 ]);
 
                 foreach ($onderdeel['instrument_soort_ids'] ?? [] as $instrumentSoortId) {
