@@ -34,7 +34,11 @@ Route::get('/oauth/logout', function (\Illuminate\Http\Request $request) {
     $request->session()->regenerateToken();
 
     if ($redirectUri && filter_var($redirectUri, FILTER_VALIDATE_URL)) {
-        return redirect($redirectUri);
+        $host = parse_url($redirectUri, PHP_URL_HOST);
+
+        if ($host === 'soli.nl' || str_ends_with($host, '.soli.nl')) {
+            return redirect($redirectUri);
+        }
     }
 
     return redirect('/');
