@@ -25,6 +25,9 @@ jobs:
           composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
           npm ci
 
+      - name: Security Audit
+        run: composer audit
+
       - name: Run Pint
         run: composer lint
 
