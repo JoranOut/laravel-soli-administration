@@ -211,11 +211,11 @@ class RelatieController extends Controller
 
         $props = [
             'relatie' => $relatie,
+            'relatieTypes' => RelatieType::all(),
+            'onderdelen' => Onderdeel::actief()->orderBy('naam')->get(),
         ];
 
         if ($user->can('relaties.edit')) {
-            $props['relatieTypes'] = RelatieType::all();
-            $props['onderdelen'] = Onderdeel::actief()->orderBy('naam')->get();
             $props['instrumentSoorten'] = InstrumentSoort::with('instrumentFamilie')->orderBy('instrument_familie_id')->orderBy('naam')->get();
         }
 
