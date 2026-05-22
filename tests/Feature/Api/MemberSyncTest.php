@@ -398,6 +398,39 @@ test('deactivation closes assignments to admin-managed onderdelen too', function
     expect($bbAssignment->pivot->tot)->not->toBeNull();
 });
 
+test('upsert skips admin-managed relatie entirely', function () {
+    $user = User::factory()->create(['email' => 'admin-set@test.nl']);
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'voornaam' => 'Original',
+        'achternaam' => 'Name',
+        'user_id' => $user->id,
+        'beheerd_in_admin' => true,
+    ]);
+    $relatie->emails()->create(['email' => 'admin-set@test.nl']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Changed',
+        'achternaam' => 'Different',
+        'email' => 'sad@test.nl',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+    $response->assertJson(['status' => 'skipped']);
+
+    // Nothing should have changed
+    $relatie->refresh();
+    expect($relatie->voornaam)->toBe('Original');
+    expect($relatie->achternaam)->toBe('Name');
+
+    $user->refresh();
+    expect($user->email)->toBe('admin-set@test.nl');
+
+    // SAD email should not have been added
+    expect($relatie->emails()->where('email', 'sad@test.nl')->exists())->toBeFalse();
+});
+
 test('reactivates inactive relatie on update', function () {
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,
@@ -513,6 +546,27 @@ test('deactivates member and deletes user account', function () {
     // Onderdeel closed
     $haAssignment = $relatie->onderdelen()->where('onderdeel_id', $ha->id)->first();
     expect($haAssignment->pivot->tot)->not->toBeNull();
+});
+
+test('deactivate skips admin-managed relatie', function () {
+    $user = User::factory()->create();
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'user_id' => $user->id,
+        'actief' => true,
+        'beheerd_in_admin' => true,
+    ]);
+
+    $response = $this->deleteJson('/api/v1/sync/members/1000', [], syncHeaders());
+
+    $response->assertStatus(200);
+    $response->assertJson(['status' => 'skipped']);
+
+    $relatie->refresh();
+    expect($relatie->actief)->toBeTrue();
+    expect($relatie->user_id)->toBe($user->id);
+    expect(User::find($user->id))->not->toBeNull();
 });
 
 test('returns 404 when deactivating unknown member', function () {

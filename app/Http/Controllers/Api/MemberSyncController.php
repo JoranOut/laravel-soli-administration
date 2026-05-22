@@ -19,6 +19,12 @@ class MemberSyncController extends Controller
     {
         $result = $this->syncService->upsertMember($lid_id, $request->validated());
 
+        if ($result['status'] === MemberSyncService::STATUS_SKIPPED) {
+            Log::info("Sync API: upsert member {$lid_id} — skipped (beheerd in admin)", ['relatie_id' => $result['relatie_id'] ?? null]);
+
+            return response()->json($result, 200);
+        }
+
         $statusCode = $result['status'] === MemberSyncService::STATUS_CREATED ? 201 : 200;
 
         Log::info("Sync API: upsert member {$lid_id}", ['status' => $result['status'], 'relatie_id' => $result['relatie_id'] ?? null]);
@@ -34,6 +40,12 @@ class MemberSyncController extends Controller
             Log::notice("Sync API: deactivate member {$lid_id} — not found");
 
             return response()->json(['message' => 'Member not found.'], 404);
+        }
+
+        if ($result['status'] === MemberSyncService::STATUS_SKIPPED) {
+            Log::info("Sync API: deactivate member {$lid_id} — skipped (beheerd in admin)", ['relatie_id' => $result['relatie_id'] ?? null]);
+
+            return response()->json($result, 200);
         }
 
         Log::info("Sync API: deactivate member {$lid_id}", ['status' => $result['status'], 'relatie_id' => $result['relatie_id'] ?? null]);
