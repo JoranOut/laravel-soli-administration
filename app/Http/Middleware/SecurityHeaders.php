@@ -22,24 +22,33 @@ class SecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        if (app()->isProduction()) {
-            $nonce = Vite::cspNonce();
-            $formAction = "'self' ".$this->passportClientOrigins();
+        $nonce = Vite::cspNonce();
+        $formAction = "'self' ".$this->passportClientOrigins();
+        $scriptSrc = "'self' 'nonce-{$nonce}'";
+        $connectSrc = "'self'";
 
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-            $response->headers->set('Content-Security-Policy',
-                "default-src 'self'; ".
-                "script-src 'self' 'nonce-{$nonce}'; ".
-                "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; ".
-                "font-src 'self' https://fonts.bunny.net; ".
-                "img-src 'self' data:; ".
-                "connect-src 'self'; ".
-                "object-src 'none'; ".
-                "base-uri 'self'; ".
-                "form-action {$formAction}; ".
-                "frame-ancestors 'none'"
-            );
+        if (! app()->isProduction()) {
+            // Allow Vite dev server (HMR websocket + script loading)
+            $scriptSrc .= " http://localhost:5173";
+            $connectSrc .= " ws://localhost:5173 http://localhost:5173";
         }
+
+        if (app()->isProduction()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
+
+        $response->headers->set('Content-Security-Policy',
+            "default-src 'self'; ".
+            "script-src {$scriptSrc}; ".
+            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net; ".
+            "font-src 'self' https://fonts.bunny.net; ".
+            "img-src 'self' data:; ".
+            "connect-src {$connectSrc}; ".
+            "object-src 'none'; ".
+            "base-uri 'self'; ".
+            "form-action {$formAction}; ".
+            "frame-ancestors 'none'"
+        );
 
         return $response;
     }

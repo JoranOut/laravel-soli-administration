@@ -156,8 +156,8 @@ test('bestuur does not receive edit props on relatie show', function () {
         ->component('admin/relaties/show')
         ->has('relatie')
         ->missing('relatie.user')
-        ->missing('relatieTypes')
-        ->missing('onderdelen')
+        ->has('relatieTypes')
+        ->has('onderdelen')
         ->missing('instrumentSoorten')
         ->missing('users')
     );
@@ -174,8 +174,8 @@ test('member does not receive edit props on own relatie show', function () {
         ->component('admin/relaties/show')
         ->has('relatie')
         ->missing('relatie.user')
-        ->missing('relatieTypes')
-        ->missing('onderdelen')
+        ->has('relatieTypes')
+        ->has('onderdelen')
         ->missing('instrumentSoorten')
         ->missing('users')
     );

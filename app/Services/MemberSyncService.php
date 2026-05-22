@@ -17,6 +17,8 @@ class MemberSyncService
 
     public const STATUS_UPDATED = 'updated';
 
+    public const STATUS_SKIPPED = 'skipped';
+
     public const STATUS_NOT_FOUND = 'not_found';
 
     public const STATUS_ALREADY_INACTIVE = 'already_inactive';
@@ -33,6 +35,13 @@ class MemberSyncService
             $relatie = Relatie::withTrashed()->lockForUpdate()->where('relatie_nummer', $lidId)->first();
 
             if ($relatie) {
+                if ($relatie->beheerd_in_admin) {
+                    return [
+                        'status' => self::STATUS_SKIPPED,
+                        'relatie_id' => $relatie->id,
+                    ];
+                }
+
                 return $this->updateMember($relatie, $data);
             }
 
@@ -47,6 +56,13 @@ class MemberSyncService
 
             if (! $relatie) {
                 return ['status' => self::STATUS_NOT_FOUND];
+            }
+
+            if ($relatie->beheerd_in_admin) {
+                return [
+                    'status' => self::STATUS_SKIPPED,
+                    'relatie_id' => $relatie->id,
+                ];
             }
 
             if (! $relatie->actief && ! $relatie->trashed()) {

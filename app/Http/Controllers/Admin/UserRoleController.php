@@ -56,7 +56,18 @@ class UserRoleController extends Controller
             }
         }
 
+        $oldRoles = $user->roles->pluck('name')->toArray();
+
         $user->syncRoles($validated['roles']);
+
+        activity()
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->withProperties([
+                'old' => $oldRoles,
+                'new' => $validated['roles'],
+            ])
+            ->log("Roles changed for {$user->name}");
 
         return back();
     }

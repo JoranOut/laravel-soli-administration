@@ -70,11 +70,13 @@ test('csp form-action deduplicates origins from multiple clients', function () {
     expect($csp)->toContain("form-action 'self' https://example.com;");
 });
 
-test('csp is not set in non-production environment', function () {
+test('csp allows vite dev server in non-production environment', function () {
     $user = User::factory()->create()->assignRole('admin');
 
     $response = $this->actingAs($user)->get(route('dashboard'));
 
-    expect($response->headers->get('Content-Security-Policy'))->toBeNull();
+    $csp = $response->headers->get('Content-Security-Policy');
+    expect($csp)->toContain('http://localhost:5173');
+    expect($csp)->toContain('ws://localhost:5173');
     expect($response->headers->get('Strict-Transport-Security'))->toBeNull();
 });
