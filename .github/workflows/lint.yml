@@ -26,7 +26,9 @@ jobs:
           npm ci
 
       - name: Security Audit
-        run: composer audit
+        run: |
+          composer audit
+          npm audit
 
       - name: Run Pint
         run: composer lint
