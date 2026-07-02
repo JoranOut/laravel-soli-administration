@@ -12,7 +12,8 @@ class SyncGoogleContacts extends Command
     protected $signature = 'sync:google-contacts
         {--relatie= : Sync a specific relatie only}
         {--sync : Run synchronously (not queued)}
-        {--dry-run : Show what would change without calling API}';
+        {--dry-run : Show what would change without calling API}
+        {--show-errors : Show detailed output including API errors}';
 
     protected $description = 'Sync Soli members to Google Contacts for all Workspace users';
 
@@ -47,6 +48,10 @@ class SyncGoogleContacts extends Command
 
     private function runDirectly(GoogleContactSyncService $syncService, ?string $relatieId, bool $dryRun): int
     {
+        if ($this->option('show-errors')) {
+            $syncService->withOutput(fn (string $msg) => $this->line($msg));
+        }
+
         if ($relatieId) {
             $relatie = Relatie::with(['emails', 'onderdelen'])->find($relatieId);
 
