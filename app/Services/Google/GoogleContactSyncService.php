@@ -21,6 +21,22 @@ class GoogleContactSyncService
         private GooglePeopleApiClient $apiClient,
     ) {}
 
+    private ?\Closure $output = null;
+
+    public function withOutput(\Closure $output): self
+    {
+        $this->output = $output;
+
+        return $this;
+    }
+
+    private function log(string $message): void
+    {
+        if ($this->output) {
+            ($this->output)($message);
+        }
+    }
+
     public function syncAll(?bool $dryRun = false): array
     {
         $log = $dryRun ? null : GoogleContactSyncLog::create([
@@ -137,6 +153,8 @@ class GoogleContactSyncService
             ->with(['emails', 'onderdelen' => fn ($q) => $q->actief(), 'types'])
             ->get();
 
+        $this->log("Processing {$relaties->count()} active relaties for {$googleEmail}");
+
         $activeRelatieIds = $relaties->pluck('id')->all();
 
         // 3. Load existing sync mappings for this user
@@ -182,6 +200,7 @@ class GoogleContactSyncService
                         $toUpdate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
                     }
                 } catch (\Throwable $e) {
+                    $this->log("ERROR getContact relatie #{$relatie->id}: {$e->getMessage()}");
                     Log::warning('Google Contacts sync getContact failed', [
                         'relatie_id' => $relatie->id,
                         'google_user' => $googleEmail,
@@ -192,6 +211,8 @@ class GoogleContactSyncService
                 $toCreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash];
             }
         }
+
+        $this->log("Collected: " . count($toCreate) . " create, " . count($toUpdate) . " update, " . count($toRecreate) . " recreate, {$stats['skipped']} skipped");
 
         // 5. Execute batch creates (including re-creates)
         $allCreates = array_merge($toCreate, $toRecreate);
@@ -223,6 +244,7 @@ class GoogleContactSyncService
                     $stats['created']++;
                 }
             } catch (\Throwable $e) {
+                $this->log("ERROR batch create ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}");
                 Log::warning('Google Contacts batch create failed', [
                     'google_user' => $googleEmail,
                     'count' => count($chunk),
@@ -245,6 +267,7 @@ class GoogleContactSyncService
                     $stats['updated']++;
                 }
             } catch (\Throwable $e) {
+                $this->log("ERROR batch update ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}");
                 Log::warning('Google Contacts batch update failed', [
                     'google_user' => $googleEmail,
                     'count' => count($chunk),
