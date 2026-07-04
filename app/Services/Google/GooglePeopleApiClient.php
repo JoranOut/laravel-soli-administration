@@ -179,6 +179,7 @@ class GooglePeopleApiClient
     {
         $request = new BatchUpdateContactsRequest;
         $request->setContacts($persons);
+        $request->setUpdateMask('names,emailAddresses,clientData,memberships');
         $request->setReadMask('names,emailAddresses,clientData,memberships');
 
         $response = $service->people->batchUpdateContacts($request);
