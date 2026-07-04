@@ -18,6 +18,7 @@ class GoogleContactSyncLog extends Model
         'contacts_updated',
         'contacts_deleted',
         'contacts_skipped',
+        'contacts_failed',
         'error_message',
         'started_at',
         'completed_at',

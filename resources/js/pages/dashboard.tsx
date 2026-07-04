@@ -54,6 +54,8 @@ function JobStatusBadge({ status }: { status: JobStatus['status'] }) {
     switch (status) {
         case 'completed':
             return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"><CheckCircle2 className="h-3 w-3" /> Completed</Badge>;
+        case 'completed_with_errors':
+            return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800"><AlertTriangle className="h-3 w-3" /> Completed with errors</Badge>;
         case 'running':
             return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"><Loader2 className="h-3 w-3 animate-spin" /> Running</Badge>;
         case 'failed':
@@ -211,9 +213,9 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                                         </div>
                                     </div>
                                 ))}
-                                {job_statuses.some((j) => j.status === 'failed' && j.last_error) && (
+                                {job_statuses.some((j) => (j.status === 'failed' || j.status === 'completed_with_errors') && j.last_error) && (
                                     <div className="mt-2 space-y-1">
-                                        {job_statuses.filter((j) => j.status === 'failed' && j.last_error).map((job) => (
+                                        {job_statuses.filter((j) => (j.status === 'failed' || j.status === 'completed_with_errors') && j.last_error).map((job) => (
                                             <p key={job.id} className="text-xs text-red-600 dark:text-red-400 truncate" title={job.last_error!}>
                                                 {job.display_name}: {job.last_error}
                                             </p>

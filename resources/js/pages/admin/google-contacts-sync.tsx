@@ -12,15 +12,23 @@ import type { GoogleContactSyncLog, PaginatedResponse } from '@/types/admin';
 function StatusBadge({ status }: { status: GoogleContactSyncLog['status'] }) {
     const { t } = useTranslation();
 
-    const classes = {
+    const classes: Record<GoogleContactSyncLog['status'], string> = {
         running: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
         completed: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
+        completed_with_errors: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
         failed: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+    };
+
+    const labels: Record<GoogleContactSyncLog['status'], string> = {
+        running: 'running',
+        completed: 'completed',
+        completed_with_errors: 'completed with errors',
+        failed: 'failed',
     };
 
     return (
         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${classes[status]}`}>
-            {t(status)}
+            {t(labels[status])}
         </span>
     );
 }
@@ -37,12 +45,12 @@ function relatieLabel(log: GoogleContactSyncLog): string {
     return [voornaam, tussenvoegsel, achternaam].filter(Boolean).join(' ');
 }
 
-const COL_COUNT = 9;
+const COL_COUNT = 10;
 
 function SyncLogRow({ log }: { log: GoogleContactSyncLog }) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
-    const hasError = log.status === 'failed' && log.error_message;
+    const hasError = (log.status === 'failed' || log.status === 'completed_with_errors') && log.error_message;
 
     return (
         <>
@@ -76,6 +84,13 @@ function SyncLogRow({ log }: { log: GoogleContactSyncLog }) {
                 <td className="py-2 pr-4 text-center">{log.contacts_updated}</td>
                 <td className="py-2 pr-4 text-center">{log.contacts_deleted}</td>
                 <td className="py-2 pr-4 text-center">{log.contacts_skipped}</td>
+                <td className="py-2 pr-4 text-center">
+                    {log.contacts_failed > 0 ? (
+                        <span className="text-red-600 dark:text-red-400 font-medium">{log.contacts_failed}</span>
+                    ) : (
+                        log.contacts_failed
+                    )}
+                </td>
                 <td className="py-2 whitespace-nowrap">
                     {formatDuration(log.started_at, log.completed_at, t)}
                 </td>
@@ -141,6 +156,7 @@ export default function GoogleContactsSync({
                                         <th className="pb-2 pr-4">{t('Updated')}</th>
                                         <th className="pb-2 pr-4">{t('Deleted')}</th>
                                         <th className="pb-2 pr-4">{t('Skipped')}</th>
+                                        <th className="pb-2 pr-4">{t('Failed')}</th>
                                         <th className="pb-2">{t('Duration')}</th>
                                     </tr>
                                 </thead>

@@ -256,12 +256,13 @@ export type GoogleContactSyncLog = {
     type: 'full' | 'relatie';
     relatie_id: number | null;
     relatie?: { id: number; voornaam: string; tussenvoegsel: string | null; achternaam: string } | null;
-    status: 'running' | 'completed' | 'failed';
+    status: 'running' | 'completed' | 'completed_with_errors' | 'failed';
     workspace_users: number;
     contacts_created: number;
     contacts_updated: number;
     contacts_deleted: number;
     contacts_skipped: number;
+    contacts_failed: number;
     error_message: string | null;
     started_at: string;
     completed_at: string | null;
@@ -324,7 +325,7 @@ export type JobStatus = {
     id: number;
     name: string;
     display_name: string;
-    status: 'pending' | 'running' | 'completed' | 'failed';
+    status: 'pending' | 'running' | 'completed' | 'completed_with_errors' | 'failed';
     last_run_at: string | null;
     last_completed_at: string | null;
     last_error: string | null;
