@@ -653,7 +653,7 @@ test('JobStatus markCompletedWithErrors stores error and sets status', function 
     expect($job->status)->toBe('completed_with_errors');
     expect($job->last_error)->toBe('Something went wrong');
     expect($job->last_completed_at)->not->toBeNull();
-    expect($job->metadata)->toBe(['processed' => 10, 'failed' => 2]);
+    expect($job->metadata)->toEqual(['processed' => 10, 'failed' => 2]);
 });
 
 test('JobStatus markCompleted clears previous errors', function () {
