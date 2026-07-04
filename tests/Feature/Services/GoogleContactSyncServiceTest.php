@@ -33,6 +33,7 @@ test('syncForUser creates contacts for active relaties', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
     $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$createdPerson]);
     $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
@@ -69,6 +70,7 @@ test('syncForUser skips relaties with unchanged hash', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('batchCreateContacts')->never();
     $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
     $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
@@ -95,13 +97,14 @@ test('syncForUser updates contacts when hash changes', function () {
     ]);
 
     $existingPerson = new Person;
+    $existingPerson->setResourceName('people/c123');
     $existingPerson->setEtag('etag-abc');
 
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([$existingPerson]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
-    $this->mockApiClient->shouldReceive('getContact')->with($this->mockService, 'people/c123')->andReturn($existingPerson);
     $this->mockApiClient->shouldReceive('getEtag')->with($existingPerson)->andReturn('etag-abc');
     $this->mockApiClient->shouldReceive('batchUpdateContacts')->once()->andReturn([]);
     $this->mockApiClient->shouldReceive('batchCreateContacts')->never();
@@ -132,6 +135,7 @@ test('syncForUser deletes contacts for deactivated relaties', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('batchDeleteContacts')
         ->with($this->mockService, ['people/c999'])
         ->once();
@@ -167,8 +171,8 @@ test('syncForUser handles externally deleted contact by re-creating', function (
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
-    $this->mockApiClient->shouldReceive('getContact')->with($this->mockService, 'people/c-deleted')->andReturnNull();
     $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$newPerson]);
     $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
     $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
@@ -253,6 +257,7 @@ test('contact groups created for muziekgroep only', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('createContactGroup')
         ->with($this->mockService, 'Soli - Test Orkest')
         ->once()
@@ -312,6 +317,7 @@ test('stale contact groups are cleaned up', function () {
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
     $this->mockApiClient->shouldReceive('batchCreateContacts')->andReturn([$createdPerson]);
     $this->mockApiClient->shouldReceive('deleteContactGroup')->with($this->mockService, 'contactGroups/stale1')->once();
@@ -341,9 +347,13 @@ test('contact type groups created for all relatie types', function () {
     $groupDonateur->setResourceName('contactGroups/donateur1');
     $groupDonateur->setName('Soli - Donateur');
 
+    $createdPerson = new Person;
+    $createdPerson->setResourceName('people/c1');
+
     $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
     $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
     $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
     $this->mockApiClient->shouldReceive('createContactGroup')
         ->with($this->mockService, 'Soli - Lid')
         ->once()
@@ -353,8 +363,8 @@ test('contact type groups created for all relatie types', function () {
         ->once()
         ->andReturn($groupDonateur);
     $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
-    $this->mockApiClient->shouldReceive('createContact')->andReturn(tap(new Person, fn ($p) => $p->setResourceName('people/c1')));
-    $this->mockApiClient->shouldReceive('deleteContact')->never();
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->andReturn([$createdPerson]);
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
     $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
 
     $service = app(GoogleContactSyncService::class);
