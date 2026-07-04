@@ -50,7 +50,7 @@ class GoogleContactSyncService
 
         try {
             $users = $this->apiClient->getWorkspaceUsers();
-            $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+            $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
             $isFirst = true;
             foreach ($users as $email) {
@@ -62,21 +62,35 @@ class GoogleContactSyncService
                     $summary['updated'] = $result['updated'];
                     $summary['deleted'] = $result['deleted'];
                     $summary['skipped'] = $result['skipped'];
+                    $summary['failed'] = $result['failed'];
                     $isFirst = false;
+                }
+                // Aggregate errors across all users
+                if (! empty($result['errors'])) {
+                    $summary['errors'] = array_merge($summary['errors'], $result['errors']);
                 }
             }
 
+            $hasErrors = ! empty($summary['errors']);
+            $logSummary = array_diff_key($summary, ['errors' => true]);
+
             $log?->update([
-                'status' => 'completed',
+                'status' => $hasErrors ? 'completed_with_errors' : 'completed',
                 'workspace_users' => $summary['users'],
                 'contacts_created' => $summary['created'],
                 'contacts_updated' => $summary['updated'],
                 'contacts_deleted' => $summary['deleted'],
                 'contacts_skipped' => $summary['skipped'],
+                'contacts_failed' => $summary['failed'],
+                'error_message' => $hasErrors ? implode("\n", $summary['errors']) : null,
                 'completed_at' => now(),
             ]);
 
-            $jobStatus?->markCompleted($summary);
+            if ($hasErrors) {
+                $jobStatus?->markCompletedWithErrors(implode("\n", $summary['errors']), $logSummary);
+            } else {
+                $jobStatus?->markCompleted($logSummary);
+            }
 
             return $summary;
         } catch (\Throwable $e) {
@@ -105,7 +119,7 @@ class GoogleContactSyncService
 
         try {
             $users = $this->apiClient->getWorkspaceUsers();
-            $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+            $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
             $relatie->load(['emails', 'onderdelen', 'types']);
 
@@ -117,19 +131,33 @@ class GoogleContactSyncService
                 $summary['updated'] = max($summary['updated'], $result['updated']);
                 $summary['deleted'] = max($summary['deleted'], $result['deleted']);
                 $summary['skipped'] = max($summary['skipped'], $result['skipped']);
+                $summary['failed'] = max($summary['failed'], $result['failed']);
+                // Aggregate errors across all users
+                if (! empty($result['errors'])) {
+                    $summary['errors'] = array_merge($summary['errors'], $result['errors']);
+                }
             }
 
+            $hasErrors = ! empty($summary['errors']);
+            $logSummary = array_diff_key($summary, ['errors' => true]);
+
             $log?->update([
-                'status' => 'completed',
+                'status' => $hasErrors ? 'completed_with_errors' : 'completed',
                 'workspace_users' => $summary['users'],
                 'contacts_created' => $summary['created'],
                 'contacts_updated' => $summary['updated'],
                 'contacts_deleted' => $summary['deleted'],
                 'contacts_skipped' => $summary['skipped'],
+                'contacts_failed' => $summary['failed'],
+                'error_message' => $hasErrors ? implode("\n", $summary['errors']) : null,
                 'completed_at' => now(),
             ]);
 
-            $jobStatus?->markCompleted($summary);
+            if ($hasErrors) {
+                $jobStatus?->markCompletedWithErrors(implode("\n", $summary['errors']), $logSummary);
+            } else {
+                $jobStatus?->markCompleted($logSummary);
+            }
 
             return $summary;
         } catch (\Throwable $e) {
@@ -153,7 +181,7 @@ class GoogleContactSyncService
 
     public function syncForUser(string $googleEmail, ?bool $dryRun = false): array
     {
-        $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+        $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
         $service = $this->apiClient->forUser($googleEmail);
 
@@ -259,6 +287,8 @@ class GoogleContactSyncService
                     $stats['created']++;
                 }
             } catch (\Throwable $e) {
+                $stats['failed'] += count($chunk);
+                $stats['errors'][] = "Batch create failed ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}";
                 $this->log("ERROR batch create ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}");
                 Log::warning('Google Contacts batch create failed', [
                     'google_user' => $googleEmail,
@@ -282,6 +312,8 @@ class GoogleContactSyncService
                     $stats['updated']++;
                 }
             } catch (\Throwable $e) {
+                $stats['failed'] += count($chunk);
+                $stats['errors'][] = "Batch update failed ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}";
                 $this->log("ERROR batch update ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}");
                 Log::warning('Google Contacts batch update failed', [
                     'google_user' => $googleEmail,
@@ -302,17 +334,20 @@ class GoogleContactSyncService
 
                 try {
                     $this->apiClient->batchDeleteContacts($service, $resourceNames);
+
+                    foreach ($chunk as $sync) {
+                        $sync->delete();
+                        $stats['deleted']++;
+                    }
                 } catch (\Throwable $e) {
+                    $stats['failed'] += count($resourceNames);
+                    $stats['errors'][] = "Batch delete failed ({$googleEmail}, " . count($resourceNames) . " contacts): {$e->getMessage()}";
+                    $this->log("ERROR batch delete ({$googleEmail}, " . count($resourceNames) . " contacts): {$e->getMessage()}");
                     Log::warning('Google Contacts batch delete failed', [
                         'google_user' => $googleEmail,
                         'count' => count($resourceNames),
                         'error' => $e->getMessage(),
                     ]);
-                }
-
-                foreach ($chunk as $sync) {
-                    $sync->delete();
-                    $stats['deleted']++;
                 }
             }
         }
@@ -328,7 +363,7 @@ class GoogleContactSyncService
 
     public function syncRelatieForUser(Relatie $relatie, string $googleEmail, ?bool $dryRun = false): array
     {
-        $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
+        $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
         $service = $this->apiClient->forUser($googleEmail);
 
@@ -397,6 +432,8 @@ class GoogleContactSyncService
                 $existing->update(['data_hash' => $hash]);
                 $stats['updated']++;
             } catch (\Throwable $e) {
+                $stats['failed']++;
+                $stats['errors'][] = "Update failed ({$googleEmail}, relatie {$relatie->id}): {$e->getMessage()}";
                 Log::warning('Google Contacts sync update failed', [
                     'relatie_id' => $relatie->id,
                     'google_user' => $googleEmail,
@@ -414,6 +451,8 @@ class GoogleContactSyncService
                 ]);
                 $stats['created']++;
             } catch (\Throwable $e) {
+                $stats['failed']++;
+                $stats['errors'][] = "Create failed ({$googleEmail}, relatie {$relatie->id}): {$e->getMessage()}";
                 Log::warning('Google Contacts sync create failed', [
                     'relatie_id' => $relatie->id,
                     'google_user' => $googleEmail,

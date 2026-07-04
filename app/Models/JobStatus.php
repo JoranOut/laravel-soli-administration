@@ -42,6 +42,17 @@ class JobStatus extends Model
         $this->update([
             'status' => 'completed',
             'last_completed_at' => now(),
+            'last_error' => null,
+            'metadata' => $metadata ?: null,
+        ]);
+    }
+
+    public function markCompletedWithErrors(string $error, array $metadata = []): void
+    {
+        $this->update([
+            'status' => 'completed_with_errors',
+            'last_completed_at' => now(),
+            'last_error' => $error,
             'metadata' => $metadata ?: null,
         ]);
     }
