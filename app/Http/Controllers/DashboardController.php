@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Instrument;
+use App\Models\JobStatus;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
@@ -329,6 +330,7 @@ class DashboardController extends Controller
                 'unlinked_users' => User::whereDoesntHave('relaties')->count(),
                 'unlinked_relaties' => Relatie::actief()->whereNull('user_id')->count(),
             ];
+            $data['job_statuses'] = JobStatus::all();
         }
 
         $chartData = $this->getOnderdeelHistory();
