@@ -105,18 +105,24 @@ class GooglePeopleApiClient
             $this->makeClientData('relatie_id', (string) $relatie->id),
         ]);
 
-        if (! empty($groupResourceNames)) {
-            $memberships = array_map(function ($resourceName) {
-                $membership = new PeopleService\Membership;
-                $group = new PeopleService\ContactGroupMembership;
-                $group->setContactGroupResourceName($resourceName);
-                $membership->setContactGroupMembership($group);
+        // Always include the system "myContacts" group — Google requires every
+        // contact to be in at least one group, and the update mask includes memberships.
+        $myContactsMembership = new PeopleService\Membership;
+        $myContactsGroup = new PeopleService\ContactGroupMembership;
+        $myContactsGroup->setContactGroupResourceName('contactGroups/myContacts');
+        $myContactsMembership->setContactGroupMembership($myContactsGroup);
 
-                return $membership;
-            }, $groupResourceNames);
+        $memberships = [$myContactsMembership];
 
-            $person->setMemberships($memberships);
+        foreach ($groupResourceNames as $resourceName) {
+            $membership = new PeopleService\Membership;
+            $group = new PeopleService\ContactGroupMembership;
+            $group->setContactGroupResourceName($resourceName);
+            $membership->setContactGroupMembership($group);
+            $memberships[] = $membership;
         }
+
+        $person->setMemberships($memberships);
 
         return $person;
     }
