@@ -1,7 +1,8 @@
 import { Head, Link } from '@inertiajs/react';
 import { useMemo, useState } from 'react';
-import { Music, Users, Wrench, Heart, AlertTriangle } from 'lucide-react';
+import { Music, Users, Wrench, Heart, AlertTriangle, Activity, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
@@ -9,11 +10,12 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, DashboardStats, DashboardAlerts, OnderdeelHistoryEntry, ResidenceStats, InstrumentStat, AgeDistribution } from '@/types';
+import type { BreadcrumbItem, DashboardStats, DashboardAlerts, OnderdeelHistoryEntry, ResidenceStats, InstrumentStat, AgeDistribution, JobStatus } from '@/types';
 
 type Props = {
     stats: DashboardStats;
     alerts?: DashboardAlerts;
+    job_statuses?: JobStatus[];
     onderdeel_history?: OnderdeelHistoryEntry[];
     onderdeel_names?: string[];
     residence_stats?: ResidenceStats;
@@ -33,7 +35,35 @@ function slugify(name: string): string {
     return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_names, residence_stats, instrument_stats, age_distribution }: Props) {
+function formatRelativeTime(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHour = Math.floor(diffMs / 3600000);
+    const diffDay = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHour < 24) return `${diffHour}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
+    return date.toLocaleDateString();
+}
+
+function JobStatusBadge({ status }: { status: JobStatus['status'] }) {
+    switch (status) {
+        case 'completed':
+            return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"><CheckCircle2 className="h-3 w-3" /> Completed</Badge>;
+        case 'running':
+            return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"><Loader2 className="h-3 w-3 animate-spin" /> Running</Badge>;
+        case 'failed':
+            return <Badge variant="destructive"><XCircle className="h-3 w-3" /> Failed</Badge>;
+        default:
+            return <Badge variant="outline"><Clock className="h-3 w-3" /> Pending</Badge>;
+    }
+}
+
+export default function Dashboard({ stats, alerts, job_statuses, onderdeel_history, onderdeel_names, residence_stats, instrument_stats, age_distribution }: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -151,6 +181,48 @@ export default function Dashboard({ stats, alerts, onderdeel_history, onderdeel_
                             </Link>
                         </AlertDescription>
                     </Alert>
+                )}
+
+                {job_statuses && job_statuses.length > 0 && (
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                                <Activity className="h-4 w-4" />
+                                {t('Background Jobs')}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-3">
+                                {job_statuses.map((job) => (
+                                    <div key={job.id} className="flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <span className="text-sm font-medium truncate">{job.display_name}</span>
+                                            <JobStatusBadge status={job.status} />
+                                        </div>
+                                        <div className="flex items-center gap-3 shrink-0">
+                                            {job.metadata && (
+                                                <span className="text-muted-foreground text-xs hidden sm:inline">
+                                                    {Object.entries(job.metadata).map(([k, v]) => `${v} ${k}`).join(', ')}
+                                                </span>
+                                            )}
+                                            {job.last_run_at && (
+                                                <span className="text-muted-foreground text-xs">{formatRelativeTime(job.last_run_at)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                                {job_statuses.some((j) => j.status === 'failed' && j.last_error) && (
+                                    <div className="mt-2 space-y-1">
+                                        {job_statuses.filter((j) => j.status === 'failed' && j.last_error).map((job) => (
+                                            <p key={job.id} className="text-xs text-red-600 dark:text-red-400 truncate" title={job.last_error!}>
+                                                {job.display_name}: {job.last_error}
+                                            </p>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
                 )}
 
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

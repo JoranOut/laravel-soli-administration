@@ -6,6 +6,7 @@ use App\Models\GoogleContactGroup;
 use App\Models\GoogleContactSyncLog;
 use App\Models\GoogleContactTypeGroup;
 use App\Models\GoogleContactSync;
+use App\Models\JobStatus;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
@@ -45,6 +46,8 @@ class GoogleContactSyncService
             'started_at' => now(),
         ]);
 
+        $jobStatus = $dryRun ? null : JobStatus::markRunning('google-contacts-sync', 'Google Contacts Sync');
+
         try {
             $users = $this->apiClient->getWorkspaceUsers();
             $summary = ['users' => count($users), 'created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0];
@@ -73,6 +76,8 @@ class GoogleContactSyncService
                 'completed_at' => now(),
             ]);
 
+            $jobStatus?->markCompleted($summary);
+
             return $summary;
         } catch (\Throwable $e) {
             $log?->update([
@@ -80,6 +85,8 @@ class GoogleContactSyncService
                 'error_message' => $e->getMessage(),
                 'completed_at' => now(),
             ]);
+
+            $jobStatus?->markFailed($e->getMessage());
 
             throw $e;
         }
@@ -93,6 +100,8 @@ class GoogleContactSyncService
             'status' => 'running',
             'started_at' => now(),
         ]);
+
+        $jobStatus = $dryRun ? null : JobStatus::markRunning('google-contacts-sync', 'Google Contacts Sync');
 
         try {
             $users = $this->apiClient->getWorkspaceUsers();
@@ -120,6 +129,8 @@ class GoogleContactSyncService
                 'completed_at' => now(),
             ]);
 
+            $jobStatus?->markCompleted($summary);
+
             return $summary;
         } catch (\Throwable $e) {
             $log?->update([
@@ -127,6 +138,8 @@ class GoogleContactSyncService
                 'error_message' => $e->getMessage(),
                 'completed_at' => now(),
             ]);
+
+            $jobStatus?->markFailed($e->getMessage());
 
             throw $e;
         }
@@ -162,9 +175,20 @@ class GoogleContactSyncService
             ->get()
             ->keyBy('relatie_id');
 
-        // 4. Collect operations
+        // 4. Pre-fetch all managed contacts from Google (uses read requests, not critical reads)
+        //    This replaces individual getContact() calls which cost 1 critical read each.
+        $contactMap = [];
+        if (! $dryRun) {
+            $managedContacts = $this->apiClient->listManagedContacts($service);
+            foreach ($managedContacts as $contact) {
+                $contactMap[$contact->getResourceName()] = $contact;
+            }
+            $this->log("Pre-fetched " . count($contactMap) . " managed contacts from Google for {$googleEmail}");
+        }
+
+        // 5. Collect operations
         $toCreate = [];  // [{relatie, person, hash}, ...]
-        $toUpdate = [];  // [{relatie, person, hash, sync, existingPerson}, ...]
+        $toUpdate = [];  // [{relatie, person, hash, sync}, ...]
         $toRecreate = []; // [{relatie, person, hash, sync}, ...]
 
         foreach ($relaties as $relatie) {
@@ -188,24 +212,15 @@ class GoogleContactSyncService
             }
 
             if ($existing) {
-                // Check if contact still exists in Google
-                try {
-                    $existingPerson = $this->apiClient->getContact($service, $existing->google_resource_name);
+                // Check if contact still exists in Google using pre-fetched map
+                $existingPerson = $contactMap[$existing->google_resource_name] ?? null;
 
-                    if (! $existingPerson) {
-                        $toRecreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
-                    } else {
-                        $etag = $this->apiClient->getEtag($existingPerson);
-                        $person->setEtag($etag);
-                        $toUpdate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
-                    }
-                } catch (\Throwable $e) {
-                    $this->log("ERROR getContact relatie #{$relatie->id}: {$e->getMessage()}");
-                    Log::warning('Google Contacts sync getContact failed', [
-                        'relatie_id' => $relatie->id,
-                        'google_user' => $googleEmail,
-                        'error' => $e->getMessage(),
-                    ]);
+                if (! $existingPerson) {
+                    $toRecreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
+                } else {
+                    $etag = $this->apiClient->getEtag($existingPerson);
+                    $person->setEtag($etag);
+                    $toUpdate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
                 }
             } else {
                 $toCreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash];
@@ -214,7 +229,7 @@ class GoogleContactSyncService
 
         $this->log("Collected: " . count($toCreate) . " create, " . count($toUpdate) . " update, " . count($toRecreate) . " recreate, {$stats['skipped']} skipped");
 
-        // 5. Execute batch creates (including re-creates)
+        // 6. Execute batch creates (including re-creates)
         $allCreates = array_merge($toCreate, $toRecreate);
 
         foreach (array_chunk($allCreates, self::BATCH_CREATE_LIMIT) as $chunk) {
@@ -253,7 +268,7 @@ class GoogleContactSyncService
             }
         }
 
-        // 6. Execute batch updates
+        // 7. Execute batch updates
         foreach (array_chunk($toUpdate, self::BATCH_UPDATE_LIMIT) as $chunk) {
             try {
                 $persons = [];
@@ -276,7 +291,7 @@ class GoogleContactSyncService
             }
         }
 
-        // 7. Delete contacts for relaties no longer active
+        // 8. Delete contacts for relaties no longer active
         $toDelete = $existingSyncs->filter(fn ($sync) => ! in_array($sync->relatie_id, $activeRelatieIds));
 
         if ($dryRun) {
@@ -302,7 +317,7 @@ class GoogleContactSyncService
             }
         }
 
-        // 8. Clean up stale groups
+        // 9. Clean up stale groups
         if (! $dryRun) {
             $this->cleanupStaleGroups($service, $googleEmail);
             $this->cleanupStaleTypeGroups($service, $googleEmail);

@@ -320,6 +320,17 @@ export type AgeDistribution = {
     average_age: number | null;
 };
 
+export type JobStatus = {
+    id: number;
+    name: string;
+    display_name: string;
+    status: 'pending' | 'running' | 'completed' | 'failed';
+    last_run_at: string | null;
+    last_completed_at: string | null;
+    last_error: string | null;
+    metadata: Record<string, number> | null;
+};
+
 // Wizard form data types for relatie creation
 export type RelatieTypeEntry = {
     type_id: string;
