@@ -1,10 +1,13 @@
 <?php
 
 use App\Models\Email;
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\User;
+use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -749,4 +752,248 @@ test('reconcile validates active_lid_ids is required', function () {
     $response = $this->postJson('/api/v1/sync/reconcile', [], syncHeaders());
 
     $response->assertStatus(422);
+});
+
+// --- PII: Geboortedatum ---
+
+test('creates relatie with geboortedatum', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'geboortedatum' => '15-03-1990',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    expect($relatie->geboortedatum->format('Y-m-d'))->toBe('1990-03-15');
+});
+
+test('updates geboortedatum on existing relatie', function () {
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'geboortedatum' => '1985-01-01',
+    ]);
+    $relatie->emails()->create(['email' => 'jan@test.nl']);
+    $user = User::factory()->create(['email' => 'jan@test.nl']);
+    $user->assignRole('member');
+    $relatie->update(['user_id' => $user->id]);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'jan@test.nl',
+        'geboortedatum' => '15-03-1990',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $relatie->refresh();
+    expect($relatie->geboortedatum->format('Y-m-d'))->toBe('1990-03-15');
+});
+
+// --- PII: Adres ---
+
+test('creates relatie with adres', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'adres' => 'Dorpsstraat 10a',
+        'postcode' => '1985 AB',
+        'plaats' => 'Driehuis',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $adres = $relatie->adressen()->first();
+    expect($adres)->not->toBeNull();
+    expect($adres->straat)->toBe('Dorpsstraat');
+    expect($adres->huisnummer)->toBe('10');
+    expect($adres->huisnummer_toevoeging)->toBe('a');
+    expect($adres->postcode)->toBe('1985 AB');
+    expect($adres->plaats)->toBe('Driehuis');
+});
+
+test('updates existing adres on update', function () {
+    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
+    $relatie->emails()->create(['email' => 'jan@test.nl']);
+    $user = User::factory()->create(['email' => 'jan@test.nl']);
+    $user->assignRole('member');
+    $relatie->update(['user_id' => $user->id]);
+    $relatie->adressen()->create([
+        'straat' => 'Oude Straat',
+        'huisnummer' => '5',
+        'postcode' => '1000 AA',
+        'plaats' => 'Amsterdam',
+    ]);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'jan@test.nl',
+        'adres' => 'Dorpsstraat 10',
+        'postcode' => '1985 AB',
+        'plaats' => 'Driehuis',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $relatie->refresh();
+    expect($relatie->adressen)->toHaveCount(1);
+
+    $adres = $relatie->adressen()->first();
+    expect($adres->straat)->toBe('Dorpsstraat');
+    expect($adres->huisnummer)->toBe('10');
+    expect($adres->postcode)->toBe('1985 AB');
+    expect($adres->plaats)->toBe('Driehuis');
+});
+
+// --- PII: Telefoon ---
+
+test('creates relatie with telefoon numbers', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'telefoon' => '06-12345678',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    expect($relatie->telefoons)->toHaveCount(1);
+    expect($relatie->telefoons->first()->nummer)->toBe('06-12345678');
+});
+
+test('replaces telefoon numbers on update', function () {
+    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
+    $relatie->emails()->create(['email' => 'jan@test.nl']);
+    $user = User::factory()->create(['email' => 'jan@test.nl']);
+    $user->assignRole('member');
+    $relatie->update(['user_id' => $user->id]);
+    $relatie->telefoons()->create(['nummer' => '06-old-number']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => $relatie->voornaam,
+        'achternaam' => $relatie->achternaam,
+        'email' => 'jan@test.nl',
+        'telefoon' => '06-new-number',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+
+    $relatie->refresh();
+    expect($relatie->telefoons)->toHaveCount(1);
+    expect($relatie->telefoons->first()->nummer)->toBe('06-new-number');
+});
+
+test('splits multiple telefoon numbers', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'telefoon' => '0255-534403 06-11052119',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    expect($relatie->telefoons)->toHaveCount(2);
+    expect($relatie->telefoons->pluck('nummer')->sort()->values()->toArray())
+        ->toBe(['0255-534403', '06-11052119']);
+});
+
+// --- PII: Instrument ---
+
+test('syncs instrument to active onderdeel', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'instrument' => 'Trompet',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $ha = Onderdeel::where('afkorting', 'HA')->first();
+    $trompet = InstrumentSoort::where('naam', 'Trompet')->first();
+
+    $ri = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->where('onderdeel_id', $ha->id)
+        ->where('instrument_soort_id', $trompet->id)
+        ->first();
+
+    expect($ri)->not->toBeNull();
+});
+
+test('warns when instrument name not found', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'instrument' => 'Banjo',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+    $response->assertJsonFragment(['Unknown instrument: Banjo']);
+});
+
+// --- PII: Skip behavior ---
+
+test('skips pii fields when null', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'geboortedatum' => null,
+        'adres' => null,
+        'telefoon' => null,
+        'instrument' => null,
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    expect($relatie->geboortedatum)->toBeNull();
+    expect($relatie->adressen)->toHaveCount(0);
+    expect($relatie->telefoons)->toHaveCount(0);
+});
+
+test('skips pii for admin-managed members', function () {
+    $user = User::factory()->create(['email' => 'admin-set@test.nl']);
+    $user->assignRole('member');
+    $relatie = Relatie::factory()->create([
+        'relatie_nummer' => 1000,
+        'user_id' => $user->id,
+        'beheerd_in_admin' => true,
+        'geboortedatum' => '1985-01-01',
+    ]);
+    $relatie->emails()->create(['email' => 'admin-set@test.nl']);
+
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Changed',
+        'achternaam' => 'Different',
+        'email' => 'sad@test.nl',
+        'geboortedatum' => '15-03-1990',
+        'adres' => 'Dorpsstraat 10',
+        'telefoon' => '06-12345678',
+    ], syncHeaders());
+
+    $response->assertStatus(200);
+    $response->assertJson(['status' => 'skipped']);
+
+    $relatie->refresh();
+    expect($relatie->geboortedatum->format('Y-m-d'))->toBe('1985-01-01');
+    expect($relatie->adressen)->toHaveCount(0);
+    expect($relatie->telefoons)->toHaveCount(0);
 });
