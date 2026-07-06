@@ -55,4 +55,10 @@ return [
         'contacts_sync_enabled' => env('GOOGLE_CONTACTS_SYNC_ENABLED', false),
     ],
 
+    'sad' => [
+        'base_url' => env('SAD_BASE_URL', 'https://sad.soli.nl/admin'),
+        'username' => env('SAD_USERNAME'),
+        'password' => env('SAD_PASSWORD'),
+    ],
+
 ];

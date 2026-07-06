@@ -2,10 +2,13 @@
 
 namespace App\Services;
 
+use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\User;
+use App\Services\Sad\SadDataParser;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -148,6 +151,10 @@ class MemberSyncService
         $onderdeelResult = $this->syncOnderdelen($relatie, $data['onderdeel_codes'] ?? []);
         $warnings = array_merge($warnings, $onderdeelResult['warnings']);
 
+        // Sync PII fields
+        $piiResult = $this->syncPii($relatie, $data);
+        $warnings = array_merge($warnings, $piiResult['warnings']);
+
         return [
             'status' => self::STATUS_CREATED,
             'relatie_id' => $relatie->id,
@@ -208,6 +215,10 @@ class MemberSyncService
         // Sync onderdelen
         $onderdeelResult = $this->syncOnderdelen($relatie, $data['onderdeel_codes'] ?? []);
         $warnings = array_merge($warnings, $onderdeelResult['warnings']);
+
+        // Sync PII fields
+        $piiResult = $this->syncPii($relatie, $data);
+        $warnings = array_merge($warnings, $piiResult['warnings']);
 
         return [
             'status' => self::STATUS_UPDATED,
@@ -350,6 +361,118 @@ class MemberSyncService
             'closed' => count($toClose),
             'warnings' => $warnings,
         ];
+    }
+
+    private function syncPii(Relatie $relatie, array $data): array
+    {
+        $warnings = [];
+
+        if (isset($data['geboortedatum'])) {
+            $this->syncGeboortedatum($relatie, $data['geboortedatum']);
+        }
+
+        if (isset($data['adres'])) {
+            $this->syncAdres($relatie, $data);
+        }
+
+        if (isset($data['telefoon'])) {
+            $this->syncTelefoons($relatie, $data['telefoon']);
+        }
+
+        if (isset($data['instrument'])) {
+            $instrumentWarnings = $this->syncInstrumenten($relatie, $data['instrument']);
+            $warnings = array_merge($warnings, $instrumentWarnings);
+        }
+
+        return ['warnings' => $warnings];
+    }
+
+    private function syncGeboortedatum(Relatie $relatie, string $geboortedatum): void
+    {
+        $parsed = SadDataParser::parseDate($geboortedatum);
+
+        if ($parsed) {
+            $relatie->update(['geboortedatum' => $parsed]);
+        }
+    }
+
+    private function syncAdres(Relatie $relatie, array $data): void
+    {
+        $raw = trim($data['adres']);
+        if ($raw === '') {
+            return;
+        }
+
+        [$straat, $huisnummer, $toevoeging] = SadDataParser::splitAddress($raw);
+
+        $adresData = [
+            'straat' => $straat,
+            'huisnummer' => $huisnummer,
+            'huisnummer_toevoeging' => $toevoeging,
+            'postcode' => $data['postcode'] ?? null,
+            'plaats' => $data['plaats'] ?? null,
+        ];
+
+        $existing = $relatie->adressen()->first();
+
+        if ($existing) {
+            $existing->update($adresData);
+        } else {
+            $relatie->adressen()->create($adresData);
+        }
+    }
+
+    private function syncTelefoons(Relatie $relatie, string $telefoon): void
+    {
+        $numbers = SadDataParser::splitPhoneNumbers($telefoon);
+
+        // Replace all existing phone numbers with the new set
+        $relatie->telefoons()->delete();
+
+        foreach ($numbers as $nummer) {
+            $relatie->telefoons()->create(['nummer' => $nummer]);
+        }
+    }
+
+    private function syncInstrumenten(Relatie $relatie, string $instrumentName): array
+    {
+        $warnings = [];
+
+        $instrumentSoortLookup = $this->getInstrumentSoortLookup();
+        $instrumentSoortId = SadDataParser::matchInstrumentSoort($instrumentName, $instrumentSoortLookup);
+
+        if (! $instrumentSoortId) {
+            $warnings[] = "Unknown instrument: {$instrumentName}";
+
+            return $warnings;
+        }
+
+        // Get active onderdeel IDs for this relatie
+        $activeOnderdeelIds = $relatie->onderdelen()
+            ->wherePivotNull('tot')
+            ->pluck('onderdeel_id')
+            ->toArray();
+
+        foreach ($activeOnderdeelIds as $onderdeelId) {
+            RelatieInstrument::firstOrCreate([
+                'relatie_id' => $relatie->id,
+                'onderdeel_id' => $onderdeelId,
+                'instrument_soort_id' => $instrumentSoortId,
+            ]);
+        }
+
+        return $warnings;
+    }
+
+    private ?array $instrumentSoortLookup = null;
+
+    private function getInstrumentSoortLookup(): array
+    {
+        if ($this->instrumentSoortLookup === null) {
+            $this->instrumentSoortLookup = InstrumentSoort::pluck('naam', 'id')->toArray();
+        }
+
+        return $this->instrumentSoortLookup;
     }
 
     private function getOnderdeelMap(): array
