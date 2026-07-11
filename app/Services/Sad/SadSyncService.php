@@ -3,6 +3,7 @@
 namespace App\Services\Sad;
 
 use App\Models\JobStatus;
+use App\Models\SadSyncLog;
 use App\Services\MemberSyncService;
 use Illuminate\Support\Facades\Log;
 
@@ -21,6 +22,7 @@ class SadSyncService
     public function syncAll(): array
     {
         $jobStatus = JobStatus::markRunning('sad-sync', 'SAD Member Sync');
+        $log = SadSyncLog::create(['status' => 'running', 'started_at' => now()]);
 
         $stats = [
             'total' => 0,
@@ -71,14 +73,17 @@ class SadSyncService
                     ? "{$stats['failed']} members failed to sync"
                     : implode('; ', array_slice($stats['warnings'], 0, 3));
                 $jobStatus->markCompletedWithErrors($errorSummary, $metadata);
+                $log->update(array_merge(['status' => 'completed_with_errors', 'completed_at' => now(), 'error_message' => $errorSummary], $metadata));
             } else {
                 $jobStatus->markCompleted($metadata);
+                $log->update(array_merge(['status' => 'completed', 'completed_at' => now()], $metadata));
             }
 
             Log::info('SadSyncService: Sync completed', $metadata);
 
         } catch (\Throwable $e) {
             $jobStatus->markFailed($e->getMessage());
+            $log->update(['status' => 'failed', 'completed_at' => now(), 'error_message' => $e->getMessage()]);
             Log::error("SadSyncService: Sync failed: {$e->getMessage()}");
 
             throw $e;
