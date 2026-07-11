@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SyncSadMembersJob;
 use App\Models\SadSyncLog;
-use App\Services\Sad\SadSyncService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\App;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -23,13 +22,7 @@ class SadSyncController extends Controller
 
     public function store(): RedirectResponse
     {
-        dispatch(function () {
-            try {
-                App::make(SadSyncService::class)->syncAll();
-            } catch (\Throwable) {
-                // syncAll() already logs the failure
-            }
-        })->afterResponse();
+        SyncSadMembersJob::dispatch();
 
         return back();
     }

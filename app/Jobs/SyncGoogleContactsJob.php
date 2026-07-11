@@ -4,11 +4,15 @@ namespace App\Jobs;
 
 use App\Models\Relatie;
 use App\Services\Google\GoogleContactSyncService;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
-class SyncGoogleContactsJob
+class SyncGoogleContactsJob implements ShouldQueue
 {
-    use Dispatchable;
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public function __construct(
         public ?int $relatieId = null,

@@ -1,9 +1,10 @@
 <?php
 
+use App\Jobs\SyncGoogleContactsJob;
 use App\Models\GoogleContactSyncLog;
 use App\Models\User;
-use App\Services\Google\GoogleContactSyncService;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\Queue;
 
 test('guests are redirected to the login page', function () {
     $response = $this->get(route('admin.google-contacts-sync.index'));
@@ -32,31 +33,14 @@ test('admin can view the google contacts sync page', function () {
 test('admin can trigger full sync', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $admin = User::factory()->create()->assignRole('admin');
-
-    $mockService = Mockery::mock(GoogleContactSyncService::class);
-    $mockService->shouldReceive('syncAll')
-        ->once()
-        ->andReturn(['users' => 2, 'created' => 10, 'updated' => 3, 'deleted' => 1, 'skipped' => 50]);
-    $this->app->instance(GoogleContactSyncService::class, $mockService);
-
-    $response = $this->actingAs($admin)->post(route('admin.google-contacts-sync.store'));
-    $response->assertRedirect();
-});
-
-test('sync failure is caught and does not error the response', function () {
-    $this->seed(RolesAndPermissionsSeeder::class);
+    Queue::fake();
 
     $admin = User::factory()->create()->assignRole('admin');
 
-    $mockService = Mockery::mock(GoogleContactSyncService::class);
-    $mockService->shouldReceive('syncAll')
-        ->once()
-        ->andThrow(new \RuntimeException('Google API error'));
-    $this->app->instance(GoogleContactSyncService::class, $mockService);
-
     $response = $this->actingAs($admin)->post(route('admin.google-contacts-sync.store'));
     $response->assertRedirect();
+
+    Queue::assertPushed(SyncGoogleContactsJob::class);
 });
 
 test('sync logs are displayed on the page', function () {
