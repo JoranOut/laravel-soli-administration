@@ -31,6 +31,10 @@ class SadApiClient
      */
     public function login(): void
     {
+        if (empty($this->username) || empty($this->password)) {
+            throw new RuntimeException('SAD credentials not configured. Set SAD_USERNAME and SAD_PASSWORD in .env');
+        }
+
         $this->cookieJar = new CookieJar;
 
         $response = Http::withOptions(['cookies' => $this->cookieJar])
