@@ -251,6 +251,20 @@ export type UserRoleOverride = {
     mapped_role: string;
 };
 
+export type SadSyncLog = {
+    id: number;
+    status: 'running' | 'completed' | 'completed_with_errors' | 'failed';
+    total: number | null;
+    created: number | null;
+    updated: number | null;
+    skipped: number | null;
+    failed: number | null;
+    deactivated: number | null;
+    error_message: string | null;
+    started_at: string;
+    completed_at: string | null;
+};
+
 export type GoogleContactSyncLog = {
     id: number;
     type: 'full' | 'relatie';

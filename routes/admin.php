@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\GoogleContactSyncController;
+use App\Http\Controllers\Admin\SadSyncController;
 use App\Http\Controllers\Admin\LedenverloopController;
 use App\Http\Controllers\Admin\OauthClientSettingController;
 use App\Http\Controllers\Admin\InstrumentBespelerController;
@@ -40,6 +41,9 @@ Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
 
     Route::get('admin/google-contacts-sync', [GoogleContactSyncController::class, 'index'])->name('admin.google-contacts-sync.index');
     Route::post('admin/google-contacts-sync', [GoogleContactSyncController::class, 'store'])->name('admin.google-contacts-sync.store');
+
+    Route::get('admin/sad-sync', [SadSyncController::class, 'index'])->name('admin.sad-sync.index');
+    Route::post('admin/sad-sync', [SadSyncController::class, 'store'])->name('admin.sad-sync.store');
 });
 
 Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(function () {
