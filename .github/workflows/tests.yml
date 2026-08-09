@@ -1,4 +1,4 @@
-name: tests
+name: Test
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  tests:
+  test:
     runs-on: ubuntu-latest
     services:
       mysql:
