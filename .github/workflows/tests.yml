@@ -27,6 +27,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Fast, no dependencies — fails before the slow setup below if the
+      # deploy script's rollback handling regresses.
+      - name: Deploy script safety tests
+        run: bash scripts/deploy/test-deploy-rollback.sh
+
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
