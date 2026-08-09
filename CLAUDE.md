@@ -129,6 +129,46 @@ Pest v4. `beforeEach` seeds permissions + `$this->withoutVite()`. Every route: 2
 
 ---
 
+## Migrations
+
+**Default to expand/contract.** Never ship a destructive schema change in the same deploy as the code that needs it.
+
+1. Deploy N — additive only: add the column, backfill, dual-write if needed. The *previous* release still runs against the new schema.
+2. Deploy N+1, once N has proven healthy — drop the old column.
+
+This is what makes a failed deploy safe. A rollback rewinds the code but never the database (see [Deploy](#deploy)), so the schema the old release lands on has to be one it can still run against. 63 of the current 69 migrations are already additive; the six that are not are the ones that would have needed splitting.
+
+### Reversibility
+
+`down()` restores **schema, not data**. Re-adding a dropped column gives you a column full of NULLs, which is the dangerous failure mode: the site comes back up looking healthy with the data silently gone. Prefer a loud failure.
+
+| Change | Fallback |
+|--------|----------|
+| Drops personal data | **No archive table.** The deletion is the deliverable. The pre-deploy backup covers the emergency. |
+| Restructures reference/taxonomy data | **Archive table** — dated name, e.g. `soli_instrument_soorten_archive_20260504` |
+| Everything else | **Expand/contract** — the overlap window *is* the safety net, no archive needed |
+
+**Archive-table cleanup is a later migration**, not a deploy step and not a cron — so it is reviewed, versioned, and runs through the same tested path as everything else. Do not gate it on the deploy health check: that check is a homepage 200, which proves the release boots, not that the data is right.
+
+**Never archive personal data to make a migration reversible.** Dropping `bsn`, `geslacht`, `geboorteplaats` and `nationaliteit` was data minimisation (GDPR Art. 5(1)(c)). A shadow copy means still holding it — unread by the app, unaudited, and carried in every backup. "We clean it up a few deploys later" does not fix that; it just shortens the period of retaining it without a basis.
+
+**When reversal is genuinely impossible, `throw` rather than writing a `down()` that lies.** See `2026_05_04_100001_restructure_instrument_families`, which deletes and restructures rows across tables and correctly refuses to pretend otherwise.
+
+### down() is unproven
+
+Nothing runs `down()` — not CI, not the deploy. Treat every one as untested until executed. Quick manual check against a scratch database, never your dev DB:
+
+```bash
+# expect it to unwind ~60 migrations and stop at restructure_instrument_families, by design
+docker compose exec -T -e DB_DATABASE=<scratch> laravel.test php artisan migrate --force
+docker compose exec -T -e DB_DATABASE=<scratch> laravel.test php artisan db:seed --force
+docker compose exec -T -e DB_DATABASE=<scratch> laravel.test php artisan migrate:reset --force
+```
+
+Seed first — an empty table hides `down()` bugs like adding a `NOT NULL` column with no default.
+
+---
+
 ## Key Workflows
 
 ### Creating a Relatie
