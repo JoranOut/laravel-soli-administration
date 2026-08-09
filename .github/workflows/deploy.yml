@@ -130,8 +130,28 @@ jobs:
             mv current failed
             mv previous current
             rm -f "$STATE"
-            echo "Rollback complete. Failed release kept at $APP_DIR/failed"
-            echo "NOTE: database migrations are NOT rolled back. Pre-deploy backup: ${BACKUP_FILE:-<none taken>}"
+            echo "Rolled back to the previous release. Failed release kept at $APP_DIR/failed"
+
+            # Verify the rollback actually restored a working site. Moving the
+            # directory back is not proof: this deploy's migrations already ran
+            # against the live database and are NOT reverted, so the restored
+            # release may not be able to run against the new schema.
+            RB_STATUS=000
+            for attempt in 1 2 3 4; do
+              sleep 3
+              RB_STATUS=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 10 \
+                -H 'Cache-Control: no-cache' "https://admin.soli.nl/?rollback-check=$$" || echo 000)
+              if [ "$RB_STATUS" -ge 200 ] && [ "$RB_STATUS" -lt 500 ]; then break; fi
+            done
+            if [ "$RB_STATUS" -ge 200 ] && [ "$RB_STATUS" -lt 500 ]; then
+              echo "Rollback verified (HTTP $RB_STATUS)."
+            else
+              echo "ROLLBACK DID NOT RESTORE A WORKING SITE (HTTP $RB_STATUS) — admin.soli.nl is DOWN."
+              echo "Most likely cause: this deploy's migrations changed the schema in a way the"
+              echo "restored release cannot run against. Restore the database by hand:"
+              echo "  zcat ${BACKUP_FILE:-<none taken>} | mysql -u<user> -p <database>"
+            fi
+            echo "NOTE: database migrations are NOT rolled back either way. Pre-deploy backup: ${BACKUP_FILE:-<none taken>}"
             exit "$status"
           }
           trap on_failure ERR INT TERM HUP
