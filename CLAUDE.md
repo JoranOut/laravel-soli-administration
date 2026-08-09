@@ -199,7 +199,23 @@ gh workflow run deploy.yml --ref main
 gh run watch $(gh run list --workflow=deploy.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 ```
 
-Hetzner VPS. Builds → rsync → symlinks .env/storage → migrate → swap staging→current → cache warm → health check (auto-rollback on 5xx). Previous release kept in `previous/`.
+Hetzner VPS. Builds → rsync to `staging/` → symlinks .env/storage → **backup DB** → migrate → swap `staging`→`current` → cache warm → health check. Previous release kept in `previous/`, last failed one in `failed/`.
+
+**A failed deploy rewinds the code, not the database.**
+
+| | rewound? |
+|---|---|
+| Release directory (`current` ← `previous`) | yes, and the rollback is health-checked |
+| Migrations already applied | **no** — `migrate --force` never runs `down()` |
+| Shared application cache | cleared, repopulates on its own |
+| Files written to shared `storage/` | no (logs, uploads) |
+| Queue workers | not restarted by deploy *or* rollback |
+
+Migrations run **before** the swap, so a failing migration aborts with the live site untouched. The dangerous case is a migration that *succeeds* followed by a post-swap failure: the schema has moved on and the restored release may not run against it. Six of the 69 migrations drop columns in `up()`, so this is not hypothetical. When that happens the deploy says `ROLLBACK DID NOT RESTORE A WORKING SITE` and prints the command to restore the pre-deploy backup from `shared/storage/backups/` (last 5 kept). Restoring the database is deliberately manual.
+
+Cache warming runs **after** the swap on purpose — `config:cache` bakes absolute `storage_path()` values into `bootstrap/cache/config.php`, so warming in `staging/` would bake a path that dies at the swap.
+
+If a deploy ever dies without rolling back (SIGKILL, runner death), `.deploy-state` is left on the server and **the next deploy refuses to start** rather than overwriting the last known-good release. Inspect, fix, then delete the file.
 
 ### Config
 
