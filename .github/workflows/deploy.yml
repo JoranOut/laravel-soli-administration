@@ -3,9 +3,19 @@ name: Deploy
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+# Never run two deploys at once, and never cancel one mid-swap: a killed job
+# leaves the remote script no chance to roll back.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout repository
@@ -55,36 +65,122 @@ jobs:
       - name: Run deploy script
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.HETZNER_SSH_USER }}@${{ secrets.HETZNER_SSH_HOST }} bash -s << 'DEPLOY_SCRIPT'
-          set -e
+          set -eEuo pipefail
 
           APP_DIR=/var/www/admin.soli.nl
           STAGING="$APP_DIR/staging"
           SHARED="$APP_DIR/shared"
+          STATE="$APP_DIR/.deploy-state"
+
+          # ---------------------------------------------------------------
+          # Refuse to start if a previous deploy died after the swap.
+          #
+          # In that state "current" holds an unverified release and
+          # "previous" is the last known-good one. Deploying over it would
+          # do `rm -rf previous; mv current previous`, destroying the only
+          # good release and making "previous" a broken rollback target.
+          # ---------------------------------------------------------------
+          if [ -f "$STATE" ] && [ "$(cat "$STATE")" = "swapped" ]; then
+            echo "A previous deploy died after swapping releases and was never verified."
+            echo "  $APP_DIR/current  -> UNVERIFIED release, currently live"
+            echo "  $APP_DIR/previous -> last release that passed a health check"
+            echo "Inspect the server, fix by hand, then delete $STATE to re-enable deploys."
+            echo "Refusing to deploy."
+            exit 1
+          fi
+          rm -f "$STATE"
+
+          SWAPPED=0
+          BACKUP_FILE=""
+
+          # ---------------------------------------------------------------
+          # Single failure path for the whole script.
+          #
+          # Before the swap: nothing is live, so just bin the staging copy.
+          # After the swap: the new release IS live, so roll back.
+          #
+          # Trapping HUP/INT/TERM as well as ERR matters — if the workflow
+          # is cancelled or the SSH connection drops, the remote shell gets
+          # a signal rather than a failing command.
+          # ---------------------------------------------------------------
+          on_failure() {
+            local status=$?
+            trap - ERR INT TERM HUP
+            set +e
+            # A signal-driven failure can arrive with $? == 0 (the last command
+            # finished fine, the signal came from outside). Never let a run that
+            # rolled back report success to the workflow.
+            [ "$status" -eq 0 ] && status=1
+
+            if [ "$SWAPPED" -eq 0 ]; then
+              echo "Deploy failed before the swap (exit $status). Live release untouched."
+              rm -rf "$STAGING"
+              rm -f "$STATE"
+              exit "$status"
+            fi
+
+            echo "Deploy failed after the swap (exit $status) — rolling back."
+            cd "$APP_DIR"
+            if [ ! -d previous ]; then
+              echo "No 'previous' release to roll back to. The unverified release is STILL LIVE."
+              echo "Manual intervention required. Leaving $STATE in place to block further deploys."
+              exit "$status"
+            fi
+            rm -rf failed
+            mv current failed
+            mv previous current
+            rm -f "$STATE"
+            echo "Rollback complete. Failed release kept at $APP_DIR/failed"
+            echo "NOTE: database migrations are NOT rolled back. Pre-deploy backup: ${BACKUP_FILE:-<none taken>}"
+            exit "$status"
+          }
+          trap on_failure ERR INT TERM HUP
 
           # Symlink shared .env and storage into staging
           ln -sfn "$SHARED/.env" "$STAGING/.env"
           ln -sfn "$SHARED/storage" "$STAGING/storage"
 
+          # Read single values out of .env. Sourcing it would execute its
+          # contents — an unquoted value with a space is enough to abort a
+          # deploy, and anything worse runs as the deploy user.
+          env_get() {
+            sed -n "s/^[[:space:]]*$1=//p" "$SHARED/.env" | head -n1 \
+              | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"
+          }
+
           # Database backup before migrations (keep last 5)
           BACKUP_DIR="$SHARED/storage/backups"
           mkdir -p "$BACKUP_DIR"
-          source "$SHARED/.env"
+          DB_HOST=$(env_get DB_HOST); DB_PORT=$(env_get DB_PORT)
+          DB_DATABASE=$(env_get DB_DATABASE); DB_USERNAME=$(env_get DB_USERNAME)
           BACKUP_FILE="$BACKUP_DIR/pre-deploy-$(date +%Y%m%d-%H%M%S).sql.gz"
-          mysqldump -h"${DB_HOST:-127.0.0.1}" -P"${DB_PORT:-3306}" -u"$DB_USERNAME" -p"$DB_PASSWORD" "$DB_DATABASE" | gzip > "$BACKUP_FILE"
+          # pipefail makes a failed mysqldump abort the deploy instead of
+          # leaving a truncated backup and carrying on into the migrations.
+          MYSQL_PWD=$(env_get DB_PASSWORD) mysqldump \
+            -h"${DB_HOST:-127.0.0.1}" -P"${DB_PORT:-3306}" -u"$DB_USERNAME" \
+            "$DB_DATABASE" | gzip > "$BACKUP_FILE"
           echo "Database backup saved to $BACKUP_FILE"
-          ls -t "$BACKUP_DIR"/pre-deploy-*.sql.gz | tail -n +6 | xargs -r rm --
           chown www-data:www-data "$BACKUP_FILE" 2>/dev/null || true
+          ls -t "$BACKUP_DIR"/pre-deploy-*.sql.gz 2>/dev/null | tail -n +6 | xargs -r rm -- || true
 
           # Run migrations on staging (abort on failure)
           cd "$STAGING"
           if ! sudo -u www-data php artisan migrate --force; then
             echo "Migration failed — aborting deploy"
             rm -rf "$STAGING"
+            rm -f "$STATE"
             exit 1
           fi
 
-          # Atomic swap: save previous release, go live
+          # ---------------------------------------------------------------
+          # Atomic swap. Everything from here on is covered by on_failure.
+          #
+          # SWAPPED/STATE are set *before* the moves, not after: if a move
+          # itself fails we want the rollback path, not the cleanup path.
+          # ---------------------------------------------------------------
           cd "$APP_DIR"
+          SWAPPED=1
+          printf 'swapped' > "$STATE"
           if [ -d current ] && [ ! -L current ]; then
             rm -rf previous
             mv current previous
@@ -96,24 +192,39 @@ jobs:
           chgrp -R www-data bootstrap/cache
           chmod -R g+w bootstrap/cache
 
-          # Clear application cache (e.g. cached translations) and warm framework caches
+          # Clear application cache (e.g. cached translations) and warm framework caches.
+          #
+          # This has to happen after the swap, not before: config:cache bakes
+          # absolute storage_path() values (sessions, cache, logs, filesystems)
+          # into bootstrap/cache/config.php, and warming it in $STAGING would
+          # bake a path that stops existing the moment the swap runs.
+          #
+          # An un-warmed release still serves correctly — Laravel falls back to
+          # reading config/ directly — so the window between swap and warm is
+          # slow, not broken. A failure here now rolls back.
           sudo -u www-data php artisan cache:clear
           sudo -u www-data php artisan config:cache
           sudo -u www-data php artisan route:cache
           sudo -u www-data php artisan view:cache
 
-          # Health check — rollback if site is broken
-          sleep 2
-          HTTP_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" --max-time 10 https://admin.soli.nl || echo "000")
+          # Health check — rollback if site is broken. Retries because
+          # PHP-FPM needs a moment to revalidate opcache after the swap.
+          HTTP_STATUS=000
+          for attempt in 1 2 3 4 5 6; do
+            sleep 3
+            HTTP_STATUS=$(curl -sL -o /dev/null -w '%{http_code}' --max-time 10 \
+              -H 'Cache-Control: no-cache' "https://admin.soli.nl/?deploy-check=$$" || echo 000)
+            if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 500 ]; then
+              break
+            fi
+            echo "Health check attempt $attempt/6: HTTP $HTTP_STATUS"
+          done
           if [ "$HTTP_STATUS" -lt 200 ] || [ "$HTTP_STATUS" -ge 500 ]; then
-            echo "Health check failed (HTTP $HTTP_STATUS) — rolling back"
-            cd "$APP_DIR"
-            mv current failed
-            mv previous current
-            echo "Rollback complete. Failed release saved in $APP_DIR/failed"
-            exit 1
+            echo "Health check failed after 6 attempts (HTTP $HTTP_STATUS)"
+            false  # hand over to on_failure, which rolls back
           fi
 
+          rm -f "$STATE"
           echo "Deploy complete (HTTP $HTTP_STATUS)"
           DEPLOY_SCRIPT
 
