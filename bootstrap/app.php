@@ -47,6 +47,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'role_or_permission' => RoleOrPermissionMiddleware::class,
             'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
             'client' => CheckToken::class,
+            // Passport declares its routes with a bare `throttle`, which would
+            // otherwise inherit Laravel's 60/minute default. Routes that pass
+            // explicit arguments are unaffected.
+            'throttle' => \App\Http\Middleware\ThrottleRequestsWithHigherDefault::class,
             'sync.api_key' => VerifySyncApiKey::class,
             'instruments.api_key' => VerifyInstrumentsApiKey::class,
         ]);
