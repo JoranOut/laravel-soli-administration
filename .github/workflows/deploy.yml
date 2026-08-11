@@ -168,6 +168,34 @@ jobs:
               | sed -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'$/\1/"
           }
 
+          # ---------------------------------------------------------------
+          # Refuse to deploy onto a cache store that cannot count safely.
+          #
+          # The file store does a non-atomic read-modify-write in
+          # increment(), which is what Laravel's rate limiter uses. Under a
+          # burst those writes race and leave counters that outlive their
+          # window, so throttled routes keep returning 429 indefinitely.
+          #
+          # On 2026-08-10 that took SSO on dev.soli.nl down for an
+          # afternoon: the hourly member sync fires ~205 requests in one
+          # minute, the /oauth/token counter stuck, and every login failed
+          # with a 429 rendered as HTML. `php artisan cache:clear` cleared
+          # it; only changing the store stops it recurring.
+          #
+          # .env is shared and not deployed, so it drifts silently. This is
+          # the gate that catches it. Keep it before the migrations so a
+          # refusal costs nothing.
+          # ---------------------------------------------------------------
+          CACHE_STORE_VALUE=$(env_get CACHE_STORE)
+          if [ "$CACHE_STORE_VALUE" = "file" ]; then
+            echo "CACHE_STORE=file in $SHARED/.env"
+            echo "The file cache store corrupts rate-limiter counters under concurrent"
+            echo "increments, which manifests as permanent 429s on /oauth/token."
+            echo "Set CACHE_STORE=database (see .env.example) and redeploy."
+            echo "Refusing to deploy."
+            exit 1
+          fi
+
           # Database backup before migrations (keep last 5)
           BACKUP_DIR="$SHARED/storage/backups"
           mkdir -p "$BACKUP_DIR"
