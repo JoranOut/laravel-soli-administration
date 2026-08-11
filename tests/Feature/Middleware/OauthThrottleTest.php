@@ -54,6 +54,27 @@ it('leaves routes that declare their own limit alone', function () {
     }
 });
 
+it('still resolves named rate limiters', function () {
+    // The alias override must not break `throttle:login`, which Fortify registers
+    // by name. The parent only takes its named-limiter path when handle() receives
+    // exactly three arguments, so an override that always forwards five silently
+    // routes every named limiter into the numeric path and throws
+    // "Rate limiter [login] is not defined." CI caught exactly that.
+    expect(RateLimiter::limiter('login'))->not->toBeNull();
+
+    $user = \App\Models\User::factory()->create();
+
+    // Fortify limits login to 5 per minute by email+IP.
+    for ($i = 0; $i < 6; $i++) {
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ]);
+    }
+
+    expect($response->getStatusCode())->toBe(429);
+});
+
 it('returns JSON rather than HTML when the caller asks for it', function () {
     // The WordPress client reports any non-JSON token response as the generic
     // `invalid-token`, discarding the status. An HTML 429 is what made this

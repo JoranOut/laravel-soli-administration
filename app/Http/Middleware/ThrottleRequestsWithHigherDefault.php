@@ -32,17 +32,31 @@ class ThrottleRequestsWithHigherDefault extends ThrottleRequests
     /**
      * Handle an incoming request.
      *
+     * Forwards exactly the arguments it was given, and supplies 100 only when the
+     * route named no limit at all.
+     *
+     * The argument count is load-bearing. The parent dispatches to named limiters
+     * (`throttle:login`, registered by FortifyServiceProvider) with:
+     *
+     *     if (is_string($maxAttempts) && func_num_args() === 3 && ...)
+     *
+     * so an override that always passes five arguments makes `func_num_args()`
+     * five, every named limiter falls through to the numeric path, and Fortify's
+     * login throttle dies with "Rate limiter [login] is not defined."
+     *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure  $next
-     * @param  int|string  $maxAttempts
-     * @param  float|int  $decayMinutes
-     * @param  string  $prefix
+     * @param  mixed  ...$args
      * @return \Symfony\Component\HttpFoundation\Response
      *
      * @throws \Illuminate\Http\Exceptions\ThrottleRequestsException
      */
-    public function handle($request, \Closure $next, $maxAttempts = 100, $decayMinutes = 1, $prefix = '')
+    public function handle($request, \Closure $next, ...$args)
     {
-        return parent::handle($request, $next, $maxAttempts, $decayMinutes, $prefix);
+        if ($args === []) {
+            $args = [100];
+        }
+
+        return parent::handle($request, $next, ...$args);
     }
 }
