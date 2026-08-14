@@ -256,7 +256,7 @@ class DashboardController extends Controller
             ->whereNotNull('soli_relaties.geboortedatum')
             ->pluck('soli_relaties.geboortedatum');
 
-        $brackets = ['0-17' => 0, '18-29' => 0, '30-44' => 0, '45-59' => 0, '60-74' => 0, '75+' => 0];
+        $brackets = ['0-17' => 0, '18-26' => 0, '27-44' => 0, '45-59' => 0, '60-74' => 0, '75+' => 0];
         $totalAge = 0;
 
         foreach ($members as $geboortedatum) {
@@ -265,10 +265,10 @@ class DashboardController extends Controller
 
             if ($age < 18) {
                 $brackets['0-17']++;
-            } elseif ($age < 30) {
-                $brackets['18-29']++;
+            } elseif ($age < 27) {
+                $brackets['18-26']++;
             } elseif ($age < 45) {
-                $brackets['30-44']++;
+                $brackets['27-44']++;
             } elseif ($age < 60) {
                 $brackets['45-59']++;
             } elseif ($age < 75) {
