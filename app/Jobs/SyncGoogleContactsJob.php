@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Models\GoogleContactSyncLog;
+use App\Models\JobStatus;
 use App\Models\Relatie;
 use App\Services\Google\GoogleContactSyncService;
 use Illuminate\Bus\Queueable;
@@ -43,5 +45,28 @@ class SyncGoogleContactsJob implements ShouldQueue
         } else {
             $syncService->syncAll();
         }
+    }
+
+    /**
+     * A timeout or crash kills the sync mid-run, leaving its log row on
+     * "running" forever. Close it out as failed right away instead.
+     */
+    public function failed(?\Throwable $exception): void
+    {
+        $message = 'Sync attempt failed: '.($exception?->getMessage() ?? 'killed (timeout or worker stop)');
+
+        GoogleContactSyncLog::where('status', 'running')
+            ->where('type', $this->relatieId ? 'relatie' : 'full')
+            ->when($this->relatieId, fn ($q) => $q->where('relatie_id', $this->relatieId))
+            ->update([
+                'status' => 'failed',
+                'error_message' => $message,
+                'completed_at' => now(),
+            ]);
+
+        JobStatus::where('name', 'google-contacts-sync')
+            ->where('status', 'running')
+            ->first()
+            ?->markFailed($message);
     }
 }
