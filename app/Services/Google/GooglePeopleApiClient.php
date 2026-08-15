@@ -80,18 +80,27 @@ class GooglePeopleApiClient
         return $users;
     }
 
-    public function buildPerson(Relatie $relatie, array $groupResourceNames = []): Person
+    public function buildPerson(Relatie $relatie, array $groupResourceNames = [], ?string $nameSuffix = null, ?array $emailOverride = null): Person
     {
         $person = new Person;
 
+        $familyName = collect([$relatie->tussenvoegsel, $relatie->achternaam])->filter()->implode(' ');
+        if ($nameSuffix !== null) {
+            $familyName = trim("{$familyName} ({$nameSuffix})");
+        }
+
         $name = new Name;
         $name->setGivenName($relatie->voornaam);
-        $name->setFamilyName(collect([$relatie->tussenvoegsel, $relatie->achternaam])->filter()->implode(' '));
+        $name->setFamilyName($familyName);
         $person->setNames([$name]);
 
-        $emailAddresses = $relatie->emails->map(function ($email) {
+        $emails = $emailOverride !== null
+            ? collect($emailOverride)
+            : $relatie->emails->pluck('email');
+
+        $emailAddresses = $emails->map(function ($email) {
             $addr = new EmailAddress;
-            $addr->setValue($email->email);
+            $addr->setValue($email);
 
             return $addr;
         })->all();

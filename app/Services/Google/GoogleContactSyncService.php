@@ -196,12 +196,11 @@ class GoogleContactSyncService
 
         $this->log("Processing {$relaties->count()} active relaties for {$googleEmail}");
 
-        $activeRelatieIds = $relaties->pluck('id')->all();
-
-        // 3. Load existing sync mappings for this user
+        // 3. Load existing sync mappings for this user, keyed per contact
+        //    (main contact = type key 0, split contacts = relatie_type_id)
         $existingSyncs = GoogleContactSync::where('google_user_email', $googleEmail)
             ->get()
-            ->keyBy('relatie_id');
+            ->keyBy(fn ($sync) => $sync->relatie_id.':'.($sync->relatie_type_id ?? 0));
 
         // 4. Pre-fetch all managed contacts from Google (uses read requests, not critical reads)
         //    This replaces individual getContact() calls which cost 1 critical read each.
@@ -219,39 +218,42 @@ class GoogleContactSyncService
         $toUpdate = [];  // [{relatie, person, hash, sync}, ...]
         $toRecreate = []; // [{relatie, person, hash, sync}, ...]
 
+        $desiredKeys = [];
+
         foreach ($relaties as $relatie) {
-            $hash = $this->computeDataHash($relatie);
-            $existing = $existingSyncs->get($relatie->id);
+            foreach ($this->buildContactSpecs($relatie, $groupMap, $typeGroupMap) as $spec) {
+                $key = $relatie->id.':'.($spec['relatie_type_id'] ?? 0);
+                $desiredKeys[$key] = true;
+                $existing = $existingSyncs->get($key);
 
-            if ($existing && $existing->data_hash === $hash) {
-                $stats['skipped']++;
+                if ($existing && $existing->data_hash === $spec['hash']) {
+                    $stats['skipped']++;
 
-                continue;
-            }
-
-            $groupResourceNames = $this->resolveGroupResourceNames($relatie, $groupMap, $typeGroupMap);
-
-            $person = $this->apiClient->buildPerson($relatie, $groupResourceNames);
-
-            if ($dryRun) {
-                $stats[$existing ? 'updated' : 'created']++;
-
-                continue;
-            }
-
-            if ($existing) {
-                // Check if contact still exists in Google using pre-fetched map
-                $existingPerson = $contactMap[$existing->google_resource_name] ?? null;
-
-                if (! $existingPerson) {
-                    $toRecreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
-                } else {
-                    $etag = $this->apiClient->getEtag($existingPerson);
-                    $person->setEtag($etag);
-                    $toUpdate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash, 'sync' => $existing];
+                    continue;
                 }
-            } else {
-                $toCreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $hash];
+
+                $person = $this->apiClient->buildPerson($relatie, $spec['groups'], $spec['suffix'], $spec['emails']);
+
+                if ($dryRun) {
+                    $stats[$existing ? 'updated' : 'created']++;
+
+                    continue;
+                }
+
+                if ($existing) {
+                    // Check if contact still exists in Google using pre-fetched map
+                    $existingPerson = $contactMap[$existing->google_resource_name] ?? null;
+
+                    if (! $existingPerson) {
+                        $toRecreate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $spec['hash'], 'sync' => $existing];
+                    } else {
+                        $etag = $this->apiClient->getEtag($existingPerson);
+                        $person->setEtag($etag);
+                        $toUpdate[] = ['relatie' => $relatie, 'person' => $person, 'hash' => $spec['hash'], 'sync' => $existing];
+                    }
+                } else {
+                    $toCreate[] = ['relatie' => $relatie, 'relatie_type_id' => $spec['relatie_type_id'], 'person' => $person, 'hash' => $spec['hash']];
+                }
             }
         }
 
@@ -279,6 +281,7 @@ class GoogleContactSyncService
                         // New create
                         GoogleContactSync::create([
                             'relatie_id' => $item['relatie']->id,
+                            'relatie_type_id' => $item['relatie_type_id'],
                             'google_user_email' => $googleEmail,
                             'google_resource_name' => $resourceName,
                             'data_hash' => $item['hash'],
@@ -323,8 +326,9 @@ class GoogleContactSyncService
             }
         }
 
-        // 8. Delete contacts for relaties no longer active
-        $toDelete = $existingSyncs->filter(fn ($sync) => ! in_array($sync->relatie_id, $activeRelatieIds));
+        // 8. Delete contacts no longer wanted: deactivated relaties and
+        //    split contacts whose type assignment or functional email is gone
+        $toDelete = $existingSyncs->filter(fn ($sync, $key) => ! isset($desiredKeys[$key]));
 
         if ($dryRun) {
             $stats['deleted'] += $toDelete->count();
@@ -371,94 +375,108 @@ class GoogleContactSyncService
         $groupMap = $this->ensureContactGroups($service, $googleEmail, $dryRun);
         $typeGroupMap = $this->ensureContactTypeGroups($service, $googleEmail, $dryRun);
 
-        $hash = $this->computeDataHash($relatie);
-        $existing = GoogleContactSync::where('relatie_id', $relatie->id)
+        $existingSyncs = GoogleContactSync::where('relatie_id', $relatie->id)
             ->where('google_user_email', $googleEmail)
-            ->first();
+            ->get()
+            ->keyBy(fn ($sync) => $sync->relatie_type_id ?? 0);
 
-        // If relatie is no longer active, delete
-        if (! $relatie->actief) {
-            if ($existing) {
-                if (! $dryRun) {
-                    try {
-                        $this->apiClient->deleteContact($service, $existing->google_resource_name);
-                    } catch (\Google\Service\Exception $e) {
-                        if ($e->getCode() !== 404) {
-                            throw $e;
-                        }
-                    }
-                    $existing->delete();
-                }
-                $stats['deleted']++;
+        $specs = $relatie->actief ? $this->buildContactSpecs($relatie, $groupMap, $typeGroupMap) : [];
+        $desiredKeys = [];
+
+        foreach ($specs as $spec) {
+            $key = $spec['relatie_type_id'] ?? 0;
+            $desiredKeys[$key] = true;
+            $existing = $existingSyncs->get($key);
+
+            if ($existing && $existing->data_hash === $spec['hash']) {
+                $stats['skipped']++;
+
+                continue;
             }
 
-            return $stats;
-        }
+            $person = $this->apiClient->buildPerson($relatie, $spec['groups'], $spec['suffix'], $spec['emails']);
 
-        if ($existing && $existing->data_hash === $hash) {
-            $stats['skipped']++;
+            if ($dryRun) {
+                $stats[$existing ? 'updated' : 'created']++;
 
-            return $stats;
-        }
+                continue;
+            }
 
-        // Resolve group resource names
-        $groupResourceNames = $this->resolveGroupResourceNames($relatie, $groupMap, $typeGroupMap);
+            if ($existing) {
+                try {
+                    $existingPerson = $this->apiClient->getContact($service, $existing->google_resource_name);
 
-        $person = $this->apiClient->buildPerson($relatie, $groupResourceNames);
+                    if (! $existingPerson) {
+                        $created = $this->apiClient->createContact($service, $person);
+                        $existing->update([
+                            'google_resource_name' => $created->getResourceName(),
+                            'data_hash' => $spec['hash'],
+                        ]);
+                        $stats['created']++;
 
-        if ($dryRun) {
-            $stats[$existing ? 'updated' : 'created']++;
+                        continue;
+                    }
 
-            return $stats;
-        }
-
-        if ($existing) {
-            try {
-                $existingPerson = $this->apiClient->getContact($service, $existing->google_resource_name);
-
-                if (! $existingPerson) {
+                    $etag = $this->apiClient->getEtag($existingPerson);
+                    $this->apiClient->updateContact($service, $existing->google_resource_name, $person, $etag);
+                    $existing->update(['data_hash' => $spec['hash']]);
+                    $stats['updated']++;
+                } catch (\Throwable $e) {
+                    $stats['failed']++;
+                    $stats['errors'][] = "Update failed ({$googleEmail}, relatie {$relatie->id}): {$e->getMessage()}";
+                    Log::warning('Google Contacts sync update failed', [
+                        'relatie_id' => $relatie->id,
+                        'relatie_type_id' => $spec['relatie_type_id'],
+                        'google_user' => $googleEmail,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            } else {
+                try {
                     $created = $this->apiClient->createContact($service, $person);
-                    $existing->update([
+                    GoogleContactSync::create([
+                        'relatie_id' => $relatie->id,
+                        'relatie_type_id' => $spec['relatie_type_id'],
+                        'google_user_email' => $googleEmail,
                         'google_resource_name' => $created->getResourceName(),
-                        'data_hash' => $hash,
+                        'data_hash' => $spec['hash'],
                     ]);
                     $stats['created']++;
-
-                    return $stats;
+                } catch (\Throwable $e) {
+                    $stats['failed']++;
+                    $stats['errors'][] = "Create failed ({$googleEmail}, relatie {$relatie->id}): {$e->getMessage()}";
+                    Log::warning('Google Contacts sync create failed', [
+                        'relatie_id' => $relatie->id,
+                        'relatie_type_id' => $spec['relatie_type_id'],
+                        'google_user' => $googleEmail,
+                        'error' => $e->getMessage(),
+                    ]);
                 }
+            }
+        }
 
-                $etag = $this->apiClient->getEtag($existingPerson);
-                $this->apiClient->updateContact($service, $existing->google_resource_name, $person, $etag);
-                $existing->update(['data_hash' => $hash]);
-                $stats['updated']++;
-            } catch (\Throwable $e) {
-                $stats['failed']++;
-                $stats['errors'][] = "Update failed ({$googleEmail}, relatie {$relatie->id}): {$e->getMessage()}";
-                Log::warning('Google Contacts sync update failed', [
-                    'relatie_id' => $relatie->id,
-                    'google_user' => $googleEmail,
-                    'error' => $e->getMessage(),
-                ]);
+        // Delete contacts no longer wanted: deactivated relatie or removed split
+        foreach ($existingSyncs as $key => $sync) {
+            if (isset($desiredKeys[$key])) {
+                continue;
             }
-        } else {
+
+            if ($dryRun) {
+                $stats['deleted']++;
+
+                continue;
+            }
+
             try {
-                $created = $this->apiClient->createContact($service, $person);
-                GoogleContactSync::create([
-                    'relatie_id' => $relatie->id,
-                    'google_user_email' => $googleEmail,
-                    'google_resource_name' => $created->getResourceName(),
-                    'data_hash' => $hash,
-                ]);
-                $stats['created']++;
-            } catch (\Throwable $e) {
-                $stats['failed']++;
-                $stats['errors'][] = "Create failed ({$googleEmail}, relatie {$relatie->id}): {$e->getMessage()}";
-                Log::warning('Google Contacts sync create failed', [
-                    'relatie_id' => $relatie->id,
-                    'google_user' => $googleEmail,
-                    'error' => $e->getMessage(),
-                ]);
+                $this->apiClient->deleteContact($service, $sync->google_resource_name);
+            } catch (\Google\Service\Exception $e) {
+                if ($e->getCode() !== 404) {
+                    throw $e;
+                }
             }
+
+            $sync->delete();
+            $stats['deleted']++;
         }
 
         return $stats;
@@ -480,8 +498,8 @@ class GoogleContactSyncService
                 ->all(),
             'type_assignments' => $relatie->types
                 ->filter(fn ($t) => $t->pivot->tot === null || $t->pivot->tot >= now()->toDateString())
-                ->map(fn ($t) => [$t->id, $t->pivot->onderdeel_id])
-                ->sortBy(fn ($pair) => $pair[0])
+                ->map(fn ($t) => [$t->id, $t->pivot->onderdeel_id, $t->pivot->email])
+                ->sortBy(fn ($tuple) => [$tuple[0], $tuple[1]])
                 ->values()
                 ->all(),
         ];
@@ -489,7 +507,60 @@ class GoogleContactSyncService
         return hash('sha256', json_encode($data));
     }
 
-    private function resolveGroupResourceNames(Relatie $relatie, array $groupMap, array $typeGroupMap): array
+    public function computeSplitDataHash(Relatie $relatie, int $typeId, string $typeNaam, array $emails): string
+    {
+        $data = [
+            'voornaam' => $relatie->voornaam,
+            'tussenvoegsel' => $relatie->tussenvoegsel,
+            'achternaam' => $relatie->achternaam,
+            'actief' => $relatie->actief,
+            'type_id' => $typeId,
+            'type_naam' => $typeNaam,
+            'emails' => $emails,
+        ];
+
+        return hash('sha256', json_encode($data));
+    }
+
+    /**
+     * One spec per Google contact for this relatie: the main contact (personal
+     * emails, all groups except types that carry a functional email) plus one
+     * split contact per type with a functional email, so that type's group
+     * holds the functional address instead of the personal one.
+     */
+    private function buildContactSpecs(Relatie $relatie, array $groupMap, array $typeGroupMap): array
+    {
+        // type_id => sorted unique functional emails from active assignments
+        $typeEmails = $relatie->types
+            ->filter(fn ($t) => ($t->pivot->tot === null || $t->pivot->tot >= now()->toDateString()) && filled($t->pivot->email))
+            ->groupBy('id')
+            ->map(fn ($group) => $group->pluck('pivot.email')->unique()->sort()->values()->all());
+
+        $specs = [[
+            'relatie_type_id' => null,
+            'groups' => $this->resolveGroupResourceNames($relatie, $groupMap, $typeGroupMap, $typeEmails->keys()->all()),
+            'suffix' => null,
+            'emails' => null,
+            'hash' => $this->computeDataHash($relatie),
+        ]];
+
+        foreach ($typeEmails as $typeId => $emails) {
+            $type = $relatie->types->firstWhere('id', $typeId);
+            $groupResourceName = $typeGroupMap[$typeId] ?? null;
+
+            $specs[] = [
+                'relatie_type_id' => $typeId,
+                'groups' => $groupResourceName ? [$groupResourceName] : [],
+                'suffix' => ucfirst($type->naam),
+                'emails' => $emails,
+                'hash' => $this->computeSplitDataHash($relatie, $typeId, $type->naam, $emails),
+            ];
+        }
+
+        return $specs;
+    }
+
+    private function resolveGroupResourceNames(Relatie $relatie, array $groupMap, array $typeGroupMap, array $excludeTypeIds = []): array
     {
         $onderdeelGroups = $relatie->onderdelen
             ->filter(fn ($o) => $o->pivot->tot === null || $o->pivot->tot >= now()->toDateString())
@@ -502,6 +573,7 @@ class GoogleContactSyncService
         $typeGroups = $relatie->types
             ->filter(fn ($t) => $t->pivot->tot === null || $t->pivot->tot >= now()->toDateString())
             ->pluck('id')
+            ->reject(fn ($id) => in_array($id, $excludeTypeIds))
             ->map(fn ($id) => $typeGroupMap[$id] ?? null)
             ->filter()
             ->values()

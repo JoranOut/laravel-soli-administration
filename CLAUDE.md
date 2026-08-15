@@ -209,7 +209,9 @@ Syncs active relaties as Google Contacts to all Workspace users under `soli.nl`.
 
 **Change detection:** SHA-256 hash of name/emails/active onderdelen/active type assignments. Same hash → skip. Rename a hash key to force full re-sync.
 
-**Contact groups:** Prefixed `"Soli - "`. Onderdeel groups only for `CONTACT_GROUP_TYPES` (orkest/ensemble/opleidingsgroep). Type groups for all relatie types. Per-user, lazily created, auto-cleaned.
+**Contact groups:** Prefixed `"Soli - "`. Onderdeel groups only for `CONTACT_GROUP_TYPES` (currently `muziekgroep`). Type groups for all relatie types. Per-user, lazily created, auto-cleaned.
+
+**Split contacts:** Google group membership is per contact, not per email, so a type assignment with a functional email (pivot `email` on relatie↔type) gets its own contact — "Peter Jansen (Bestuur)" with only that email, member of only that type's group. The main contact keeps personal emails and all other groups, and is excluded from type groups that have a split. Sync rows are keyed (relatie_id, relatie_type_id, google_user_email); `relatie_type_id = null` is the main contact.
 
 **Gotchas:**
 - Stats use first user's counts (syncAll) or max (syncRelatie) — same relaties sync to every user, don't multiply
