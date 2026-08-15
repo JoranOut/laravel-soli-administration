@@ -14,6 +14,14 @@ class SyncGoogleContactsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // A full sync legitimately runs for many minutes. Never retry it:
+    // a re-delivered attempt overlapping a still-running one creates
+    // duplicate contacts in Google that nothing cleans up. The queue's
+    // retry_after must exceed this timeout (DB_QUEUE_RETRY_AFTER).
+    public int $tries = 1;
+
+    public int $timeout = 1800;
+
     public function __construct(
         public ?int $relatieId = null,
     ) {}
