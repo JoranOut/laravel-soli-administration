@@ -11,6 +11,7 @@ class GoogleContactSync extends Model
 
     protected $fillable = [
         'relatie_id',
+        'relatie_type_id',
         'google_user_email',
         'google_resource_name',
         'data_hash',
@@ -19,5 +20,10 @@ class GoogleContactSync extends Model
     public function relatie(): BelongsTo
     {
         return $this->belongsTo(Relatie::class);
+    }
+
+    public function relatieType(): BelongsTo
+    {
+        return $this->belongsTo(RelatieType::class);
     }
 }
