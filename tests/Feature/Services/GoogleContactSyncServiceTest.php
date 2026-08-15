@@ -778,6 +778,211 @@ test('syncRelatieForUser deletes all contacts including splits when relatie is d
     $this->assertDatabaseMissing('soli_google_contact_syncs', ['relatie_id' => $relatie->id]);
 });
 
+test('syncForUser splits only types with an email and keeps email-less type groups on the main contact', function () {
+    $relatie = Relatie::factory()->create(['voornaam' => 'Peter', 'achternaam' => 'Jansen']);
+    $relatie->emails()->create(['email' => 'peter@example.com']);
+
+    $bestuur = RelatieType::factory()->create(['naam' => 'bestuur']);
+    $lid = RelatieType::factory()->create(['naam' => 'lid']);
+    $relatie->types()->attach($bestuur->id, ['van' => now()->subYear()->toDateString(), 'email' => 'voorzitter@soli.nl']);
+    $relatie->types()->attach($lid->id, ['van' => now()->subYear()->toDateString()]);
+
+    $groups = [];
+    foreach (['Soli - Bestuur' => 'contactGroups/bestuur1', 'Soli - Lid' => 'contactGroups/lid1'] as $name => $resource) {
+        $g = new ContactGroup;
+        $g->setResourceName($resource);
+        $g->setName($name);
+        $groups[$name] = $g;
+    }
+
+    $mainPerson = new Person;
+    $mainPerson->setResourceName('people/c-main');
+    $splitPerson = new Person;
+    $splitPerson->setResourceName('people/c-split');
+
+    $this->mockApiClient->shouldReceive('forUser')->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->andReturnUsing(fn ($service, $name) => $groups[$name]);
+
+    // Main contact: personal email untouched, lid group kept, bestuur group excluded
+    $this->mockApiClient->shouldReceive('buildPerson')
+        ->withArgs(fn ($r, $g, $suffix = null, $emails = null) => $suffix === null
+            && $emails === null
+            && in_array('contactGroups/lid1', $g)
+            && ! in_array('contactGroups/bestuur1', $g))
+        ->once()
+        ->andReturn(new Person);
+
+    // Split contact: only the bestuur group
+    $this->mockApiClient->shouldReceive('buildPerson')
+        ->withArgs(fn ($r, $g, $suffix = null, $emails = null) => $suffix === 'Bestuur'
+            && $emails === ['voorzitter@soli.nl']
+            && $g === ['contactGroups/bestuur1'])
+        ->once()
+        ->andReturn(new Person);
+
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$mainPerson, $splitPerson]);
+    $this->mockApiClient->shouldReceive('batchUpdateContacts')->never();
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
+    $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncForUser($this->googleEmail);
+
+    expect($stats['created'])->toBe(2);
+    $this->assertDatabaseMissing('soli_google_contact_syncs', ['relatie_type_id' => $lid->id]);
+});
+
+test('syncForUser creates a split contact per type with an email', function () {
+    $relatie = Relatie::factory()->create(['voornaam' => 'Peter', 'achternaam' => 'Jansen']);
+    $bestuur = RelatieType::factory()->create(['naam' => 'bestuur']);
+    $dirigent = RelatieType::factory()->create(['naam' => 'dirigent']);
+    $relatie->types()->attach($bestuur->id, ['van' => now()->subYear()->toDateString(), 'email' => 'voorzitter@soli.nl']);
+    $relatie->types()->attach($dirigent->id, ['van' => now()->subYear()->toDateString(), 'email' => 'dirigent@soli.nl']);
+
+    $persons = [];
+    foreach (['people/c-main', 'people/c-s1', 'people/c-s2'] as $rn) {
+        $p = new Person;
+        $p->setResourceName($rn);
+        $persons[] = $p;
+    }
+
+    $this->mockApiClient->shouldReceive('forUser')->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->andReturnUsing(function ($service, $name) {
+            $g = new ContactGroup;
+            $g->setResourceName('contactGroups/'.md5($name));
+            $g->setName($name);
+
+            return $g;
+        });
+    $this->mockApiClient->shouldReceive('buildPerson')->times(3)->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn($persons);
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
+    $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncForUser($this->googleEmail);
+
+    expect($stats['created'])->toBe(3);
+    $this->assertDatabaseHas('soli_google_contact_syncs', ['relatie_id' => $relatie->id, 'relatie_type_id' => $bestuur->id]);
+    $this->assertDatabaseHas('soli_google_contact_syncs', ['relatie_id' => $relatie->id, 'relatie_type_id' => $dirigent->id]);
+    $this->assertDatabaseHas('soli_google_contact_syncs', ['relatie_id' => $relatie->id, 'relatie_type_id' => null]);
+});
+
+test('same type attached twice with different emails yields one split contact with both emails', function () {
+    $relatie = Relatie::factory()->create(['voornaam' => 'Peter', 'achternaam' => 'Jansen']);
+    $bestuur = RelatieType::factory()->create(['naam' => 'bestuur']);
+    $onderdeel1 = Onderdeel::factory()->create();
+    $onderdeel2 = Onderdeel::factory()->create();
+    $relatie->types()->attach($bestuur->id, ['van' => now()->subYear()->toDateString(), 'email' => 'voorzitter@soli.nl', 'onderdeel_id' => $onderdeel1->id]);
+    $relatie->types()->attach($bestuur->id, ['van' => now()->subYear()->toDateString(), 'email' => 'secretaris@soli.nl', 'onderdeel_id' => $onderdeel2->id]);
+
+    $mainPerson = new Person;
+    $mainPerson->setResourceName('people/c-main');
+    $splitPerson = new Person;
+    $splitPerson->setResourceName('people/c-split');
+
+    $this->mockApiClient->shouldReceive('forUser')->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->andReturnUsing(function ($service, $name) {
+            $g = new ContactGroup;
+            $g->setResourceName('contactGroups/'.md5($name));
+
+            return $g;
+        });
+    $this->mockApiClient->shouldReceive('buildPerson')
+        ->withArgs(fn ($r, $g, $suffix = null, $emails = null) => $suffix === null && $emails === null)
+        ->once()
+        ->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('buildPerson')
+        ->withArgs(fn ($r, $g, $suffix = null, $emails = null) => $suffix === 'Bestuur'
+            && $emails === ['secretaris@soli.nl', 'voorzitter@soli.nl'])
+        ->once()
+        ->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$mainPerson, $splitPerson]);
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
+    $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncForUser($this->googleEmail);
+
+    expect($stats['created'])->toBe(2);
+    expect(GoogleContactSync::where('relatie_id', $relatie->id)->whereNotNull('relatie_type_id')->count())->toBe(1);
+});
+
+test('an expired type assignment with an email does not create a split contact', function () {
+    $relatie = Relatie::factory()->create(['voornaam' => 'Peter', 'achternaam' => 'Jansen']);
+    $bestuur = RelatieType::factory()->create(['naam' => 'bestuur']);
+    $relatie->types()->attach($bestuur->id, [
+        'van' => now()->subYears(2)->toDateString(),
+        'tot' => now()->subYear()->toDateString(),
+        'email' => 'voorzitter@soli.nl',
+    ]);
+
+    $mainPerson = new Person;
+    $mainPerson->setResourceName('people/c-main');
+
+    $this->mockApiClient->shouldReceive('forUser')->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$this->googleEmail]);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->andReturnUsing(function ($service, $name) {
+            $g = new ContactGroup;
+            $g->setResourceName('contactGroups/'.md5($name));
+
+            return $g;
+        });
+    $this->mockApiClient->shouldReceive('buildPerson')->once()->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$mainPerson]);
+    $this->mockApiClient->shouldReceive('batchDeleteContacts')->never();
+    $this->mockApiClient->shouldReceive('deleteContactGroup')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncForUser($this->googleEmail);
+
+    expect($stats['created'])->toBe(1);
+    $this->assertDatabaseMissing('soli_google_contact_syncs', ['relatie_type_id' => $bestuur->id]);
+});
+
+test('syncRelatieForUser creates a split contact for a type with a functional email', function () {
+    $relatie = Relatie::factory()->create(['voornaam' => 'Peter', 'achternaam' => 'Jansen']);
+    $relatie->emails()->create(['email' => 'peter@example.com']);
+    $bestuur = RelatieType::factory()->create(['naam' => 'bestuur']);
+    $relatie->types()->attach($bestuur->id, ['van' => now()->subYear()->toDateString(), 'email' => 'voorzitter@soli.nl']);
+    $relatie->load(['emails', 'onderdelen', 'types']);
+
+    $mainPerson = new Person;
+    $mainPerson->setResourceName('people/c-main');
+    $splitPerson = new Person;
+    $splitPerson->setResourceName('people/c-split');
+
+    $this->mockApiClient->shouldReceive('forUser')->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')
+        ->andReturnUsing(function ($service, $name) {
+            $g = new ContactGroup;
+            $g->setResourceName('contactGroups/'.md5($name));
+
+            return $g;
+        });
+    $this->mockApiClient->shouldReceive('buildPerson')->twice()->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('createContact')->twice()->andReturn($mainPerson, $splitPerson);
+    $this->mockApiClient->shouldReceive('deleteContact')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncRelatieForUser($relatie, $this->googleEmail);
+
+    expect($stats['created'])->toBe(2);
+    $this->assertDatabaseHas('soli_google_contact_syncs', ['relatie_id' => $relatie->id, 'relatie_type_id' => null]);
+    $this->assertDatabaseHas('soli_google_contact_syncs', ['relatie_id' => $relatie->id, 'relatie_type_id' => $bestuur->id]);
+});
+
 test('computeDataHash changes when a type functional email changes', function () {
     $relatie = Relatie::factory()->create();
     $type = RelatieType::factory()->create(['naam' => 'bestuur']);
