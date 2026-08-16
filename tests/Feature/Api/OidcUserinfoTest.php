@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\InstrumentFamilie;
+use App\Models\InstrumentSoort;
+use App\Models\Onderdeel;
 use App\Models\Relatie;
+use App\Models\RelatieInstrument;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Laravel\Passport\Passport;
@@ -88,6 +92,42 @@ test('userinfo returns roles for roles scope', function () {
 
     $response->assertOk();
     $response->assertJsonFragment(['roles' => ['admin']]);
+});
+
+test('userinfo returns assignments with onderdeel name and slug for assignments scope', function () {
+    $user = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $user->id]);
+    $onderdeel = Onderdeel::factory()->create(['naam' => 'Klein Orkest']);
+    $relatie->onderdelen()->attach($onderdeel->id, ['van' => now()->subYear()->toDateString()]);
+
+    $familie = InstrumentFamilie::create(['naam' => 'Slagwerk']);
+    $soort = InstrumentSoort::create([
+        'naam' => 'Melodisch slagwerk',
+        'instrument_familie_id' => $familie->id,
+    ]);
+    RelatieInstrument::create([
+        'relatie_id' => $relatie->id,
+        'onderdeel_id' => $onderdeel->id,
+        'instrument_soort_id' => $soort->id,
+    ]);
+
+    Passport::actingAs($user, ['openid', 'assignments']);
+
+    $response = $this->getJson('/api/oauth/userinfo');
+
+    $response->assertOk();
+    $response->assertJsonFragment([
+        'assignments' => [
+            [
+                'onderdeel_id' => $onderdeel->id,
+                'onderdeel' => 'Klein Orkest',
+                'onderdeel_slug' => 'klein-orkest',
+                'instrument_soort_id' => $soort->id,
+                'instrument_soort' => 'Melodisch slagwerk',
+                'instrument_familie' => 'Slagwerk',
+            ],
+        ],
+    ]);
 });
 
 test('userinfo does not leak claims for ungranted scopes', function () {

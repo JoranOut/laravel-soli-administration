@@ -75,10 +75,12 @@ class SoliIdentityEntity implements IdentityEntityInterface
                                 ->orWhere('soli_relatie_onderdeel.tot', '>=', $today);
                         });
                 })
-                ->with('instrumentSoort.instrumentFamilie')
+                ->with(['instrumentSoort.instrumentFamilie', 'onderdeel'])
                 ->get()
                 ->map(fn ($ri) => [
                     'onderdeel_id' => $ri->onderdeel_id,
+                    'onderdeel' => $ri->onderdeel->naam,
+                    'onderdeel_slug' => \Illuminate\Support\Str::slug($ri->onderdeel->naam),
                     'instrument_soort_id' => $ri->instrumentSoort->id,
                     'instrument_soort' => $ri->instrumentSoort->naam,
                     'instrument_familie' => $ri->instrumentSoort->instrumentFamilie?->naam,
