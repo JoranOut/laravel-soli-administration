@@ -64,7 +64,7 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         <AppLayout>
             <Head title={relatie.volledige_naam} />
             <div className="space-y-6 p-4">
-                    {!isMember && (
+                    {can('relaties.view') && (
                         <div className="flex items-center gap-4">
                             <Button variant="ghost" size="sm" asChild>
                                 <Link href="/admin/relaties">
