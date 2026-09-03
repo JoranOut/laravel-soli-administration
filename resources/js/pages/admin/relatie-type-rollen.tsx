@@ -1,5 +1,6 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
@@ -57,12 +58,20 @@ export default function RelatieTypeRollen({
             <Head title={t('Relatie type roles')} />
 
             <div className="space-y-6 p-4">
-                <Heading
-                    title={t('Derived roles')}
-                    description={t(
-                        'Map a relatie type to an internal role. Anyone holding that type actively gets the role automatically.',
-                    )}
-                />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        title={t('Derived roles')}
+                        description={t(
+                            'Map a relatie type to an internal role. Anyone holding that type actively gets the role automatically.',
+                        )}
+                    />
+
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href="/admin/roles">
+                            {t('Roles & permissions')}
+                        </Link>
+                    </Button>
+                </div>
 
                 <p className="text-xs text-muted-foreground">
                     {t(

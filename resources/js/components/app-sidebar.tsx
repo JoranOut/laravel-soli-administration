@@ -143,6 +143,7 @@ export function AppSidebar() {
             allLabel: t('Roles & permissions'),
             children: [
                 { title: t('Users'), href: '/admin/users' },
+                { title: t('Relatie type roles'), href: '/admin/relatie-type-rollen' },
                 { title: t('Links'), href: '/admin/koppelingen' },
                 { title: t('Activity log'), href: '/admin/activity-log' },
                 { title: t('OAuth clients'), href: '/admin/oauth-clients' },

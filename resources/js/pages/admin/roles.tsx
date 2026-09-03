@@ -1,5 +1,6 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
@@ -57,10 +58,18 @@ export default function Roles({
             <Head title={t('Roles & permissions')} />
 
             <div className="space-y-6 p-4">
-                <Heading
-                    title={t('Permission matrix')}
-                    description={t('Toggle permissions per role')}
-                />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        title={t('Permission matrix')}
+                        description={t('Toggle permissions per role')}
+                    />
+
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href="/admin/relatie-type-rollen">
+                            {t('Relatie type roles')}
+                        </Link>
+                    </Button>
+                </div>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
