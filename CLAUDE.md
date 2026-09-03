@@ -24,6 +24,11 @@ npm run build                         # Production build
 | `admin@example.com` | admin | password |
 | `ledenadministratie@example.com` | ledenadministratie | password |
 | `member@example.com` | member | password |
+| `contactpersoon@example.com` | contactpersoon | password |
+
+`contactpersoon` is not assigned by the seeder — that account gets it through an active `contactpersoon` relatie type, so a fresh seed also exercises `DerivedRoleSyncService`. The member account is deliberately linked to a relatie with no mapped type; `Relatie::first()` handed it a `bestuur` type and with it the stats dashboard.
+
+**Roles and mappings do not reach production through a deploy.** `deploy.yml` runs `migrate --force` and never `db:seed`, so a new role or mapping needs `db:seed --class=RolesAndPermissionsSeeder --force` on the server (idempotent) plus the mapping set in the UI at `/admin/relatie-type-rollen`.
 
 ---
 
