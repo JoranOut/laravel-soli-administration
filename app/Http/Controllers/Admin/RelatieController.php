@@ -12,6 +12,7 @@ use App\Models\Relatie;
 use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\User;
+use App\Services\DerivedRoleSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -165,6 +166,12 @@ class RelatieController extends Controller
 
             return $relatie;
         });
+
+        // The wizard can attach a type that maps to a role, so the fresh
+        // account needs more than the member role it was given.
+        if ($relatie->user) {
+            app(DerivedRoleSyncService::class)->syncUser($relatie->user->load('roles'));
+        }
 
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
@@ -321,6 +328,8 @@ class RelatieController extends Controller
 
         $relatie->user_id = $user->id;
         $relatie->save();
+
+        app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
 
         return redirect()
             ->back()

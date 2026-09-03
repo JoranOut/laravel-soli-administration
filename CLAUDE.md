@@ -87,6 +87,18 @@ Seeded in `RolesAndPermissionsSeeder`. New roles/resources → also update `reso
 
 Frontend: `const { can } = usePermissions()`.
 
+### Roles derived from relatie types
+
+`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
+
+**Only roles that appear as a target in the mapping table are touched.** That rule is the sole protection for hand-granted roles: Spatie's `model_has_roles` has no column separating automatic from manual, so a sync that touched everything would wipe a manual `admin`. `DerivedRoleSyncService::NEVER_MANAGED` (`admin`, `member`) is filtered out when computing managed roles, so a mapping row inserted outside the UI still cannot take over the escape hatch — the controller's validation alone would not stop a seeder or a manual `INSERT`.
+
+A managed role cannot be assigned by hand; `UserRoleController@update` refuses it and preserves the derived roles a user already holds, because `syncRoles()` would drop them and the nightly command would silently put them back.
+
+**`roles:sync-derived` (daily) is the correctness-critical part, not the triggers.** A `tot` date passing fires no event, so without the scheduled run an ex-board member keeps their permissions until someone happens to edit their types. Everything else — `RelatieTypeController`, `UserRelatieLinkController`, `RelatieController`, `MemberSyncService` — only makes the change immediate. Run `roles:sync-derived --dry-run` before the first real run: the first sync revokes any hand-granted `bestuur` from users without the type, and revoking a role is not a migration, so a deploy rollback does not bring it back.
+
+This is the internal counterpart to `ClientRoleResolver`, which maps the same relatie types to roles in *external* clients (WordPress, muziekbibliotheek). The two are independent: internal roles never affect what a client gets, except as `ClientRoleResolver`'s fallback when a client has no settings row.
+
 ### Account Rules
 
 - No self-delete. Account management needs `users.edit`.

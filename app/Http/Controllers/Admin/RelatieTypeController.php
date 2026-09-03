@@ -5,11 +5,26 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Jobs\SyncGoogleContactsJob;
 use App\Models\Relatie;
+use App\Services\DerivedRoleSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class RelatieTypeController extends Controller
 {
+    public function __construct(private readonly DerivedRoleSyncService $derivedRoles) {}
+
+    /**
+     * A type change can grant or revoke a derived role for the linked user.
+     */
+    private function syncDerivedRoles(Relatie $relatie): void
+    {
+        $user = $relatie->fresh()?->user;
+
+        if ($user) {
+            $this->derivedRoles->syncUser($user->load('roles'));
+        }
+    }
+
     public function store(Request $request, Relatie $relatie): RedirectResponse
     {
         $validated = $request->validate([
@@ -28,6 +43,8 @@ class RelatieTypeController extends Controller
             'email' => $validated['email'] ?? null,
             'onderdeel_id' => $validated['onderdeel_id'] ?? null,
         ]);
+
+        $this->syncDerivedRoles($relatie);
 
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
@@ -55,6 +72,8 @@ class RelatieTypeController extends Controller
             $validated
         );
 
+        $this->syncDerivedRoles($relatie);
+
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return back()->with('success', __('Type updated.'));
@@ -69,6 +88,8 @@ class RelatieTypeController extends Controller
         }
 
         $relatie->types()->wherePivot('id', $pivotId)->detach($type->id);
+
+        $this->syncDerivedRoles($relatie);
 
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 

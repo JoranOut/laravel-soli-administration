@@ -24,6 +24,11 @@ export default function AdminLayout({ children }: PropsWithChildren) {
             icon: null,
         },
         {
+            title: t('Relatie type roles'),
+            href: '/admin/relatie-type-rollen',
+            icon: null,
+        },
+        {
             title: t('User-relation links'),
             href: '/admin/koppelingen',
             icon: null,

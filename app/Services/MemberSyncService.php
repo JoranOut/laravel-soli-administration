@@ -279,6 +279,8 @@ class MemberSyncService
 
         $relatie->user_id = $user->id;
         $relatie->save();
+
+        app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
     }
 
     private function syncUserEmail(Relatie $relatie, string $newEmail): void

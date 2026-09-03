@@ -2,13 +2,12 @@
 
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\GoogleContactSyncController;
-use App\Http\Controllers\Admin\SadSyncController;
-use App\Http\Controllers\Admin\LedenverloopController;
-use App\Http\Controllers\Admin\OauthClientSettingController;
 use App\Http\Controllers\Admin\InstrumentBespelerController;
 use App\Http\Controllers\Admin\InstrumentController;
 use App\Http\Controllers\Admin\InstrumentReparatieController;
 use App\Http\Controllers\Admin\InstrumentSoortController;
+use App\Http\Controllers\Admin\LedenverloopController;
+use App\Http\Controllers\Admin\OauthClientSettingController;
 use App\Http\Controllers\Admin\OnderdeelController;
 use App\Http\Controllers\Admin\RelatieContactController;
 use App\Http\Controllers\Admin\RelatieController;
@@ -17,7 +16,9 @@ use App\Http\Controllers\Admin\RelatieInsigneController;
 use App\Http\Controllers\Admin\RelatieLidmaatschapController;
 use App\Http\Controllers\Admin\RelatieOpleidingController;
 use App\Http\Controllers\Admin\RelatieTypeController;
+use App\Http\Controllers\Admin\RelatieTypeRoleMappingController;
 use App\Http\Controllers\Admin\RolePermissionController;
+use App\Http\Controllers\Admin\SadSyncController;
 use App\Http\Controllers\Admin\UserRelatieLinkController;
 use App\Http\Controllers\Admin\UserRoleController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
     Route::get('admin/roles', [RolePermissionController::class, 'index'])->name('admin.roles.index');
     Route::put('admin/roles/{role}', [RolePermissionController::class, 'update'])->name('admin.roles.update');
+
+    Route::get('admin/relatie-type-rollen', [RelatieTypeRoleMappingController::class, 'index'])->name('admin.relatie-type-rollen.index');
+    Route::put('admin/relatie-type-rollen', [RelatieTypeRoleMappingController::class, 'update'])->name('admin.relatie-type-rollen.update');
 
     Route::get('admin/users', [UserRoleController::class, 'index'])->name('admin.users.index');
     Route::put('admin/users/{user}', [UserRoleController::class, 'update'])->name('admin.users.update');
@@ -160,4 +164,3 @@ Route::middleware(['auth', 'verified', 'permission:instrumenten.view'])->group(f
 Route::middleware(['auth', 'verified', 'permission:instrumentsoorten.view'])->group(function () {
     Route::get('admin/instrumentsoorten', [InstrumentSoortController::class, 'index'])->name('admin.instrumentsoorten.index');
 });
-

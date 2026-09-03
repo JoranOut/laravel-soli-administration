@@ -597,5 +597,17 @@
     "Total": "Total",
 
     "Admin-managed": "Admin-managed",
-    "When enabled, member assignments to this section will not be removed by the SAD sync.": "When enabled, member assignments to this section will not be removed by the SAD sync."
+    "When enabled, member assignments to this section will not be removed by the SAD sync.": "When enabled, member assignments to this section will not be removed by the SAD sync.",
+
+    "Relatie type roles": "Relatie type roles",
+    "Derived roles": "Derived roles",
+    "Map a relatie type to an internal role. Anyone holding that type actively gets the role automatically.": "Map a relatie type to an internal role. Anyone holding that type actively gets the role automatically.",
+    "admin and member stay manual on purpose and cannot be mapped.": "admin and member stay manual on purpose and cannot be mapped.",
+    "Relatie type": "Relatie type",
+    "From relatie type": "From relatie type",
+    "Manual role": "Manual role",
+    "This role follows from a relatie type": "This role follows from a relatie type",
+    ":count user(s) updated.": ":count user(s) updated.",
+    "The role :role follows from a relatie type and cannot be assigned by hand.": "The role :role follows from a relatie type and cannot be assigned by hand.",
+    "No relatie types found.": "No relatie types found."
 }

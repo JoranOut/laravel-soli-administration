@@ -600,5 +600,17 @@
     "Total": "Totaal",
 
     "Admin-managed": "Beheerd in admin",
-    "When enabled, member assignments to this section will not be removed by the SAD sync.": "Indien ingeschakeld worden toewijzingen aan dit onderdeel niet verwijderd door de SAD-synchronisatie."
+    "When enabled, member assignments to this section will not be removed by the SAD sync.": "Indien ingeschakeld worden toewijzingen aan dit onderdeel niet verwijderd door de SAD-synchronisatie.",
+
+    "Relatie type roles": "Rollen per relatietype",
+    "Derived roles": "Afgeleide rollen",
+    "Map a relatie type to an internal role. Anyone holding that type actively gets the role automatically.": "Koppel een relatietype aan een interne rol. Wie dat type actief heeft, krijgt de rol automatisch.",
+    "admin and member stay manual on purpose and cannot be mapped.": "admin en member blijven bewust handmatig en kunnen niet gekoppeld worden.",
+    "Relatie type": "Relatietype",
+    "From relatie type": "Uit relatietype",
+    "Manual role": "Handmatige rol",
+    "This role follows from a relatie type": "Deze rol volgt uit een relatietype",
+    ":count user(s) updated.": ":count gebruiker(s) bijgewerkt.",
+    "The role :role follows from a relatie type and cannot be assigned by hand.": "De rol :role volgt uit een relatietype en kan niet handmatig worden toegekend.",
+    "No relatie types found.": "Geen relatietypes gevonden."
 }

@@ -11,3 +11,4 @@ Artisan::command('inspire', function () {
 Schedule::command('sync:google-contacts --sync')->daily();
 Schedule::command('sync:instruments')->hourly();
 Schedule::command('sync:sad-members')->daily();
+Schedule::command('roles:sync-derived')->daily();

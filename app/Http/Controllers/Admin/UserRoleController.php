@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\DerivedRoleSyncService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -11,9 +12,12 @@ use Spatie\Permission\Models\Role;
 
 class UserRoleController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Request $request, DerivedRoleSyncService $service): Response
     {
         $search = $request->input('search');
+
+        $managedRoles = $service->managedRoleNames();
+        $derivedRoles = $service->derivedRolesForAllUsers();
 
         $users = User::with('roles')
             ->when($search, fn ($q) => $q->where('name', 'like', "%{$search}%")
@@ -25,6 +29,7 @@ class UserRoleController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'roles' => $user->roles->pluck('name')->toArray(),
+                'derived_roles' => $derivedRoles[$user->id] ?? [],
             ]);
 
         $roles = Role::all()->pluck('name')->toArray();
@@ -32,11 +37,12 @@ class UserRoleController extends Controller
         return Inertia::render('admin/users', [
             'users' => $users,
             'roles' => $roles,
+            'managedRoles' => $managedRoles,
             'filters' => $request->only(['search']),
         ]);
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, User $user, DerivedRoleSyncService $service)
     {
         if ($user->id === auth()->id()) {
             return back()->withErrors(['roles' => __('You cannot edit your own roles.')]);
@@ -49,6 +55,15 @@ class UserRoleController extends Controller
             'roles.*' => ['string', "exists:{$rolesTable},name"],
         ]);
 
+        $managedRoles = $service->managedRoleNames();
+        $handAssigned = array_intersect($validated['roles'], $managedRoles);
+
+        if ($handAssigned !== []) {
+            return back()->withErrors(['roles' => __('The role :role follows from a relatie type and cannot be assigned by hand.', [
+                'role' => implode(', ', $handAssigned),
+            ])]);
+        }
+
         if ($user->hasRole('admin') && ! in_array('admin', $validated['roles'])) {
             $adminCount = User::role('admin')->count();
             if ($adminCount <= 1) {
@@ -58,7 +73,11 @@ class UserRoleController extends Controller
 
         $oldRoles = $user->roles->pluck('name')->toArray();
 
-        $user->syncRoles($validated['roles']);
+        // Keep the roles this user earns through relatie types; syncRoles would
+        // drop them and the nightly command would silently put them back.
+        $derived = array_values(array_intersect($oldRoles, $managedRoles));
+
+        $user->syncRoles([...$validated['roles'], ...$derived]);
 
         activity()
             ->performedOn($user)

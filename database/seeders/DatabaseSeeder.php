@@ -38,6 +38,7 @@ class DatabaseSeeder extends Seeder
             SampleDataSeeder::class,
             OauthClientSeeder::class,
             ClientRoleMappingSeeder::class,
+            RelatieTypeRoleMappingSeeder::class,
             GoogleContactSyncLogSeeder::class,
         ]);
 
