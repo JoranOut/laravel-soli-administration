@@ -98,7 +98,20 @@ test('a hand-granted admin survives a sync that revokes bestuur', function () {
     expect($user->hasRole('bestuur'))->toBeFalse();
 });
 
-test('an unmapped role is left alone', function () {
+test('a mappable role that is not mapped is left alone', function () {
+    ($this->mapBestuur)();
+    Role::create(['name' => 'commissie']);
+
+    $user = User::factory()->create();
+    $user->assignRole('commissie');
+    ($this->relatieFor)($user, null);
+
+    $this->service->syncUser($user->load('roles'));
+
+    expect($user->fresh()->hasRole('commissie'))->toBeTrue();
+});
+
+test('a never-managed role is left alone', function () {
     ($this->mapBestuur)();
     $user = User::factory()->create();
     $user->assignRole('ledenadministratie');
@@ -109,19 +122,19 @@ test('an unmapped role is left alone', function () {
     expect($user->fresh()->hasRole('ledenadministratie'))->toBeTrue();
 });
 
-test('admin can never become a managed role even when mapped', function () {
-    ($this->mapBestuur)('admin');
+test('a never-managed role cannot become managed even when mapped', function (string $roleName) {
+    ($this->mapBestuur)($roleName);
 
     expect($this->service->managedRoleNames())->toBe([]);
 
     $user = User::factory()->create();
-    $user->assignRole('admin');
+    $user->assignRole($roleName);
     ($this->relatieFor)($user, null);
 
     $this->service->syncUser($user->load('roles'));
 
-    expect($user->fresh()->hasRole('admin'))->toBeTrue();
-});
+    expect($user->fresh()->hasRole($roleName))->toBeTrue();
+})->with(['admin', 'ledenadministratie', 'member']);
 
 test('a type held through a second relatie counts', function () {
     ($this->mapBestuur)();

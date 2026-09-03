@@ -13,7 +13,7 @@ class RelatieTypeRoleMappingSeeder extends Seeder
     /**
      * Relatie type name => internal role name.
      *
-     * Roles in DerivedRoleSyncService::NEVER_MANAGED are refused on purpose.
+     * Roles in DerivedRoleSyncService::NEVER_MANAGED are skipped on purpose.
      */
     private const MAPPINGS = [
         'bestuur' => 'bestuur',

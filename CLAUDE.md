@@ -91,7 +91,11 @@ Frontend: `const { can } = usePermissions()`.
 
 `soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
 
-**Only roles that appear as a target in the mapping table are touched.** That rule is the sole protection for hand-granted roles: Spatie's `model_has_roles` has no column separating automatic from manual, so a sync that touched everything would wipe a manual `admin`. `DerivedRoleSyncService::NEVER_MANAGED` (`admin`, `member`) is filtered out when computing managed roles, so a mapping row inserted outside the UI still cannot take over the escape hatch — the controller's validation alone would not stop a seeder or a manual `INSERT`.
+**Only roles that appear as a target in the mapping table are touched.** That rule is the sole protection for hand-granted roles: Spatie's `model_has_roles` has no column separating automatic from manual, so a sync that touched everything would wipe a manual `admin`. `DerivedRoleSyncService::NEVER_MANAGED` (`admin`, `ledenadministratie`, `muziekbeheer`, `member`) is filtered out when computing managed roles, so a mapping row inserted outside the UI still cannot take over the escape hatch — the controller's validation alone would not stop a seeder or a manual `INSERT`.
+
+`muziekbeheer` is in that list ahead of the internal role existing — today it is only a client role name in `ClientRoleMapping`, so the entry does nothing yet. `member` is there because `RelatieController` and `MemberSyncService` already assign it.
+
+**Multiple roles are additive, so there is no priority.** A user gets the union of the roles mapped to every active type across every relatie, and Spatie treats permissions as a union too, so nothing has to win. `ClientRoleResolver` needs its `priority` column only because a WordPress user gets exactly one role. Hand-granted roles stack on top: giving someone `admin` leaves their derived `bestuur` in place, and the union makes them admin in practice.
 
 A managed role cannot be assigned by hand; `UserRoleController@update` refuses it and preserves the derived roles a user already holds, because `syncRoles()` would drop them and the nightly command would silently put them back.
 

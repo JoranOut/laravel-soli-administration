@@ -4,6 +4,7 @@ use App\Models\Relatie;
 use App\Models\RelatieType;
 use App\Models\RelatieTypeRoleMapping;
 use App\Models\User;
+use App\Services\DerivedRoleSyncService;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Role;
@@ -31,7 +32,7 @@ test('admin can view the relatie type roles page', function () {
         );
 });
 
-test('admin and member are not offered as mappable roles', function () {
+test('never-managed roles are not offered as mappable roles', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
     $this->actingAs($admin)
@@ -39,8 +40,10 @@ test('admin and member are not offered as mappable roles', function () {
         ->assertInertia(function ($page) {
             $names = collect($page->toArray()['props']['roles'])->pluck('name');
 
-            expect($names)->not->toContain('admin');
-            expect($names)->not->toContain('member');
+            foreach (DerivedRoleSyncService::NEVER_MANAGED as $never) {
+                expect($names)->not->toContain($never);
+            }
+
             expect($names)->toContain('bestuur');
         });
 });
@@ -110,30 +113,17 @@ test('removing a mapping stops deriving the role', function () {
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
 });
 
-test('mapping a type to admin is refused', function () {
+test('mapping a type to a never-managed role is refused', function (string $roleName) {
     $admin = User::factory()->create()->assignRole('admin');
-    $adminRole = Role::where('name', 'admin')->first();
+    $role = Role::where('name', $roleName)->first();
 
     $this->actingAs($admin)
         ->put('/admin/relatie-type-rollen', [
             'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $adminRole->id],
+                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $role->id],
             ],
         ])
         ->assertSessionHasErrors('mappings.0.role_id');
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
-});
-
-test('mapping a type to member is refused', function () {
-    $admin = User::factory()->create()->assignRole('admin');
-    $memberRole = Role::where('name', 'member')->first();
-
-    $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $memberRole->id],
-            ],
-        ])
-        ->assertSessionHasErrors('mappings.0.role_id');
-});
+})->with(['admin', 'ledenadministratie', 'member']);
