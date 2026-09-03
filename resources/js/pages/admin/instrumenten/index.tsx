@@ -1,19 +1,21 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 
+import { DataTable } from '@/components/admin/data-table';
+import type { Column } from '@/components/admin/data-table';
+import { Pagination } from '@/components/admin/pagination';
+import { RelatieLink } from '@/components/admin/relatie-link';
+import { SearchInput } from '@/components/admin/search-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DataTable, type Column } from '@/components/admin/data-table';
-import { Pagination } from '@/components/admin/pagination';
-import { SearchInput } from '@/components/admin/search-input';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { Instrument, PaginatedResponse } from '@/types/admin';
 
 type Props = {
@@ -76,9 +78,9 @@ export default function InstrumentenIndex({ instrumenten, filters }: Props) {
             label: t('Player'),
             render: (i) =>
                 i.huidige_bespeler?.relatie ? (
-                    <Link href={`/admin/relaties/${i.huidige_bespeler.relatie.id}`} className="text-primary hover:underline">
+                    <RelatieLink relatieId={i.huidige_bespeler.relatie.id}>
                         {i.huidige_bespeler.relatie.volledige_naam}
-                    </Link>
+                    </RelatieLink>
                 ) : (
                     <span className="text-muted-foreground">—</span>
                 ),

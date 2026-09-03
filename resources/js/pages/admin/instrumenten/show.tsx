@@ -1,8 +1,9 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Plus, Wrench, Pencil } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 
+import { DateRangeDisplay } from '@/components/admin/date-range-display';
+import { RelatieLink } from '@/components/admin/relatie-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DateRangeDisplay } from '@/components/admin/date-range-display';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { Instrument, InstrumentBespeler, Relatie } from '@/types/admin';
 
 type Props = {
@@ -255,9 +256,9 @@ export default function InstrumentShow({ instrument, relaties }: Props) {
                                         <div key={b.id} className="flex items-center justify-between rounded-md border p-3">
                                             <div>
                                                 {b.relatie && (
-                                                    <Link href={`/admin/relaties/${b.relatie.id}`} className="text-primary hover:underline font-medium">
+                                                    <RelatieLink relatieId={b.relatie.id} className="font-medium">
                                                         {b.relatie.volledige_naam}
-                                                    </Link>
+                                                    </RelatieLink>
                                                 )}
                                                 <div className="flex items-center gap-2">
                                                     <DateRangeDisplay van={b.van} tot={b.tot} />

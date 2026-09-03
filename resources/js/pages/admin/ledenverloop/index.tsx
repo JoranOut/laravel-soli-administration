@@ -1,10 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { Head, router } from '@inertiajs/react';
+import { DataTable } from '@/components/admin/data-table';
+import type { Column } from '@/components/admin/data-table';
+import { Pagination } from '@/components/admin/pagination';
+import { RelatieLink } from '@/components/admin/relatie-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DataTable, type Column } from '@/components/admin/data-table';
-import { Pagination } from '@/components/admin/pagination';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { PaginatedResponse, Relatie } from '@/types/admin';
 
 type LedenverloopRelatie = Relatie & {
@@ -33,9 +35,9 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
             key: 'achternaam',
             label: t('Name'),
             render: (relatie) => (
-                <Link href={`/admin/relaties/${relatie.id}`} className="text-primary hover:underline font-medium">
+                <RelatieLink relatieId={relatie.id} className="font-medium">
                     {relatie.volledige_naam}
-                </Link>
+                </RelatieLink>
             ),
         },
         {

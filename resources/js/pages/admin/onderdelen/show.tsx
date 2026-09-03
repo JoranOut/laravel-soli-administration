@@ -1,9 +1,10 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Mail, Pencil, ShieldCheck, Trash } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 
 import { CopyEmailsDialog } from '@/components/admin/copy-emails-dialog';
+import { RelatieLink } from '@/components/admin/relatie-link';
+import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,10 +13,10 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import InputError from '@/components/input-error';
+import { ONDERDEEL_TYPES } from '@/constants/onderdeel';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
-import { ONDERDEEL_TYPES } from '@/constants/onderdeel';
+import AppLayout from '@/layouts/app-layout';
 import type { EmailRecord, Onderdeel } from '@/types/admin';
 
 type Props = {
@@ -188,9 +189,9 @@ export default function OnderdeelShow({ onderdeel, instrumentsByRelatie }: Props
                                         return (
                                             <div key={relatie.id} className="flex items-center justify-between rounded-md border p-3">
                                                 <div className="flex items-center gap-2">
-                                                    <Link href={`/admin/relaties/${relatie.id}`} className="text-primary hover:underline font-medium">
+                                                    <RelatieLink relatieId={relatie.id} className="font-medium">
                                                         {relatie.volledige_naam}
-                                                    </Link>
+                                                    </RelatieLink>
                                                     {relatie.types?.map((type) => (
                                                         <Badge key={type.id} variant="outline">{type.naam}</Badge>
                                                     ))}
