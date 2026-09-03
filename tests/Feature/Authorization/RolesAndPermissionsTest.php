@@ -25,9 +25,17 @@ test('seeder creates all expected permissions', function () {
 test('seeder creates all expected roles', function () {
     expect(Role::findByName('admin'))->not->toBeNull();
     expect(Role::findByName('bestuur'))->not->toBeNull();
+    expect(Role::findByName('contactpersoon'))->not->toBeNull();
     expect(Role::findByName('ledenadministratie'))->not->toBeNull();
     expect(Role::findByName('member'))->not->toBeNull();
-    expect(Role::count())->toBe(4);
+    expect(Role::count())->toBe(5);
+});
+
+test('contactpersoon role only reaches the contact page', function () {
+    $contactpersoon = Role::findByName('contactpersoon');
+
+    expect($contactpersoon->permissions->pluck('name')->sort()->values()->toArray())
+        ->toBe(['contact.view', 'dashboard.view']);
 });
 
 test('admin role has all permissions', function () {
@@ -92,5 +100,5 @@ test('seeder is idempotent', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
     expect(Permission::count())->toBe(22);
-    expect(Role::count())->toBe(4);
+    expect(Role::count())->toBe(5);
 });

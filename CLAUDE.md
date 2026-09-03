@@ -79,6 +79,7 @@ Spatie Laravel Permission. Format: `{resource}.{action}` (e.g. `relaties.view`).
 | admin | All |
 | ledenadministratie | All except users.* |
 | bestuur | *.view only |
+| contactpersoon | dashboard.view + contact.view only |
 | member | relaties.view only |
 
 Seeded in `RolesAndPermissionsSeeder`. New roles/resources → also update `resources/js/types/auth.ts`.
@@ -89,7 +90,7 @@ Frontend: `const { can } = usePermissions()`.
 
 ### Roles derived from relatie types
 
-`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
+`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role and an active `contactpersoon` type grants `contactpersoon`. Both are seeded by `RelatieTypeRoleMappingSeeder`. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
 
 **Only roles that appear as a target in the mapping table are touched.** That rule is the sole protection for hand-granted roles: Spatie's `model_has_roles` has no column separating automatic from manual, so a sync that touched everything would wipe a manual `admin`. `DerivedRoleSyncService::NEVER_MANAGED` (`admin`, `ledenadministratie`, `muziekbeheer`, `member`) is filtered out when computing managed roles, so a mapping row inserted outside the UI still cannot take over the escape hatch — the controller's validation alone would not stop a seeder or a manual `INSERT`.
 

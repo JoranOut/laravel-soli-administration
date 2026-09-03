@@ -5,6 +5,7 @@ use App\Models\RelatieType;
 use App\Models\RelatieTypeRoleMapping;
 use App\Models\User;
 use App\Services\DerivedRoleSyncService;
+use Database\Seeders\RelatieTypeRoleMappingSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Role;
@@ -220,4 +221,21 @@ test('derivedRolesForAllUsers matches the per-user result', function () {
 
     expect($map[$earning->id])->toBe(['bestuur']);
     expect($map)->not->toHaveKey($other->id);
+});
+
+test('an active contactpersoon type grants the contactpersoon role', function () {
+    $this->seed(RelatieTypeRoleMappingSeeder::class);
+
+    $type = RelatieType::where('naam', 'contactpersoon')->first();
+    $user = User::factory()->create();
+    Relatie::factory()
+        ->create(['user_id' => $user->id])
+        ->types()->attach($type->id, ['van' => '2026-01-01']);
+
+    $this->service->syncUser($user->load('roles'));
+
+    $user->refresh();
+    expect($user->hasRole('contactpersoon'))->toBeTrue();
+    expect($user->can('contact.view'))->toBeTrue();
+    expect($user->can('relaties.view'))->toBeFalse();
 });

@@ -17,6 +17,7 @@ class RelatieTypeRoleMappingSeeder extends Seeder
      */
     private const MAPPINGS = [
         'bestuur' => 'bestuur',
+        'contactpersoon' => 'contactpersoon',
     ];
 
     public function run(): void

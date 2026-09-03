@@ -11,11 +11,21 @@ export type User = {
     [key: string]: unknown;
 };
 
-export type CrudResource = 'relaties' | 'onderdelen' | 'instrumenten' | 'instrumentsoorten' | 'users';
+export type CrudResource =
+    | 'relaties'
+    | 'onderdelen'
+    | 'instrumenten'
+    | 'instrumentsoorten'
+    | 'users';
 export type CrudAction = 'view' | 'create' | 'edit' | 'delete';
 export type StandalonePermission = 'dashboard.view' | 'contact.view';
 export type Permission = `${CrudResource}.${CrudAction}` | StandalonePermission;
-export type Role = 'admin' | 'bestuur' | 'ledenadministratie' | 'member';
+export type Role =
+    | 'admin'
+    | 'bestuur'
+    | 'contactpersoon'
+    | 'ledenadministratie'
+    | 'member';
 
 export type Auth = {
     user: User;

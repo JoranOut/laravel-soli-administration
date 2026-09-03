@@ -52,6 +52,13 @@ class RolesAndPermissionsSeeder extends Seeder
                 Permission::where('name', 'not like', 'users.%')->pluck('name')->toArray()
             );
 
+        // Contactpersoon: the contact page and nothing else
+        Role::findOrCreate('contactpersoon')
+            ->syncPermissions([
+                'dashboard.view',
+                'contact.view',
+            ]);
+
         // Member: view own data only (enforced at policy level)
         Role::findOrCreate('member')
             ->syncPermissions([
