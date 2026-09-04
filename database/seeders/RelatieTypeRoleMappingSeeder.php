@@ -37,10 +37,13 @@ class RelatieTypeRoleMappingSeeder extends Seeder
                 continue;
             }
 
-            RelatieTypeRoleMapping::updateOrCreate([
-                'relatie_type_id' => $type->id,
-                'role_id' => $role->id,
-            ]);
+            // Key on the type alone: it is unique, so passing role_id as part
+            // of the key would look for a row that does not exist and then hit
+            // the unique index on insert.
+            RelatieTypeRoleMapping::updateOrCreate(
+                ['relatie_type_id' => $type->id],
+                ['role_id' => $role->id],
+            );
         }
     }
 }

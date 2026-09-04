@@ -5,6 +5,7 @@ use App\Models\RelatieType;
 use App\Models\RelatieTypeRoleMapping;
 use App\Models\User;
 use App\Services\DerivedRoleSyncService;
+use Database\Seeders\RelatieTypeRoleMappingSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Spatie\Permission\Models\Role;
@@ -205,3 +206,22 @@ test('mapping a type to a never-managed role is refused', function (string $role
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
 })->with(['admin', 'ledenadministratie']);
+
+test('the seeder is idempotent and overwrites a changed role', function () {
+    $lid = RelatieType::where('naam', 'lid')->first();
+
+    // A mapping the admin changed by hand, pointing at the wrong role
+    RelatieTypeRoleMapping::create([
+        'relatie_type_id' => $lid->id,
+        'role_id' => $this->bestuurRole->id,
+    ]);
+
+    $this->seed(RelatieTypeRoleMappingSeeder::class);
+    $this->seed(RelatieTypeRoleMappingSeeder::class);
+
+    expect(RelatieTypeRoleMapping::where('relatie_type_id', $lid->id)->count())->toBe(1);
+    $this->assertDatabaseHas('soli_relatie_type_role_mappings', [
+        'relatie_type_id' => $lid->id,
+        'role_id' => Role::where('name', 'minimal')->first()->id,
+    ]);
+});
