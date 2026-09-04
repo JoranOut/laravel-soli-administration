@@ -27,7 +27,7 @@ test('admin can update role permissions', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
-    $role = Role::findByName('member');
+    $role = Role::findByName('minimal');
 
     $this->actingAs($admin)
         ->put("/admin/roles/{$role->id}", [
@@ -42,7 +42,7 @@ test('admin can update role permissions', function () {
 
 test('non-admin gets 403 on roles page', function () {
     $member = User::factory()->create();
-    $member->assignRole('member');
+    $member->assignRole('minimal');
 
     $this->actingAs($member)
         ->get('/admin/roles')

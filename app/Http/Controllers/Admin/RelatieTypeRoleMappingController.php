@@ -24,7 +24,7 @@ class RelatieTypeRoleMappingController extends Controller
             ->map(fn (RelatieType $type) => [
                 'id' => $type->id,
                 'naam' => $type->naam,
-                'role_ids' => $type->roleMappings->pluck('role_id')->all(),
+                'role_id' => $type->roleMappings->first()?->role_id,
             ]);
 
         return Inertia::render('admin/relatie-type-rollen', [
@@ -43,7 +43,12 @@ class RelatieTypeRoleMappingController extends Controller
 
         $validated = $request->validate([
             'mappings' => ['present', 'array'],
-            'mappings.*.relatie_type_id' => ['required', 'exists:soli_relatie_types,id'],
+            'mappings.*.relatie_type_id' => [
+                'required',
+                'exists:soli_relatie_types,id',
+                // One role per type, so a type must not appear twice
+                'distinct',
+            ],
             'mappings.*.role_id' => ['required', Rule::in($assignableRoleIds)],
         ]);
 
@@ -51,7 +56,7 @@ class RelatieTypeRoleMappingController extends Controller
             RelatieTypeRoleMapping::query()->delete();
 
             foreach ($validated['mappings'] as $mapping) {
-                RelatieTypeRoleMapping::updateOrCreate([
+                RelatieTypeRoleMapping::create([
                     'relatie_type_id' => $mapping['relatie_type_id'],
                     'role_id' => $mapping['role_id'],
                 ]);

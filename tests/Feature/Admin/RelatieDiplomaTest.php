@@ -70,7 +70,7 @@ test('ledenadministratie can add diploma', function () {
 });
 
 test('member cannot add diploma', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
 
     $response = $this->actingAs($member)->post("/admin/relaties/{$relatie->id}/diplomas", [
@@ -114,7 +114,7 @@ test('admin can update diploma', function () {
 });
 
 test('member cannot update diploma', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
     $diploma = $relatie->diplomas()->create([
         'naam' => 'HaFaBra A',
@@ -156,7 +156,7 @@ test('admin can delete diploma', function () {
 });
 
 test('member cannot delete diploma', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
     $diploma = $relatie->diplomas()->create([
         'naam' => 'Te verwijderen',

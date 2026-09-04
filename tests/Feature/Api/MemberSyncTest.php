@@ -9,12 +9,14 @@ use App\Models\RelatieType;
 use App\Models\User;
 use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\OnderdeelSeeder;
+use Database\Seeders\RelatieTypeRoleMappingSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
+    $this->seed(RelatieTypeRoleMappingSeeder::class);
     $this->seed(OnderdeelSeeder::class);
 
     config(['services.soli_sync.api_key' => 'test-sync-api-key']);
@@ -102,7 +104,7 @@ test('creates new relatie with user account and lid type', function () {
     expect($relatie->user_id)->not->toBeNull();
     $user = $relatie->user;
     expect($user->email)->toBe('jan@test.nl');
-    expect($user->hasRole('member'))->toBeTrue();
+    expect($user->hasRole('minimal'))->toBeTrue();
 
     // Lid type attached
     $lidType = RelatieType::where('naam', 'lid')->first();
@@ -203,7 +205,7 @@ test('updates existing relatie name fields', function () {
     ]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
     $user = User::factory()->create(['email' => 'jan@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
 
     $response = $this->putJson('/api/v1/sync/members/1000', [
@@ -224,7 +226,7 @@ test('adds missing email on update', function () {
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
     $relatie->emails()->create(['email' => 'old@test.nl']);
     $user = User::factory()->create(['email' => 'old@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
 
     $this->putJson('/api/v1/sync/members/1000', [
@@ -239,7 +241,7 @@ test('adds missing email on update', function () {
 
 test('syncs user email when sync email changes', function () {
     $user = User::factory()->create(['email' => 'old@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
     $relatie->emails()->create(['email' => 'old@test.nl']);
 
@@ -260,7 +262,7 @@ test('does not overwrite user email if new email is taken by another user', func
     $otherUser = User::factory()->create(['email' => 'taken@test.nl']);
 
     $user = User::factory()->create(['email' => 'old@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
     $relatie->emails()->create(['email' => 'old@test.nl']);
 
@@ -279,7 +281,7 @@ test('does not overwrite user email if new email is taken by another user', func
 
 test('does not touch user email when sync email is unchanged', function () {
     $user = User::factory()->create(['email' => 'same@test.nl', 'email_verified_at' => now()]);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
     $relatie->emails()->create(['email' => 'same@test.nl']);
 
@@ -300,7 +302,7 @@ test('syncs onderdelen on update: adds new, closes removed', function () {
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
     $user = User::factory()->create(['email' => 'jan@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
 
     $ha = Onderdeel::where('afkorting', 'HA')->first();
@@ -334,7 +336,7 @@ test('sync does not close assignment to admin-managed onderdeel', function () {
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
     $user = User::factory()->create(['email' => 'jan@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
 
     $ha = Onderdeel::where('afkorting', 'HA')->first();
@@ -369,7 +371,7 @@ test('sync does not close assignment to admin-managed onderdeel', function () {
 
 test('deactivation closes assignments to admin-managed onderdelen too', function () {
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,
         'user_id' => $user->id,
@@ -403,7 +405,7 @@ test('deactivation closes assignments to admin-managed onderdelen too', function
 
 test('upsert skips admin-managed relatie entirely', function () {
     $user = User::factory()->create(['email' => 'admin-set@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,
         'voornaam' => 'Original',
@@ -519,7 +521,7 @@ test('adds lid type when relatie has no active types', function () {
 
 test('deactivates member and deletes user account', function () {
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,
         'user_id' => $user->id,
@@ -553,7 +555,7 @@ test('deactivates member and deletes user account', function () {
 
 test('deactivate skips admin-managed relatie', function () {
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,
         'user_id' => $user->id,
@@ -632,11 +634,11 @@ test('delete endpoint also requires API key', function () {
 
 test('reconcile deactivates members not in active list', function () {
     $user1 = User::factory()->create();
-    $user1->assignRole('member');
+    $user1->assignRole('minimal');
     $staying = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user1->id, 'actief' => true]);
 
     $user2 = User::factory()->create();
-    $user2->assignRole('member');
+    $user2->assignRole('minimal');
     $leaving = Relatie::factory()->create(['relatie_nummer' => 1001, 'user_id' => $user2->id, 'actief' => true]);
 
     // Add extra members so deactivating 1 of 6 stays under 20% threshold
@@ -777,7 +779,7 @@ test('updates geboortedatum on existing relatie', function () {
     ]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
     $user = User::factory()->create(['email' => 'jan@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
 
     $response = $this->putJson('/api/v1/sync/members/1000', [
@@ -821,7 +823,7 @@ test('updates existing adres on update', function () {
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
     $user = User::factory()->create(['email' => 'jan@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
     $relatie->adressen()->create([
         'straat' => 'Oude Straat',
@@ -872,7 +874,7 @@ test('replaces telefoon numbers on update', function () {
     $relatie = Relatie::factory()->create(['relatie_nummer' => 1000]);
     $relatie->emails()->create(['email' => 'jan@test.nl']);
     $user = User::factory()->create(['email' => 'jan@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie->update(['user_id' => $user->id]);
     $relatie->telefoons()->create(['nummer' => '06-old-number']);
 
@@ -971,7 +973,7 @@ test('skips pii fields when null', function () {
 
 test('skips pii for admin-managed members', function () {
     $user = User::factory()->create(['email' => 'admin-set@test.nl']);
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create([
         'relatie_nummer' => 1000,
         'user_id' => $user->id,

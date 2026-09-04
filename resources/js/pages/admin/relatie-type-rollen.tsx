@@ -1,15 +1,23 @@
 import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
+const NO_ROLE = 'none';
+
 type RelatieTypeData = {
     id: number;
     naam: string;
-    role_ids: number[];
+    role_id: number | null;
 };
 
 type RoleData = {
@@ -35,16 +43,15 @@ export default function RelatieTypeRollen({
         },
     ];
 
-    function toggle(type: RelatieTypeData, roleId: number) {
-        const roleIds = type.role_ids.includes(roleId)
-            ? type.role_ids.filter((id) => id !== roleId)
-            : [...type.role_ids, roleId];
+    function updateRole(type: RelatieTypeData, value: string) {
+        const roleId = value === NO_ROLE ? null : Number(value);
 
-        const mappings = relatieTypes.flatMap((current) =>
-            (current.id === type.id ? roleIds : current.role_ids).map(
-                (role_id) => ({ relatie_type_id: current.id, role_id }),
-            ),
-        );
+        const mappings = relatieTypes
+            .map((current) => ({
+                relatie_type_id: current.id,
+                role_id: current.id === type.id ? roleId : current.role_id,
+            }))
+            .filter((mapping) => mapping.role_id !== null);
 
         router.put(
             '/admin/relatie-type-rollen',
@@ -75,8 +82,9 @@ export default function RelatieTypeRollen({
 
                 <p className="text-xs text-muted-foreground">
                     {t(
-                        'admin and member stay manual on purpose and cannot be mapped.',
+                        'One role per relatie type. Several types may point to the same role.',
                     )}{' '}
+                    {t('These roles stay manual and cannot be mapped:')}{' '}
                     <span className="font-mono">{neverManaged.join(', ')}</span>
                 </p>
 
@@ -87,21 +95,16 @@ export default function RelatieTypeRollen({
                                 <th className="py-3 pr-4 text-left font-medium">
                                     {t('Relatie type')}
                                 </th>
-                                {roles.map((role) => (
-                                    <th
-                                        key={role.id}
-                                        className="px-4 py-3 text-center font-medium capitalize"
-                                    >
-                                        {role.name}
-                                    </th>
-                                ))}
+                                <th className="px-4 py-3 text-left font-medium">
+                                    {t('Role')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {relatieTypes.length === 0 && (
                                 <tr>
                                     <td
-                                        colSpan={roles.length + 1}
+                                        colSpan={2}
                                         className="py-4 text-muted-foreground"
                                     >
                                         {t('No relatie types found.')}
@@ -111,21 +114,35 @@ export default function RelatieTypeRollen({
                             {relatieTypes.map((type) => (
                                 <tr key={type.id} className="border-b">
                                     <td className="py-2 pr-4">{type.naam}</td>
-                                    {roles.map((role) => (
-                                        <td
-                                            key={`${type.id}-${role.id}`}
-                                            className="px-4 py-2 text-center"
+                                    <td className="px-4 py-2">
+                                        <Select
+                                            value={
+                                                type.role_id === null
+                                                    ? NO_ROLE
+                                                    : String(type.role_id)
+                                            }
+                                            onValueChange={(value) =>
+                                                updateRole(type, value)
+                                            }
                                         >
-                                            <Checkbox
-                                                checked={type.role_ids.includes(
-                                                    role.id,
-                                                )}
-                                                onCheckedChange={() =>
-                                                    toggle(type, role.id)
-                                                }
-                                            />
-                                        </td>
-                                    ))}
+                                            <SelectTrigger className="w-[240px]">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value={NO_ROLE}>
+                                                    {t('No role')}
+                                                </SelectItem>
+                                                {roles.map((role) => (
+                                                    <SelectItem
+                                                        key={role.id}
+                                                        value={String(role.id)}
+                                                    >
+                                                        {role.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

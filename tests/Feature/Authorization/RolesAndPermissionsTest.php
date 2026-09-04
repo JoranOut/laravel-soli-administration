@@ -27,7 +27,7 @@ test('seeder creates all expected roles', function () {
     expect(Role::findByName('bestuur'))->not->toBeNull();
     expect(Role::findByName('contactpersoon'))->not->toBeNull();
     expect(Role::findByName('ledenadministratie'))->not->toBeNull();
-    expect(Role::findByName('member'))->not->toBeNull();
+    expect(Role::findByName('minimal'))->not->toBeNull();
     expect(Role::count())->toBe(5);
 });
 
@@ -80,7 +80,7 @@ test('ledenadministratie role has all permissions except users', function () {
 });
 
 test('member role has correct permissions', function () {
-    $member = Role::findByName('member');
+    $member = Role::findByName('minimal');
     $permissionNames = $member->permissions->pluck('name')->toArray();
 
     expect($permissionNames)->toEqualCanonicalizing(['relaties.view', 'contact.view']);

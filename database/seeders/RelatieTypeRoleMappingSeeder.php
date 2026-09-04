@@ -16,6 +16,9 @@ class RelatieTypeRoleMappingSeeder extends Seeder
      * Roles in DerivedRoleSyncService::NEVER_MANAGED are skipped on purpose.
      */
     private const MAPPINGS = [
+        'lid' => 'minimal',
+        'donateur' => 'minimal',
+        'vrijwilliger' => 'minimal',
         'bestuur' => 'bestuur',
         'contactpersoon' => 'contactpersoon',
     ];

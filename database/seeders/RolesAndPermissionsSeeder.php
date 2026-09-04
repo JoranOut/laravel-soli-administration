@@ -59,8 +59,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'contact.view',
             ]);
 
-        // Member: view own data only (enforced at policy level)
-        Role::findOrCreate('member')
+        // Minimal: view own data only (enforced at policy level). Derived from
+        // the lid, donateur and vrijwilliger types.
+        Role::findOrCreate('minimal')
             ->syncPermissions([
                 'relaties.view',
                 'contact.view',

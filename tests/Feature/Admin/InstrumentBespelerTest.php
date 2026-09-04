@@ -88,7 +88,7 @@ test('admin can remove bespeler from instrument', function () {
 });
 
 test('member cannot assign bespeler', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $instrument = Instrument::factory()->create();
     $relatie = Relatie::factory()->create();
 

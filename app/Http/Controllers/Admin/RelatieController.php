@@ -29,7 +29,7 @@ class RelatieController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('member')) {
+        if ($user->hasRole('minimal')) {
             if ($relatie = $user->relaties->first()) {
                 return redirect()->route('admin.relaties.show', $relatie);
             }
@@ -123,7 +123,6 @@ class RelatieController extends Controller
                 'email' => $firstEmail,
                 'password' => Str::random(32),
             ]);
-            $user->assignRole('member');
             $relatie->user_id = $user->id;
             $relatie->save();
 
@@ -184,7 +183,7 @@ class RelatieController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('member') && $relatie->user_id !== $user->id) {
+        if ($user->hasRole('minimal') && $relatie->user_id !== $user->id) {
             abort(403);
         }
 
@@ -230,7 +229,7 @@ class RelatieController extends Controller
             $props['users'] = User::orderBy('name')->get(['id', 'name', 'email']);
         }
 
-        if ($user->hasRole('member') && $relatie->user_id === $user->id) {
+        if ($user->hasRole('minimal') && $relatie->user_id === $user->id) {
             $props['userRelaties'] = $user->relaties()
                 ->orderBy('achternaam')
                 ->get(['id', 'voornaam', 'tussenvoegsel', 'achternaam', 'relatie_nummer']);
@@ -324,11 +323,11 @@ class RelatieController extends Controller
             'email' => $email->email,
             'password' => Str::random(32),
         ]);
-        $user->assignRole('member');
-
         $relatie->user_id = $user->id;
         $relatie->save();
 
+        // The minimal role follows from the relatie's types, not from creating
+        // the account, so this is what grants it.
         app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
 
         return redirect()

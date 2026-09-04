@@ -49,7 +49,7 @@ test('never-managed roles are not offered as mappable roles', function () {
 });
 
 test('non-admin gets 403 on the relatie type roles page', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $this->actingAs($member)
         ->get('/admin/relatie-type-rollen')
@@ -58,6 +58,84 @@ test('non-admin gets 403 on the relatie type roles page', function () {
 
 test('guest is redirected from the relatie type roles page', function () {
     $this->get('/admin/relatie-type-rollen')->assertRedirect('/login');
+});
+
+test('the page exposes one role per type', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    RelatieTypeRoleMapping::create([
+        'relatie_type_id' => $this->bestuurType->id,
+        'role_id' => $this->bestuurRole->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->get('/admin/relatie-type-rollen')
+        ->assertInertia(function ($page) {
+            $rows = collect($page->toArray()['props']['relatieTypes']);
+            $bestuur = $rows->firstWhere('id', $this->bestuurType->id);
+
+            expect($bestuur)->toHaveKey('role_id');
+            expect($bestuur['role_id'])->toBe($this->bestuurRole->id);
+            expect($rows->firstWhere('naam', 'donateur')['role_id'])->toBeNull();
+        });
+});
+
+test('a type mapped twice is refused', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $minimal = Role::where('name', 'minimal')->first();
+
+    $this->actingAs($admin)
+        ->put('/admin/relatie-type-rollen', [
+            'mappings' => [
+                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $this->bestuurRole->id],
+                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $minimal->id],
+            ],
+        ])
+        ->assertSessionHasErrors('mappings.0.relatie_type_id');
+
+    $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
+});
+
+test('several types may point to the same role', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $minimal = Role::where('name', 'minimal')->first();
+    $lid = RelatieType::where('naam', 'lid')->first();
+    $donateur = RelatieType::where('naam', 'donateur')->first();
+
+    $this->actingAs($admin)
+        ->put('/admin/relatie-type-rollen', [
+            'mappings' => [
+                ['relatie_type_id' => $lid->id, 'role_id' => $minimal->id],
+                ['relatie_type_id' => $donateur->id, 'role_id' => $minimal->id],
+            ],
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseCount('soli_relatie_type_role_mappings', 2);
+});
+
+test('replacing the role for a type keeps one row', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $minimal = Role::where('name', 'minimal')->first();
+
+    RelatieTypeRoleMapping::create([
+        'relatie_type_id' => $this->bestuurType->id,
+        'role_id' => $this->bestuurRole->id,
+    ]);
+
+    $this->actingAs($admin)
+        ->put('/admin/relatie-type-rollen', [
+            'mappings' => [
+                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $minimal->id],
+            ],
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseCount('soli_relatie_type_role_mappings', 1);
+    $this->assertDatabaseHas('soli_relatie_type_role_mappings', [
+        'relatie_type_id' => $this->bestuurType->id,
+        'role_id' => $minimal->id,
+    ]);
 });
 
 test('admin can save a mapping', function () {
@@ -126,4 +204,4 @@ test('mapping a type to a never-managed role is refused', function (string $role
         ->assertSessionHasErrors('mappings.0.role_id');
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
-})->with(['admin', 'ledenadministratie', 'member']);
+})->with(['admin', 'ledenadministratie']);

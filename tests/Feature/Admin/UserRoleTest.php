@@ -32,7 +32,7 @@ test('admin can assign a role to a user', function () {
     $admin->assignRole('admin');
 
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
 
     $this->actingAs($admin)
         ->put("/admin/users/{$user->id}", [
@@ -42,12 +42,12 @@ test('admin can assign a role to a user', function () {
 
     $user->refresh();
     expect($user->hasRole('bestuur'))->toBeTrue();
-    expect($user->hasRole('member'))->toBeFalse();
+    expect($user->hasRole('minimal'))->toBeFalse();
 });
 
 test('non-admin gets 403 on users page', function () {
     $member = User::factory()->create();
-    $member->assignRole('member');
+    $member->assignRole('minimal');
 
     $this->actingAs($member)
         ->get('/admin/users')
@@ -77,7 +77,7 @@ test('a mapped role cannot be assigned by hand', function () {
     $admin->assignRole('admin');
 
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
 
     $this->actingAs($admin)
         ->put("/admin/users/{$user->id}", ['roles' => ['bestuur']])
@@ -93,7 +93,7 @@ test('changing the manual role keeps a derived role', function () {
     $admin->assignRole('admin');
 
     $user = User::factory()->create();
-    $user->assignRole(['member', 'bestuur']);
+    $user->assignRole(['minimal', 'bestuur']);
     Relatie::factory()
         ->create(['user_id' => $user->id])
         ->types()->attach($type->id, ['van' => '2026-01-01']);
@@ -105,7 +105,7 @@ test('changing the manual role keeps a derived role', function () {
     $user->refresh();
     expect($user->hasRole('ledenadministratie'))->toBeTrue();
     expect($user->hasRole('bestuur'))->toBeTrue();
-    expect($user->hasRole('member'))->toBeFalse();
+    expect($user->hasRole('minimal'))->toBeFalse();
 });
 
 test('the users page exposes derived roles separately', function () {

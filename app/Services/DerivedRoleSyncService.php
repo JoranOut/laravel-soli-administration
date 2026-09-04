@@ -20,12 +20,11 @@ class DerivedRoleSyncService
      * Roles that can never be derived, no matter what the mapping table says.
      *
      * admin is the escape hatch and ledenadministratie is granted on trust, so
-     * both stay hand-granted. member is already assigned by RelatieController
-     * and MemberSyncService and would fight with this sync. muziekbeheer is
-     * listed ahead of the internal role existing; today it is only an external
-     * client role in ClientRoleMapping, so the entry is a no-op.
+     * both stay hand-granted. muziekbeheer is listed ahead of the internal role
+     * existing; today it is only an external client role in ClientRoleMapping,
+     * so the entry is a no-op.
      */
-    public const NEVER_MANAGED = ['admin', 'ledenadministratie', 'muziekbeheer', 'member'];
+    public const NEVER_MANAGED = ['admin', 'ledenadministratie', 'muziekbeheer'];
 
     /**
      * Role names this service is allowed to grant and revoke.

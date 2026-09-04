@@ -25,7 +25,7 @@ export type Role =
     | 'bestuur'
     | 'contactpersoon'
     | 'ledenadministratie'
-    | 'member';
+    | 'minimal';
 
 export type Auth = {
     user: User;

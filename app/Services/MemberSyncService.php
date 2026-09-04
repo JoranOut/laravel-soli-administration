@@ -147,6 +147,9 @@ class MemberSyncService
             $warnings[] = 'RelatieType "lid" not found; skipped type assignment.';
         }
 
+        // Roles follow from the types, so this has to run after the attach
+        $this->syncDerivedRoles($relatie);
+
         // Sync onderdelen
         $onderdeelResult = $this->syncOnderdelen($relatie, $data['onderdeel_codes'] ?? []);
         $warnings = array_merge($warnings, $onderdeelResult['warnings']);
@@ -212,6 +215,8 @@ class MemberSyncService
             }
         }
 
+        $this->syncDerivedRoles($relatie);
+
         // Sync onderdelen
         $onderdeelResult = $this->syncOnderdelen($relatie, $data['onderdeel_codes'] ?? []);
         $warnings = array_merge($warnings, $onderdeelResult['warnings']);
@@ -273,14 +278,17 @@ class MemberSyncService
             throw new \RuntimeException("Failed to create or find user for email: {$data['email']}");
         }
 
-        if (! $user->hasRole('member')) {
-            $user->assignRole('member');
-        }
-
         $relatie->user_id = $user->id;
         $relatie->save();
+    }
 
-        app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+    private function syncDerivedRoles(Relatie $relatie): void
+    {
+        $user = $relatie->fresh()?->user;
+
+        if ($user) {
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+        }
     }
 
     private function syncUserEmail(Relatie $relatie, string $newEmail): void

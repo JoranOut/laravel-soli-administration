@@ -24,7 +24,7 @@ test('member with linked relatie sees relatie data on dashboard', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
 
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $member->id]);
 
     $response = $this->actingAs($member)->get(route('dashboard'));
@@ -39,7 +39,7 @@ test('member with linked relatie sees relatie data on dashboard', function () {
 test('member without linked relatie sees not-linked page on dashboard', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get(route('dashboard'));
     $response->assertOk();

@@ -31,7 +31,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Member User',
             'email' => 'member@example.com',
         ]);
-        $memberUser->assignRole('member');
+        $memberUser->assignRole('minimal');
 
         $this->call([
             RelatieTypeSeeder::class,

@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\InstrumentSoort;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
@@ -301,7 +300,7 @@ test('admin can delete opleiding', function () {
 // --- Authorization ---
 
 test('member cannot mutate relatie sub-resources', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
     $type = RelatieType::where('naam', 'lid')->first();
 

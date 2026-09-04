@@ -13,7 +13,7 @@ use Laravel\Passport\Client;
 
 beforeEach(function () {
     $this->seed([RolesAndPermissionsSeeder::class, RelatieTypeSeeder::class]);
-    $this->resolver = new ClientRoleResolver();
+    $this->resolver = new ClientRoleResolver;
 });
 
 function createClient(): Client
@@ -51,7 +51,7 @@ function createSettingWithMappings(string $clientId, array $mappings, string $de
 function createUserWithRelatieTypes(array $typeNames): User
 {
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $user->id]);
 
     foreach ($typeNames as $typeName) {
@@ -146,7 +146,7 @@ test('ignores expired relatie types', function () {
     ]);
 
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $user->id]);
 
     // Active lid type
@@ -177,7 +177,7 @@ test('merges relatie types across multiple relaties', function () {
     ]);
 
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
 
     // First relatie with lid type
     $relatie1 = Relatie::factory()->create(['user_id' => $user->id]);
@@ -208,7 +208,7 @@ test('returns default role when user has no relaties', function () {
     ], 'subscriber');
 
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
 
     $roles = $this->resolver->resolve($user, $client->id);
 

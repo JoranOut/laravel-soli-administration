@@ -5,12 +5,14 @@ use App\Models\Relatie;
 use App\Models\RelatieType;
 use App\Models\User;
 use Database\Seeders\OnderdeelSeeder;
+use Database\Seeders\RelatieTypeRoleMappingSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
+    $this->seed(RelatieTypeRoleMappingSeeder::class);
     $this->withoutVite();
 });
 
@@ -109,6 +111,9 @@ test('admin can create a relatie', function () {
         'emails' => [
             ['email' => 'test@example.com'],
         ],
+        'types' => [
+            ['type_id' => RelatieType::where('naam', 'lid')->first()->id, 'van' => '2026-01-01'],
+        ],
     ]);
 
     $response->assertRedirect();
@@ -121,13 +126,13 @@ test('admin can create a relatie', function () {
     $relatie = Relatie::where('relatie_nummer', 9999)->first();
     $user = User::where('email', 'test@example.com')->first();
     expect($user)->not->toBeNull();
-    expect($user->hasRole('member'))->toBeTrue();
+    expect($user->hasRole('minimal'))->toBeTrue();
     expect($relatie->user_id)->toBe($user->id);
 });
 
 test('admin can view a relatie detail with all props', function () {
     $admin = User::factory()->create()->assignRole('admin');
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $response = $this->actingAs($admin)->get("/admin/relaties/{$relatie->id}");
@@ -146,7 +151,7 @@ test('admin can view a relatie detail with all props', function () {
 
 test('bestuur does not receive edit props on relatie show', function () {
     $bestuur = User::factory()->create()->assignRole('bestuur');
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $response = $this->actingAs($bestuur)->get("/admin/relaties/{$relatie->id}");
@@ -164,7 +169,7 @@ test('bestuur does not receive edit props on relatie show', function () {
 });
 
 test('member does not receive edit props on own relatie show', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $member->id]);
 
     $response = $this->actingAs($member)->get("/admin/relaties/{$relatie->id}");
@@ -210,7 +215,7 @@ test('admin can delete a relatie', function () {
 });
 
 test('member with linked relatie is redirected from index to own relatie', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $member->id]);
 
     $response = $this->actingAs($member)->get('/admin/relaties');
@@ -219,7 +224,7 @@ test('member with linked relatie is redirected from index to own relatie', funct
 
 test('member without linked relatie sees not-linked page', function () {
     $this->withoutVite();
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get('/admin/relaties');
     $response->assertOk();
@@ -227,7 +232,7 @@ test('member without linked relatie sees not-linked page', function () {
 });
 
 test('member can view own relatie', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $member->id]);
 
     $response = $this->actingAs($member)->get("/admin/relaties/{$relatie->id}");
@@ -236,7 +241,7 @@ test('member can view own relatie', function () {
 });
 
 test('member cannot view other relatie', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     Relatie::factory()->create(['user_id' => $member->id]);
     $otherRelatie = Relatie::factory()->create();
 
@@ -245,14 +250,14 @@ test('member cannot view other relatie', function () {
 });
 
 test('member cannot create relaties', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get('/admin/relaties/create');
     $response->assertForbidden();
 });
 
 test('member cannot update relaties', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
 
     $response = $this->actingAs($member)->put("/admin/relaties/{$relatie->id}", [
@@ -265,7 +270,7 @@ test('member cannot update relaties', function () {
 });
 
 test('member cannot delete relaties', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
 
     $response = $this->actingAs($member)->delete("/admin/relaties/{$relatie->id}");
@@ -356,7 +361,6 @@ test('admin can create relatie with all sub-resources', function () {
 
         'geboortedatum' => '1990-05-15',
 
-
         'types' => [
             ['type_id' => $lidType->id, 'van' => '2026-01-01'],
         ],
@@ -436,7 +440,7 @@ test('admin can create relatie with all sub-resources', function () {
     // Verify user account was created
     $user = User::where('email', 'wizard@test.nl')->first();
     expect($user)->not->toBeNull();
-    expect($user->hasRole('member'))->toBeTrue();
+    expect($user->hasRole('minimal'))->toBeTrue();
     expect($relatie->user_id)->toBe($user->id);
 });
 
@@ -578,7 +582,7 @@ test('store rejects email already used by existing user', function () {
     $response->assertSessionHasErrors('emails.0.email');
 });
 
-test('store creates user with member role linked to relatie', function () {
+test('store creates a user whose role follows from the lid type', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
     $response = $this->actingAs($admin)->post('/admin/relaties', [
@@ -590,6 +594,9 @@ test('store creates user with member role linked to relatie', function () {
         'emails' => [
             ['email' => 'jan@example.com'],
         ],
+        'types' => [
+            ['type_id' => RelatieType::where('naam', 'lid')->first()->id, 'van' => '2026-01-01'],
+        ],
     ]);
 
     $response->assertRedirect();
@@ -599,8 +606,27 @@ test('store creates user with member role linked to relatie', function () {
 
     expect($user)->not->toBeNull();
     expect($user->name)->toBe('Jan van Berg');
-    expect($user->hasRole('member'))->toBeTrue();
+    expect($user->hasRole('minimal'))->toBeTrue();
     expect($relatie->user_id)->toBe($user->id);
+});
+
+test('store creates a role-less user when the wizard gets no type', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)->post('/admin/relaties', [
+        'relatie_nummer' => 2223,
+        'voornaam' => 'Zonder',
+        'achternaam' => 'Type',
+
+        'emails' => [
+            ['email' => 'zonder-type@example.com'],
+        ],
+    ])->assertRedirect();
+
+    $user = User::where('email', 'zonder-type@example.com')->first();
+
+    expect($user)->not->toBeNull();
+    expect($user->roles)->toBeEmpty();
 });
 
 test('store rolls back user creation on transaction failure', function () {

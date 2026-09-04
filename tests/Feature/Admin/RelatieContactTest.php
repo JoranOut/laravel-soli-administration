@@ -233,7 +233,7 @@ test('admin can delete giro gegeven', function () {
 // --- Authorization ---
 
 test('member cannot add adres', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
 
     $response = $this->actingAs($member)->post("/admin/relaties/{$relatie->id}/adressen", [
@@ -267,7 +267,7 @@ test('bestuur cannot add adres', function () {
 test('updating login email also updates user account email', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $email = $relatie->emails()->create(['email' => 'login@example.com']);
 
@@ -284,7 +284,7 @@ test('updating login email also updates user account email', function () {
 test('updating non-login email does not affect user account email', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'login@example.com']);
     $otherEmail = $relatie->emails()->create(['email' => 'other@example.com']);
@@ -300,7 +300,7 @@ test('updating non-login email does not affect user account email', function () 
 test('cannot delete email that is the login email', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $email = $relatie->emails()->create(['email' => 'login@example.com']);
 
@@ -315,7 +315,7 @@ test('cannot delete email that is the login email', function () {
 test('can delete email that is not the login email', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'login@example.com']);
     $otherEmail = $relatie->emails()->create(['email' => 'other@example.com']);
@@ -332,7 +332,7 @@ test('updating login email to one already used by another user fails', function 
     $admin = User::factory()->create()->assignRole('admin');
 
     User::factory()->create(['email' => 'taken@example.com']);
-    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'login@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $email = $relatie->emails()->create(['email' => 'login@example.com']);
 

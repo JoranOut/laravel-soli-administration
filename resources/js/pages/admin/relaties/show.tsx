@@ -46,14 +46,14 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         router.get('/dashboard', { relatie: id }, { preserveState: false });
     };
 
-    const isMember = hasRole('member');
+    const isMinimal = hasRole('minimal');
 
     const tabs: Tab[] = [
         { key: 'overview', label: t('Overview') },
         { key: 'types', label: t('Types') },
-        ...(!isMember ? [{ key: 'contact', label: t('Contact') }] : []),
+        ...(!isMinimal ? [{ key: 'contact', label: t('Contact') }] : []),
         { key: 'lidmaatschap', label: t('Membership') },
-        ...(!isMember ? [
+        ...(!isMinimal ? [
             { key: 'opleiding', label: t('Education') },
             { key: 'instrumenten', label: t('Instruments') },
         ] : []),

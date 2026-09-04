@@ -78,7 +78,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $lid->update(['user_id' => $user->id]);
 
             Telefoon::create([
@@ -136,7 +136,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $donateur->update(['user_id' => $user->id]);
         }
 
@@ -166,7 +166,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $docent->update(['user_id' => $user->id]);
 
             // Assign to a random training group
@@ -204,7 +204,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $dirigent->update(['user_id' => $user->id]);
 
             if ($harmonieOrkest) {

@@ -12,7 +12,7 @@ test('guests are redirected to the login page', function () {
 
 test('members can view the contact page', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
-    $user = User::factory()->create()->assignRole('member');
+    $user = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($user)->get(route('contact'));
     $response->assertOk();

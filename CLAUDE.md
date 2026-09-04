@@ -23,12 +23,12 @@ npm run build                         # Production build
 |-------|------|----------|
 | `admin@example.com` | admin | password |
 | `ledenadministratie@example.com` | ledenadministratie | password |
-| `member@example.com` | member | password |
+| `member@example.com` | minimal | password |
 | `contactpersoon@example.com` | contactpersoon | password |
 
 `contactpersoon` is not assigned by the seeder — that account gets it through an active `contactpersoon` relatie type, so a fresh seed also exercises `DerivedRoleSyncService`. The member account is deliberately linked to a relatie with no mapped type; `Relatie::first()` handed it a `bestuur` type and with it the stats dashboard.
 
-**Roles and mappings do not reach production through a deploy.** `deploy.yml` runs `migrate --force` and never `db:seed`, so a new role or mapping needs `db:seed --class=RolesAndPermissionsSeeder --force` on the server (idempotent) plus the mapping set in the UI at `/admin/relatie-type-rollen`.
+**Roles and mappings do not reach production through a deploy.** `deploy.yml` runs `migrate --force` and never `db:seed`, so a new role or mapping needs `db:seed --class=RolesAndPermissionsSeeder --force` on the server (idempotent) plus the mapping set in the UI at `/admin/relatie-type-rollen`. The `member`→`minimal` rename is the exception: it is a migration, so it does travel with the deploy. It renames the row rather than recreating it, so every existing assignment in `model_has_roles` survives; verified in both directions against populated data.
 
 ---
 
@@ -85,7 +85,7 @@ Spatie Laravel Permission. Format: `{resource}.{action}` (e.g. `relaties.view`).
 | ledenadministratie | All except users.* |
 | bestuur | *.view only |
 | contactpersoon | dashboard.view + contact.view only |
-| member | relaties.view only |
+| minimal | relaties.view only |
 
 Seeded in `RolesAndPermissionsSeeder`. New roles/resources → also update `resources/js/types/auth.ts`.
 
@@ -95,11 +95,13 @@ Frontend: `const { can } = usePermissions()`.
 
 ### Roles derived from relatie types
 
-`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role and an active `contactpersoon` type grants `contactpersoon`. Both are seeded by `RelatieTypeRoleMappingSeeder`. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
+`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role. **One role per relatie type** (unique on `relatie_type_id`), edited as a dropdown per type at `/admin/relatie-type-rollen`. Several types may point to the same role, which is how `lid`, `donateur` and `vrijwilliger` all feed `minimal`. Seeded by `RelatieTypeRoleMappingSeeder`.
+
+**`minimal` (renamed from `member`) is derived, not granted on account creation.** `RelatieController` and `MemberSyncService` no longer call `assignRole`; the role arrives because the relatie holds a mapped type. Two consequences worth knowing: a relatie created through the wizard *without* a type yields an account with no role at all, and in `MemberSyncService` the sync must run **after** the `lid` type is attached — it used to sit inside `ensureUserAccount`, which runs before, and would have revoked the role it just granted. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
 
 **Only roles that appear as a target in the mapping table are touched.** That rule is the sole protection for hand-granted roles: Spatie's `model_has_roles` has no column separating automatic from manual, so a sync that touched everything would wipe a manual `admin`. `DerivedRoleSyncService::NEVER_MANAGED` (`admin`, `ledenadministratie`, `muziekbeheer`, `member`) is filtered out when computing managed roles, so a mapping row inserted outside the UI still cannot take over the escape hatch — the controller's validation alone would not stop a seeder or a manual `INSERT`.
 
-`muziekbeheer` is in that list ahead of the internal role existing — today it is only a client role name in `ClientRoleMapping`, so the entry does nothing yet. `member` is there because `RelatieController` and `MemberSyncService` already assign it.
+`muziekbeheer` is in that list ahead of the internal role existing — today it is only a client role name in `ClientRoleMapping`, so the entry does nothing yet.
 
 **Multiple roles are additive, so there is no priority.** A user gets the union of the roles mapped to every active type across every relatie, and Spatie treats permissions as a union too, so nothing has to win. `ClientRoleResolver` needs its `priority` column only because a WordPress user gets exactly one role. Hand-granted roles stack on top: giving someone `admin` leaves their derived `bestuur` in place, and the union makes them admin in practice.
 

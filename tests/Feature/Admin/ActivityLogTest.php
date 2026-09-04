@@ -12,7 +12,7 @@ test('guests are redirected to the login page', function () {
 test('non-admin gets 403 on activity log page', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get(route('admin.activity-log.index'));
     $response->assertForbidden();

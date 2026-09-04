@@ -80,7 +80,7 @@ test('admin can delete onderdeel', function () {
 });
 
 test('member cannot access onderdelen', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get('/admin/onderdelen');
     $response->assertForbidden();

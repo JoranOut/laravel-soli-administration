@@ -87,7 +87,7 @@ test('admin can delete reparatie', function () {
 });
 
 test('member cannot add reparatie', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $instrument = Instrument::factory()->create();
 
     $response = $this->actingAs($member)->post("/admin/instrumenten/{$instrument->id}/reparaties", [

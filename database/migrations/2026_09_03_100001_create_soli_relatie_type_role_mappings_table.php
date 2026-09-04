@@ -14,7 +14,9 @@ return new class extends Migration
             $table->foreignId('role_id')->constrained(config('permission.table_names.roles'))->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['relatie_type_id', 'role_id'], 'relatie_type_role_mapping_unique');
+            // One role per relatie type. Several types may feed the same role
+            // (lid, donateur and vrijwilliger all map to minimal).
+            $table->unique('relatie_type_id', 'relatie_type_role_mapping_unique');
         });
     }
 

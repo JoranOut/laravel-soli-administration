@@ -135,7 +135,7 @@ test('a never-managed role cannot become managed even when mapped', function (st
     $this->service->syncUser($user->load('roles'));
 
     expect($user->fresh()->hasRole($roleName))->toBeTrue();
-})->with(['admin', 'ledenadministratie', 'member']);
+})->with(['admin', 'ledenadministratie']);
 
 test('a type held through a second relatie counts', function () {
     ($this->mapBestuur)();
@@ -169,12 +169,12 @@ test('the role stays while a second mapped type is still active', function () {
 test('a user without a relatie is untouched', function () {
     ($this->mapBestuur)();
     $user = User::factory()->create();
-    $user->assignRole('member');
+    $user->assignRole('minimal');
 
     $result = $this->service->syncUser($user->load('roles'));
 
     expect($result)->toBe(['added' => [], 'removed' => []]);
-    expect($user->fresh()->hasRole('member'))->toBeTrue();
+    expect($user->fresh()->hasRole('minimal'))->toBeTrue();
 });
 
 test('nothing happens when no type is mapped', function () {
