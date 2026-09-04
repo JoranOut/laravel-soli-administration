@@ -19,7 +19,10 @@ test('seeder creates all expected permissions', function () {
         }
     }
 
-    expect(Permission::count())->toBe(22);
+    expect(Permission::findByName('relaties.view.all'))->not->toBeNull();
+    expect(Permission::findByName('beheer.manage'))->not->toBeNull();
+
+    expect(Permission::count())->toBe(24);
 });
 
 test('seeder creates all expected roles', function () {
@@ -41,7 +44,7 @@ test('contactpersoon role only reaches the contact page', function () {
 test('admin role has all permissions', function () {
     $admin = Role::findByName('admin');
 
-    expect($admin->permissions->count())->toBe(22);
+    expect($admin->permissions->count())->toBe(24);
 });
 
 test('bestuur role has view-only permissions', function () {
@@ -52,6 +55,7 @@ test('bestuur role has view-only permissions', function () {
         'dashboard.view',
         'contact.view',
         'relaties.view',
+        'relaties.view.all',
         'onderdelen.view',
         'instrumenten.view',
         'instrumentsoorten.view',
@@ -66,7 +70,7 @@ test('ledenadministratie role has all permissions except users', function () {
 
     $expected = [
         'dashboard.view', 'contact.view',
-        'relaties.view', 'relaties.create', 'relaties.edit', 'relaties.delete',
+        'relaties.view', 'relaties.view.all', 'relaties.create', 'relaties.edit', 'relaties.delete',
         'onderdelen.view', 'onderdelen.create', 'onderdelen.edit', 'onderdelen.delete',
         'instrumenten.view', 'instrumenten.create', 'instrumenten.edit', 'instrumenten.delete',
         'instrumentsoorten.view', 'instrumentsoorten.create', 'instrumentsoorten.edit', 'instrumentsoorten.delete',
@@ -77,6 +81,8 @@ test('ledenadministratie role has all permissions except users', function () {
     expect($permissionNames)->not->toContain('users.create');
     expect($permissionNames)->not->toContain('users.edit');
     expect($permissionNames)->not->toContain('users.delete');
+    // The authentication pages stay admin-only
+    expect($permissionNames)->not->toContain('beheer.manage');
 });
 
 test('member role has correct permissions', function () {
@@ -99,6 +105,6 @@ test('seeder is idempotent', function () {
     // Run seeder again
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    expect(Permission::count())->toBe(22);
+    expect(Permission::count())->toBe(24);
     expect(Role::count())->toBe(5);
 });

@@ -23,7 +23,7 @@ use App\Http\Controllers\Admin\UserRelatieLinkController;
 use App\Http\Controllers\Admin\UserRoleController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'permission:beheer.manage'])->group(function () {
     Route::get('admin/roles', [RolePermissionController::class, 'index'])->name('admin.roles.index');
     Route::put('admin/roles/{role}', [RolePermissionController::class, 'update'])->name('admin.roles.update');
 

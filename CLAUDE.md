@@ -82,14 +82,20 @@ Spatie Laravel Permission. Format: `{resource}.{action}` (e.g. `relaties.view`).
 | Role | Permissions |
 |------|-------------|
 | admin | All |
-| ledenadministratie | All except users.* |
-| bestuur | *.view only |
+| ledenadministratie | All except users.* and beheer.manage |
+| bestuur | *.view only, plus relaties.view.all |
 | contactpersoon | dashboard.view + contact.view only |
-| minimal | relaties.view only |
+| minimal | relaties.view only (own record) |
 
-Seeded in `RolesAndPermissionsSeeder`. New roles/resources → also update `resources/js/types/auth.ts`.
+Besides `{resource}.{action}` there are four standalone permissions: `dashboard.view`, `contact.view`, `relaties.view.all` and `beheer.manage`.
+
+`relaties.view` and `relaties.view.all` are **not** the same thing, and conflating them was a live authorization bug. `relaties.view` means "my own record"; `relaties.view.all` means "everyone's". `RelatieController` clamps to the user's own relatie whenever `relaties.view.all` is missing. `beheer.manage` gates the whole `/admin` authentication group (roles, users, the type→role mapping, links, activity log, OAuth clients, both sync pages) plus the dashboard alerts and job statuses.
+
+Seeded in `RolesAndPermissionsSeeder`. New roles/resources/permissions → also update `resources/js/types/auth.ts`.
 
 **Two auth layers required:** middleware on routes + controller filters data. Never rely on frontend-only guards (Inertia props visible in devtools).
+
+**Check permissions, not roles.** `hasRole` in an authorization decision is a bug waiting for the next role to be added: derived roles now stack (a staff member who is also a lid holds both `admin` and `minimal`), so `hasRole('minimal')` silently locked admins out of the relatie list until this was fixed. Exactly two role checks are legitimate, because they are *about* roles rather than about access: the last-admin guard in `UserRoleController@update`, and `DerivedRoleSyncService::NEVER_MANAGED`.
 
 Frontend: `const { can } = usePermissions()`.
 
@@ -99,7 +105,9 @@ Frontend: `const { can } = usePermissions()`.
 
 **`minimal` (renamed from `member`) is derived, not granted on account creation.** `RelatieController` and `MemberSyncService` no longer call `assignRole`; the role arrives because the relatie holds a mapped type. Two consequences worth knowing: a relatie created through the wizard *without* a type yields an account with no role at all, and in `MemberSyncService` the sync must run **after** the `lid` type is attached — it used to sit inside `ensureUserAccount`, which runs before, and would have revoked the role it just granted. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
 
-**Only roles that appear as a target in the mapping table are touched.** That rule is the sole protection for hand-granted roles: Spatie's `model_has_roles` has no column separating automatic from manual, so a sync that touched everything would wipe a manual `admin`. `DerivedRoleSyncService::NEVER_MANAGED` (`admin`, `ledenadministratie`, `muziekbeheer`, `member`) is filtered out when computing managed roles, so a mapping row inserted outside the UI still cannot take over the escape hatch — the controller's validation alone would not stop a seeder or a manual `INSERT`.
+**Every role except `NEVER_MANAGED` (`admin`, `ledenadministratie`, `muziekbeheer`) is managed by the sync**, which grants and revokes it purely from the types. Those three are the only roles `/admin/users` hands out, and the sync can neither grant nor revoke them; the filter sits in the service itself, not only in the controller's validation, so a mapping row inserted by a seeder or a manual `INSERT` still cannot take over the escape hatch.
+
+Managed is deliberately *not* "roles some mapping currently points at". That earlier definition meant un-mapping a type stopped the role being managed at the exact moment you wanted it revoked: everyone who had earned it kept it forever, and the users page then showed it as a manual role. `UserRoleController@update` preserves the roles a user **earns**, not every managed role they hold, so a role someone no longer earns disappears on a hand edit too.
 
 `muziekbeheer` is in that list ahead of the internal role existing — today it is only a client role name in `ClientRoleMapping`, so the entry does nothing yet.
 

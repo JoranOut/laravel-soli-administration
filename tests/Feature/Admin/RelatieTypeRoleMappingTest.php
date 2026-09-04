@@ -177,7 +177,7 @@ test('saving a mapping applies it immediately', function () {
     expect($lid->fresh()->hasRole('bestuur'))->toBeTrue();
 });
 
-test('removing a mapping stops deriving the role', function () {
+test('removing a mapping revokes the role it granted', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
     RelatieTypeRoleMapping::create([
@@ -185,11 +185,34 @@ test('removing a mapping stops deriving the role', function () {
         'role_id' => $this->bestuurRole->id,
     ]);
 
+    // Someone who earned the role through the mapping
+    $lid = User::factory()->create();
+    Relatie::factory()
+        ->create(['user_id' => $lid->id])
+        ->types()->attach($this->bestuurType->id, ['van' => '2026-01-01']);
+    $lid->assignRole('bestuur');
+
     $this->actingAs($admin)
         ->put('/admin/relatie-type-rollen', ['mappings' => []])
         ->assertRedirect();
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
+
+    // The mapping is gone, so the role it handed out must be gone too
+    expect($lid->fresh()->hasRole('bestuur'))->toBeFalse();
+});
+
+test('the nightly command also revokes a role whose mapping was removed', function () {
+    $lid = User::factory()->create();
+    Relatie::factory()
+        ->create(['user_id' => $lid->id])
+        ->types()->attach($this->bestuurType->id, ['van' => '2026-01-01']);
+    $lid->assignRole('bestuur');
+
+    // No mapping rows at all
+    $this->artisan('roles:sync-derived')->assertSuccessful();
+
+    expect($lid->fresh()->hasRole('bestuur'))->toBeFalse();
 });
 
 test('mapping a type to a never-managed role is refused', function (string $roleName) {

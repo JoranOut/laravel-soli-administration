@@ -99,7 +99,7 @@ test('a hand-granted admin survives a sync that revokes bestuur', function () {
     expect($user->hasRole('bestuur'))->toBeFalse();
 });
 
-test('a mappable role that is not mapped is left alone', function () {
+test('a role no type maps to is revoked', function () {
     ($this->mapBestuur)();
     Role::create(['name' => 'commissie']);
 
@@ -109,7 +109,9 @@ test('a mappable role that is not mapped is left alone', function () {
 
     $this->service->syncUser($user->load('roles'));
 
-    expect($user->fresh()->hasRole('commissie'))->toBeTrue();
+    // Nothing maps to commissie, so nobody can hold it: every role outside
+    // NEVER_MANAGED has to come from a type.
+    expect($user->fresh()->hasRole('commissie'))->toBeFalse();
 });
 
 test('a never-managed role is left alone', function () {
@@ -126,7 +128,7 @@ test('a never-managed role is left alone', function () {
 test('a never-managed role cannot become managed even when mapped', function (string $roleName) {
     ($this->mapBestuur)($roleName);
 
-    expect($this->service->managedRoleNames())->toBe([]);
+    expect($this->service->managedRoleNames())->not->toContain($roleName);
 
     $user = User::factory()->create();
     $user->assignRole($roleName);
@@ -166,25 +168,35 @@ test('the role stays while a second mapped type is still active', function () {
     expect($user->fresh()->hasRole('bestuur'))->toBeTrue();
 });
 
-test('a user without a relatie is untouched', function () {
+test('a user without a relatie keeps a never-managed role', function () {
     ($this->mapBestuur)();
     $user = User::factory()->create();
-    $user->assignRole('minimal');
+    $user->assignRole('ledenadministratie');
 
     $result = $this->service->syncUser($user->load('roles'));
 
     expect($result)->toBe(['added' => [], 'removed' => []]);
-    expect($user->fresh()->hasRole('minimal'))->toBeTrue();
+    expect($user->fresh()->hasRole('ledenadministratie'))->toBeTrue();
 });
 
-test('nothing happens when no type is mapped', function () {
+test('a user without a relatie loses a derived role', function () {
+    ($this->mapBestuur)();
+    $user = User::factory()->create();
+    $user->assignRole('minimal');
+
+    $this->service->syncUser($user->load('roles'));
+
+    expect($user->fresh()->hasRole('minimal'))->toBeFalse();
+});
+
+test('an empty mapping table revokes every derived role', function () {
     $user = User::factory()->create();
     $user->assignRole('bestuur');
     ($this->relatieFor)($user, null);
 
     $this->service->syncUser($user->load('roles'));
 
-    expect($user->fresh()->hasRole('bestuur'))->toBeTrue();
+    expect($user->fresh()->hasRole('bestuur'))->toBeFalse();
 });
 
 test('dry run reports changes without applying them', function () {

@@ -650,3 +650,41 @@ test('store rolls back user creation on transaction failure', function () {
     $this->assertDatabaseMissing('soli_relaties', ['relatie_nummer' => 1111]);
     $this->assertDatabaseMissing('users', ['email' => 'rollback-user@example.com']);
 });
+
+test('an admin who is also a lid still sees every relatie', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+
+    // The normal case at this association: staff are members too, so the
+    // nightly sync hands them the derived minimal role on top of admin.
+    $own = Relatie::factory()->create(['user_id' => $admin->id]);
+    $own->types()->attach(RelatieType::where('naam', 'lid')->first()->id, ['van' => '2026-01-01']);
+    app(App\Services\DerivedRoleSyncService::class)->syncUser($admin->load('roles'));
+
+    expect($admin->fresh()->hasRole('minimal'))->toBeTrue();
+
+    $someoneElse = Relatie::factory()->create();
+
+    // The index must not clamp them to their own record
+    $this->actingAs($admin)
+        ->get('/admin/relaties')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('admin/relaties/index'));
+
+    $this->actingAs($admin)
+        ->get("/admin/relaties/{$someoneElse->id}")
+        ->assertOk();
+});
+
+test('a user without relaties.view.all is clamped to their own relatie', function () {
+    $user = User::factory()->create()->assignRole('minimal');
+    $own = Relatie::factory()->create(['user_id' => $user->id]);
+    $someoneElse = Relatie::factory()->create();
+
+    $this->actingAs($user)
+        ->get('/admin/relaties')
+        ->assertRedirect("/admin/relaties/{$own->id}");
+
+    $this->actingAs($user)
+        ->get("/admin/relaties/{$someoneElse->id}")
+        ->assertForbidden();
+});

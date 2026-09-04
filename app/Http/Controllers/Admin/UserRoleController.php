@@ -73,9 +73,11 @@ class UserRoleController extends Controller
 
         $oldRoles = $user->roles->pluck('name')->toArray();
 
-        // Keep the roles this user earns through relatie types; syncRoles would
-        // drop them and the nightly command would silently put them back.
-        $derived = array_values(array_intersect($oldRoles, $managedRoles));
+        // Keep the roles this user *earns* through relatie types; syncRoles would
+        // drop them and the nightly command would silently put them back. Note
+        // this is the earned set, not every managed role they happen to hold:
+        // a role they no longer earn should disappear here too.
+        $derived = $service->derivedRoleNames($user);
 
         $user->syncRoles([...$validated['roles'], ...$derived]);
 

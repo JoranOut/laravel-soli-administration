@@ -6,6 +6,7 @@ use App\Models\RelatieTypeRoleMapping;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 /**
  * Keeps internal Spatie roles in sync with the relatie types a user holds.
@@ -29,17 +30,19 @@ class DerivedRoleSyncService
     /**
      * Role names this service is allowed to grant and revoke.
      *
+     * Every role except NEVER_MANAGED, deliberately *not* only the ones a
+     * mapping currently points at: a role has to stay revocable after its
+     * mapping is removed, which is the moment you most want it taken away.
+     * NEVER_MANAGED is therefore the single knob — those roles are the only
+     * ones /admin/users hands out, everything else follows from the types.
+     *
      * @return string[]
      */
     public function managedRoleNames(): array
     {
-        return RelatieTypeRoleMapping::with('role:id,name')
-            ->get()
-            ->pluck('role.name')
-            ->filter()
-            ->unique()
-            ->reject(fn (string $name) => in_array($name, self::NEVER_MANAGED, true))
-            ->values()
+        return Role::whereNotIn('name', self::NEVER_MANAGED)
+            ->orderBy('name')
+            ->pluck('name')
             ->all();
     }
 
@@ -162,10 +165,6 @@ class DerivedRoleSyncService
      */
     public function syncAll(?callable $onChange = null, bool $dryRun = false): int
     {
-        if ($this->managedRoleNames() === []) {
-            return 0;
-        }
-
         $changed = 0;
 
         User::with('roles')->chunkById(200, function ($users) use (&$changed, $onChange, $dryRun) {

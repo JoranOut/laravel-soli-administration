@@ -24,7 +24,7 @@ import type { RelatieType } from '@/types/admin';
 let cachedRelatieTypes: Pick<RelatieType, 'id' | 'naam'>[] | null = null;
 
 export function AppSidebar() {
-    const { can, canAny, hasRole } = usePermissions();
+    const { can, canAny } = usePermissions();
     const { t } = useTranslation();
     const [relatieTypes, setRelatieTypes] = useState(cachedRelatieTypes ?? []);
     const { relatie_ids } = usePage().props.auth;
@@ -135,7 +135,7 @@ export function AppSidebar() {
         });
     }
 
-    if (hasRole('admin')) {
+    if (can('beheer.manage')) {
         adminNavItems.push({
             title: t('Authentication'),
             href: '/admin/roles',

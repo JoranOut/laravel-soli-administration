@@ -327,7 +327,7 @@ class DashboardController extends Controller
             'age_distribution' => $this->getAgeDistribution(),
         ];
 
-        if (auth()->user()->hasRole('admin')) {
+        if (auth()->user()->can('beheer.manage')) {
             $data['alerts'] = [
                 'unlinked_users' => User::whereDoesntHave('relaties')->count(),
                 'unlinked_relaties' => Relatie::actief()->whereNull('user_id')->count(),

@@ -37,7 +37,7 @@ function formatName(r: RelatieSummary): string {
 
 export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrumentSoorten, users, userRelaties }: Props) {
     const [activeTab, setActiveTab] = useState('overview');
-    const { can, hasRole } = usePermissions();
+    const { can } = usePermissions();
     const { t } = useTranslation();
 
     const showSwitcher = userRelaties && userRelaties.length > 1;
@@ -46,14 +46,14 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         router.get('/dashboard', { relatie: id }, { preserveState: false });
     };
 
-    const isMinimal = hasRole('minimal');
+    const seesAllRelaties = can('relaties.view.all');
 
     const tabs: Tab[] = [
         { key: 'overview', label: t('Overview') },
         { key: 'types', label: t('Types') },
-        ...(!isMinimal ? [{ key: 'contact', label: t('Contact') }] : []),
+        ...(seesAllRelaties ? [{ key: 'contact', label: t('Contact') }] : []),
         { key: 'lidmaatschap', label: t('Membership') },
-        ...(!isMinimal ? [
+        ...(seesAllRelaties ? [
             { key: 'opleiding', label: t('Education') },
             { key: 'instrumenten', label: t('Instruments') },
         ] : []),

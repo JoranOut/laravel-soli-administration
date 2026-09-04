@@ -27,7 +27,7 @@ test('admin can view the users page', function () {
         );
 });
 
-test('admin can assign a role to a user', function () {
+test('admin can assign a never-managed role to a user', function () {
     $admin = User::factory()->create();
     $admin->assignRole('admin');
 
@@ -36,12 +36,13 @@ test('admin can assign a role to a user', function () {
 
     $this->actingAs($admin)
         ->put("/admin/users/{$user->id}", [
-            'roles' => ['bestuur'],
+            'roles' => ['ledenadministratie'],
         ])
         ->assertRedirect();
 
     $user->refresh();
-    expect($user->hasRole('bestuur'))->toBeTrue();
+    expect($user->hasRole('ledenadministratie'))->toBeTrue();
+    // minimal is derived and this user earns nothing, so it goes
     expect($user->hasRole('minimal'))->toBeFalse();
 });
 
@@ -104,7 +105,9 @@ test('changing the manual role keeps a derived role', function () {
 
     $user->refresh();
     expect($user->hasRole('ledenadministratie'))->toBeTrue();
+    // bestuur is earned through the type, so it survives the hand edit
     expect($user->hasRole('bestuur'))->toBeTrue();
+    // minimal is not earned by this user, so it does not survive
     expect($user->hasRole('minimal'))->toBeFalse();
 });
 
@@ -129,4 +132,16 @@ test('the users page exposes derived roles separately', function () {
             $row = collect($props['users'])->firstWhere('id', $user->id);
             expect($row['derived_roles'])->toBe(['bestuur']);
         });
+});
+
+test('the authentication pages need beheer.manage, not the admin role', function () {
+    $ledenadmin = User::factory()->create();
+    $ledenadmin->assignRole('ledenadministratie');
+
+    // Holds every permission except users.* and beheer.manage
+    expect($ledenadmin->can('relaties.edit'))->toBeTrue();
+
+    $this->actingAs($ledenadmin)->get('/admin/users')->assertForbidden();
+    $this->actingAs($ledenadmin)->get('/admin/roles')->assertForbidden();
+    $this->actingAs($ledenadmin)->get('/admin/relatie-type-rollen')->assertForbidden();
 });

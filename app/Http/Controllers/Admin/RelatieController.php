@@ -29,7 +29,7 @@ class RelatieController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('minimal')) {
+        if (! $user->can('relaties.view.all')) {
             if ($relatie = $user->relaties->first()) {
                 return redirect()->route('admin.relaties.show', $relatie);
             }
@@ -183,7 +183,7 @@ class RelatieController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('minimal') && $relatie->user_id !== $user->id) {
+        if (! $user->can('relaties.view.all') && $relatie->user_id !== $user->id) {
             abort(403);
         }
 
@@ -229,7 +229,7 @@ class RelatieController extends Controller
             $props['users'] = User::orderBy('name')->get(['id', 'name', 'email']);
         }
 
-        if ($user->hasRole('minimal') && $relatie->user_id === $user->id) {
+        if (! $user->can('relaties.view.all') && $relatie->user_id === $user->id) {
             $props['userRelaties'] = $user->relaties()
                 ->orderBy('achternaam')
                 ->get(['id', 'voornaam', 'tussenvoegsel', 'achternaam', 'relatie_nummer']);

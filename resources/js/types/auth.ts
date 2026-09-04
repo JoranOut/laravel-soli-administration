@@ -18,7 +18,11 @@ export type CrudResource =
     | 'instrumentsoorten'
     | 'users';
 export type CrudAction = 'view' | 'create' | 'edit' | 'delete';
-export type StandalonePermission = 'dashboard.view' | 'contact.view';
+export type StandalonePermission =
+    | 'dashboard.view'
+    | 'contact.view'
+    | 'relaties.view.all'
+    | 'beheer.manage';
 export type Permission = `${CrudResource}.${CrudAction}` | StandalonePermission;
 export type Role =
     | 'admin'

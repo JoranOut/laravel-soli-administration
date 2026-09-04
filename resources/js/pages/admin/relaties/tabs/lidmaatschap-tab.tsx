@@ -324,7 +324,7 @@ function EditOnderdeelDialog({ relatieId, onderdeel, relatie, instrumentSoorten 
 }
 
 export default function RelatieLidmaatschapTab({ relatie, onderdelen, instrumentSoorten }: Props) {
-    const { can, hasRole } = usePermissions();
+    const { can } = usePermissions();
     const { t } = useTranslation();
 
     const getInstrumentsForOnderdeel = (onderdeelId: number): string[] => {
@@ -384,7 +384,7 @@ export default function RelatieLidmaatschapTab({ relatie, onderdelen, instrument
                                                 {instruments.map((soort) => (
                                                     <Badge key={soort}>{soort}</Badge>
                                                 ))}
-                                                {onderdeel.beheerd_in_admin && hasRole('admin') && (
+                                                {onderdeel.beheerd_in_admin && can('beheer.manage') && (
                                                     <Badge variant="outline" className="text-blue-600 border-blue-300">
                                                         <ShieldCheck className="mr-1 h-3 w-3" />{t('Admin-managed')}
                                                     </Badge>
