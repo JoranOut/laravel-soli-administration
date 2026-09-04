@@ -12,8 +12,9 @@ type RelatieLinkProps = {
 /**
  * A relatie name, linked only for users who may open the relatie page.
  *
- * Roles like contactpersoon can hold onderdelen.view without relaties.view,
- * and the route would answer 403, so the name renders as plain text for them.
+ * A role can hold onderdelen.view or instrumenten.view without
+ * relaties.view.all, and the relatie route answers 403 for them, so the name
+ * renders as plain text rather than as a dead link.
  */
 export function RelatieLink({
     relatieId,
@@ -22,7 +23,7 @@ export function RelatieLink({
 }: RelatieLinkProps) {
     const { can } = usePermissions();
 
-    if (!can('relaties.view')) {
+    if (!can('relaties.view.all')) {
         return <span className={className}>{children}</span>;
     }
 

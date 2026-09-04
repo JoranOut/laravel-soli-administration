@@ -166,8 +166,8 @@ class RelatieController extends Controller
             return $relatie;
         });
 
-        // The wizard can attach a type that maps to a role, so the fresh
-        // account needs more than the member role it was given.
+        // The wizard can attach a type that maps to a role, which is what
+        // gives the fresh account any role at all.
         if ($relatie->user) {
             app(DerivedRoleSyncService::class)->syncUser($relatie->user->load('roles'));
         }
@@ -250,6 +250,11 @@ class RelatieController extends Controller
             $relatie->save();
         }
 
+        // Reactivating brings the relatie's types back into scope
+        if (! $wasActief && $relatie->actief && $relatie->user) {
+            app(DerivedRoleSyncService::class)->syncUser($relatie->user->load('roles'));
+        }
+
         return redirect()
             ->back()
             ->with('success', __('Relation updated.'));
@@ -257,7 +262,14 @@ class RelatieController extends Controller
 
     public function destroy(Relatie $relatie): RedirectResponse
     {
+        $user = $relatie->user;
+
         $relatie->delete();
+
+        // A soft-deleted relatie no longer counts towards derived roles
+        if ($user) {
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+        }
 
         return redirect()
             ->route('admin.relaties.index')

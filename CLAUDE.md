@@ -28,7 +28,31 @@ npm run build                         # Production build
 
 `contactpersoon` is not assigned by the seeder — that account gets it through an active `contactpersoon` relatie type, so a fresh seed also exercises `DerivedRoleSyncService`. The member account is deliberately linked to a relatie with no mapped type; `Relatie::first()` handed it a `bestuur` type and with it the stats dashboard.
 
-**Roles and mappings do not reach production through a deploy.** `deploy.yml` runs `migrate --force` and never `db:seed`, so a new role or mapping needs `db:seed --class=RolesAndPermissionsSeeder --force` on the server (idempotent) plus the mapping set in the UI at `/admin/relatie-type-rollen`. The `member`→`minimal` rename is the exception: it is a migration, so it does travel with the deploy. It renames the row rather than recreating it, so every existing assignment in `model_has_roles` survives; verified in both directions against populated data.
+### Bootstrapping this release in production
+
+`permission:beheer.manage` goes through Spatie's `canAny()`, which returns **false** for a permission that does not exist (`PermissionMiddleware.php:37`) — so until the two new permissions exist, every admin gets 403 on the whole `/admin` authentication group, and nobody holds `relaties.view.all`, which clamps all staff to their own relatie. The deploy runs no seeders, so grant one account by hand first, then use the UI for the rest:
+
+```sql
+INSERT INTO soli_permissions (name, guard_name, created_at, updated_at)
+SELECT 'beheer.manage', 'web', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM soli_permissions WHERE name = 'beheer.manage' AND guard_name = 'web');
+
+INSERT INTO soli_permissions (name, guard_name, created_at, updated_at)
+SELECT 'relaties.view.all', 'web', NOW(), NOW()
+WHERE NOT EXISTS (SELECT 1 FROM soli_permissions WHERE name = 'relaties.view.all' AND guard_name = 'web');
+
+INSERT IGNORE INTO soli_model_has_permissions (permission_id, model_type, model_id)
+SELECT p.id, 'App\\Models\\User', u.id
+FROM soli_permissions p
+JOIN users u ON u.email = '<your login>'
+WHERE p.name IN ('beheer.manage', 'relaties.view.all') AND p.guard_name = 'web';
+```
+
+Then `php artisan permission:cache-reset` — the permission cache holds for 24h and a raw `INSERT` does not clear it. The grant is direct to the user rather than to a role on purpose: it works even if the roles are misconfigured. Verified against a database with both permissions deleted.
+
+From there, `/admin/roles` assigns the permissions to roles and `/admin/relatie-type-rollen` fills the mapping table. **Until the mapping table has rows, no account gets any role** — including every relatie created or SAD-imported in the meantime — so do it in the same sitting, and run `roles:sync-derived --dry-run` before letting the nightly run loose.
+
+**Roles and mappings do not reach production through a deploy.** `deploy.yml` runs `migrate --force` and never `db:seed`, so a new role or mapping needs `db:seed --class=RolesAndPermissionsSeeder --force` on the server (idempotent) plus the mapping set in the UI at `/admin/relatie-type-rollen`. **The `member`→`minimal` rename is expand/contract across two deploys.** This deploy adds `minimal` beside `member` and copies its permissions and every assignment, leaving `member` untouched, because migrations run before the swap and the previous release still calls `hasRole('member')`. Dropping `member` is a separate migration for the *next* deploy, once this one is healthy.
 
 ---
 
@@ -84,7 +108,7 @@ Spatie Laravel Permission. Format: `{resource}.{action}` (e.g. `relaties.view`).
 | admin | All |
 | ledenadministratie | All except users.* and beheer.manage |
 | bestuur | *.view only, plus relaties.view.all |
-| contactpersoon | dashboard.view + contact.view only |
+| contactpersoon | contact.view + relaties.view (own record) |
 | minimal | relaties.view only (own record) |
 
 Besides `{resource}.{action}` there are four standalone permissions: `dashboard.view`, `contact.view`, `relaties.view.all` and `beheer.manage`.
@@ -101,15 +125,13 @@ Frontend: `const { can } = usePermissions()`.
 
 ### Roles derived from relatie types
 
-`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role. **One role per relatie type** (unique on `relatie_type_id`), edited as a dropdown per type at `/admin/relatie-type-rollen`. Several types may point to the same role, which is how `lid`, `donateur` and `vrijwilliger` all feed `minimal`. Seeded by `RelatieTypeRoleMappingSeeder`.
+`soli_relatie_type_role_mappings` maps a relatie type to an internal role, so an active `bestuur` type grants the `bestuur` role. **One role per relatie type** (unique on `relatie_type_id`), edited as a dropdown per type at `/admin/relatie-type-rollen`, one `PUT` per type so two admins editing at once cannot overwrite each other's rows. Several types may point to the same role, which is how `lid`, `donateur` and `vrijwilliger` all feed `minimal`. Seeded by `RelatieTypeRoleMappingSeeder`.
 
 **`minimal` (renamed from `member`) is derived, not granted on account creation.** `RelatieController` and `MemberSyncService` no longer call `assignRole`; the role arrives because the relatie holds a mapped type. Two consequences worth knowing: a relatie created through the wizard *without* a type yields an account with no role at all, and in `MemberSyncService` the sync must run **after** the `lid` type is attached — it used to sit inside `ensureUserAccount`, which runs before, and would have revoked the role it just granted. Managed in the UI at `/admin/relatie-type-rollen`; `DerivedRoleSyncService` applies it.
 
-**Every role except `NEVER_MANAGED` (`admin`, `ledenadministratie`, `muziekbeheer`) is managed by the sync**, which grants and revokes it purely from the types. Those three are the only roles `/admin/users` hands out, and the sync can neither grant nor revoke them; the filter sits in the service itself, not only in the controller's validation, so a mapping row inserted by a seeder or a manual `INSERT` still cannot take over the escape hatch.
+**Every role except `NEVER_MANAGED` (`admin`, `ledenadministratie`) is managed by the sync**, which grants and revokes it purely from the types. Those three are the only roles `/admin/users` hands out, and the sync can neither grant nor revoke them; the filter sits in the service itself, not only in the controller's validation, so a mapping row inserted by a seeder or a manual `INSERT` still cannot take over the escape hatch.
 
 Managed is deliberately *not* "roles some mapping currently points at". That earlier definition meant un-mapping a type stopped the role being managed at the exact moment you wanted it revoked: everyone who had earned it kept it forever, and the users page then showed it as a manual role. `UserRoleController@update` preserves the roles a user **earns**, not every managed role they hold, so a role someone no longer earns disappears on a hand edit too.
-
-`muziekbeheer` is in that list ahead of the internal role existing — today it is only a client role name in `ClientRoleMapping`, so the entry does nothing yet.
 
 **Multiple roles are additive, so there is no priority.** A user gets the union of the roles mapped to every active type across every relatie, and Spatie treats permissions as a union too, so nothing has to win. `ClientRoleResolver` needs its `priority` column only because a WordPress user gets exactly one role. Hand-granted roles stack on top: giving someone `admin` leaves their derived `bestuur` in place, and the union makes them admin in practice.
 

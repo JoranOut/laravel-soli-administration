@@ -28,7 +28,7 @@ Route::middleware(['auth', 'verified', 'permission:beheer.manage'])->group(funct
     Route::put('admin/roles/{role}', [RolePermissionController::class, 'update'])->name('admin.roles.update');
 
     Route::get('admin/relatie-type-rollen', [RelatieTypeRoleMappingController::class, 'index'])->name('admin.relatie-type-rollen.index');
-    Route::put('admin/relatie-type-rollen', [RelatieTypeRoleMappingController::class, 'update'])->name('admin.relatie-type-rollen.update');
+    Route::put('admin/relatie-type-rollen/{relatieType}', [RelatieTypeRoleMappingController::class, 'update'])->name('admin.relatie-type-rollen.update');
 
     Route::get('admin/users', [UserRoleController::class, 'index'])->name('admin.users.index');
     Route::put('admin/users/{user}', [UserRoleController::class, 'update'])->name('admin.users.update');

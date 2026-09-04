@@ -266,3 +266,17 @@ test('onderdelen.view without relaties.view cannot open a relatie', function () 
     $this->actingAs($user)->get("/admin/onderdelen/{$onderdeel->id}")->assertOk();
     $this->actingAs($user)->get("/admin/relaties/{$relatie->id}")->assertForbidden();
 });
+
+test('relaties.view alone does not open someone elses relatie', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'eigenkijker']);
+    $role->givePermissionTo(['onderdelen.view', 'relaties.view']);
+
+    $user = User::factory()->create()->assignRole($role);
+    $own = Relatie::factory()->create(['user_id' => $user->id]);
+    $someoneElse = Relatie::factory()->create();
+
+    // Own record is fine, anyone else's is not: this is why RelatieLink
+    // checks relaties.view.all rather than relaties.view.
+    $this->actingAs($user)->get("/admin/relaties/{$own->id}")->assertOk();
+    $this->actingAs($user)->get("/admin/relaties/{$someoneElse->id}")->assertForbidden();
+});

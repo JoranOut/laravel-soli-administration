@@ -43,19 +43,12 @@ export default function RelatieTypeRollen({
         },
     ];
 
+    // One type per request, so editing this row cannot overwrite a row
+    // somebody else changed while this page was open.
     function updateRole(type: RelatieTypeData, value: string) {
-        const roleId = value === NO_ROLE ? null : Number(value);
-
-        const mappings = relatieTypes
-            .map((current) => ({
-                relatie_type_id: current.id,
-                role_id: current.id === type.id ? roleId : current.role_id,
-            }))
-            .filter((mapping) => mapping.role_id !== null);
-
         router.put(
-            '/admin/relatie-type-rollen',
-            { mappings },
+            `/admin/relatie-type-rollen/${type.id}`,
+            { role_id: value === NO_ROLE ? null : Number(value) },
             { preserveScroll: true },
         );
     }

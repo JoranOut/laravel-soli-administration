@@ -37,33 +37,33 @@ class RelatieTypeRoleMappingController extends Controller
         ]);
     }
 
-    public function update(Request $request, DerivedRoleSyncService $service): RedirectResponse
+    /**
+     * Set or clear the role for one relatie type.
+     *
+     * One type per request on purpose: the page used to submit the whole set,
+     * so two admins editing at once silently overwrote each other's rows.
+     */
+    public function update(Request $request, RelatieType $relatieType, DerivedRoleSyncService $service): RedirectResponse
     {
-        $assignableRoleIds = $this->assignableRoles()->pluck('id')->all();
-
         $validated = $request->validate([
-            'mappings' => ['present', 'array'],
-            'mappings.*.relatie_type_id' => [
-                'required',
-                'exists:soli_relatie_types,id',
-                // One role per type, so a type must not appear twice
-                'distinct',
-            ],
-            'mappings.*.role_id' => ['required', Rule::in($assignableRoleIds)],
+            'role_id' => ['nullable', Rule::in($this->assignableRoles()->pluck('id')->all())],
         ]);
 
-        DB::transaction(function () use ($validated) {
-            RelatieTypeRoleMapping::query()->delete();
+        DB::transaction(function () use ($relatieType, $validated) {
+            if ($validated['role_id'] === null) {
+                $relatieType->roleMappings()->delete();
 
-            foreach ($validated['mappings'] as $mapping) {
-                RelatieTypeRoleMapping::create([
-                    'relatie_type_id' => $mapping['relatie_type_id'],
-                    'role_id' => $mapping['role_id'],
-                ]);
+                return;
             }
+
+            // One row per type, enforced by a unique index on relatie_type_id
+            RelatieTypeRoleMapping::updateOrCreate(
+                ['relatie_type_id' => $relatieType->id],
+                ['role_id' => $validated['role_id']],
+            );
         });
 
-        // Without this the new rule only takes effect on the nightly run.
+        // Without this the change only takes effect on the nightly run
         $changed = $service->syncAll();
 
         return back()->with('success', __(':count user(s) updated.', ['count' => $changed]));
@@ -72,8 +72,8 @@ class RelatieTypeRoleMappingController extends Controller
     /**
      * Roles that may be derived from a relatie type.
      *
-     * admin and member are withheld so a mapping can never take over the
-     * escape hatch or fight the member role the relatie flow assigns.
+     * NEVER_MANAGED is withheld so a mapping can never take over the escape
+     * hatch: those roles are handed out on /admin/users and nowhere else.
      */
     private function assignableRoles()
     {

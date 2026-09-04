@@ -21,11 +21,9 @@ class DerivedRoleSyncService
      * Roles that can never be derived, no matter what the mapping table says.
      *
      * admin is the escape hatch and ledenadministratie is granted on trust, so
-     * both stay hand-granted. muziekbeheer is listed ahead of the internal role
-     * existing; today it is only an external client role in ClientRoleMapping,
-     * so the entry is a no-op.
+     * both stay hand-granted.
      */
-    public const NEVER_MANAGED = ['admin', 'ledenadministratie', 'muziekbeheer'];
+    public const NEVER_MANAGED = ['admin', 'ledenadministratie'];
 
     /**
      * Role names this service is allowed to grant and revoke.
@@ -77,14 +75,24 @@ class DerivedRoleSyncService
      */
     public function diffFor(User $user): array
     {
-        $managed = $this->managedRoleNames();
+        return $this->diff(
+            $this->managedRoleNames(),
+            $this->derivedRoleNames($user),
+            $user->roles->pluck('name')->all(),
+        );
+    }
 
+    /**
+     * @param  string[]  $managed  roles this service may touch
+     * @param  string[]  $earned  roles the user's active types map to
+     * @param  string[]  $held  roles the user has right now
+     * @return array{added: string[], removed: string[]}
+     */
+    private function diff(array $managed, array $earned, array $held): array
+    {
         if ($managed === []) {
             return ['added' => [], 'removed' => []];
         }
-
-        $earned = $this->derivedRoleNames($user);
-        $held = $user->roles->pluck('name')->all();
 
         return [
             'added' => array_values(array_diff($earned, $held)),
@@ -135,8 +143,15 @@ class DerivedRoleSyncService
      */
     public function syncUser(User $user): array
     {
-        $diff = $this->diffFor($user);
+        return $this->apply($user, $this->diffFor($user));
+    }
 
+    /**
+     * @param  array{added: string[], removed: string[]}  $diff
+     * @return array{added: string[], removed: string[]}
+     */
+    private function apply(User $user, array $diff): array
+    {
         if ($diff['added'] === [] && $diff['removed'] === []) {
             return $diff;
         }
@@ -165,18 +180,31 @@ class DerivedRoleSyncService
      */
     public function syncAll(?callable $onChange = null, bool $dryRun = false): int
     {
+        // Resolved once for the whole run: doing it per user was three queries
+        // and an activity-log insert per account, for every account.
+        $managed = $this->managedRoleNames();
+        $earnedPerUser = $this->derivedRolesForAllUsers();
+
         $changed = 0;
 
-        User::with('roles')->chunkById(200, function ($users) use (&$changed, $onChange, $dryRun) {
+        User::with('roles')->chunkById(200, function ($users) use (&$changed, $onChange, $dryRun, $managed, $earnedPerUser) {
             foreach ($users as $user) {
-                $result = $dryRun ? $this->diffFor($user) : $this->syncUser($user);
+                $diff = $this->diff(
+                    $managed,
+                    $earnedPerUser[$user->id] ?? [],
+                    $user->roles->pluck('name')->all(),
+                );
 
-                if ($result['added'] === [] && $result['removed'] === []) {
+                if ($diff['added'] === [] && $diff['removed'] === []) {
                     continue;
                 }
 
+                if (! $dryRun) {
+                    $this->apply($user, $diff);
+                }
+
                 $changed++;
-                $onChange && $onChange($user, $result);
+                $onChange && $onChange($user, $diff);
             }
         });
 

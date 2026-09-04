@@ -38,7 +38,7 @@ test('contactpersoon role only reaches the contact page', function () {
     $contactpersoon = Role::findByName('contactpersoon');
 
     expect($contactpersoon->permissions->pluck('name')->sort()->values()->toArray())
-        ->toBe(['contact.view', 'dashboard.view']);
+        ->toBe(['contact.view', 'relaties.view']);
 });
 
 test('admin role has all permissions', function () {

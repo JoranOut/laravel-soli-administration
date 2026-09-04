@@ -81,22 +81,6 @@ test('the page exposes one role per type', function () {
         });
 });
 
-test('a type mapped twice is refused', function () {
-    $admin = User::factory()->create()->assignRole('admin');
-    $minimal = Role::where('name', 'minimal')->first();
-
-    $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $this->bestuurRole->id],
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $minimal->id],
-            ],
-        ])
-        ->assertSessionHasErrors('mappings.0.relatie_type_id');
-
-    $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
-});
-
 test('several types may point to the same role', function () {
     $admin = User::factory()->create()->assignRole('admin');
     $minimal = Role::where('name', 'minimal')->first();
@@ -104,14 +88,34 @@ test('several types may point to the same role', function () {
     $donateur = RelatieType::where('naam', 'donateur')->first();
 
     $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $lid->id, 'role_id' => $minimal->id],
-                ['relatie_type_id' => $donateur->id, 'role_id' => $minimal->id],
-            ],
-        ])
+        ->put("/admin/relatie-type-rollen/{$lid->id}", ['role_id' => $minimal->id])
+        ->assertRedirect();
+    $this->actingAs($admin)
+        ->put("/admin/relatie-type-rollen/{$donateur->id}", ['role_id' => $minimal->id])
         ->assertRedirect();
 
+    $this->assertDatabaseCount('soli_relatie_type_role_mappings', 2);
+});
+
+test('editing one type leaves the other types alone', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $minimal = Role::where('name', 'minimal')->first();
+    $lid = RelatieType::where('naam', 'lid')->first();
+
+    RelatieTypeRoleMapping::create([
+        'relatie_type_id' => $this->bestuurType->id,
+        'role_id' => $this->bestuurRole->id,
+    ]);
+
+    // A second admin editing lid must not wipe the bestuur row
+    $this->actingAs($admin)
+        ->put("/admin/relatie-type-rollen/{$lid->id}", ['role_id' => $minimal->id])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('soli_relatie_type_role_mappings', [
+        'relatie_type_id' => $this->bestuurType->id,
+        'role_id' => $this->bestuurRole->id,
+    ]);
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 2);
 });
 
@@ -125,11 +129,7 @@ test('replacing the role for a type keeps one row', function () {
     ]);
 
     $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $minimal->id],
-            ],
-        ])
+        ->put("/admin/relatie-type-rollen/{$this->bestuurType->id}", ['role_id' => $minimal->id])
         ->assertRedirect();
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 1);
@@ -143,11 +143,7 @@ test('admin can save a mapping', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
     $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $this->bestuurRole->id],
-            ],
-        ])
+        ->put("/admin/relatie-type-rollen/{$this->bestuurType->id}", ['role_id' => $this->bestuurRole->id])
         ->assertRedirect();
 
     $this->assertDatabaseHas('soli_relatie_type_role_mappings', [
@@ -167,11 +163,7 @@ test('saving a mapping applies it immediately', function () {
     expect($lid->hasRole('bestuur'))->toBeFalse();
 
     $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $this->bestuurRole->id],
-            ],
-        ])
+        ->put("/admin/relatie-type-rollen/{$this->bestuurType->id}", ['role_id' => $this->bestuurRole->id])
         ->assertRedirect();
 
     expect($lid->fresh()->hasRole('bestuur'))->toBeTrue();
@@ -193,7 +185,7 @@ test('removing a mapping revokes the role it granted', function () {
     $lid->assignRole('bestuur');
 
     $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', ['mappings' => []])
+        ->put("/admin/relatie-type-rollen/{$this->bestuurType->id}", ['role_id' => null])
         ->assertRedirect();
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
@@ -220,12 +212,8 @@ test('mapping a type to a never-managed role is refused', function (string $role
     $role = Role::where('name', $roleName)->first();
 
     $this->actingAs($admin)
-        ->put('/admin/relatie-type-rollen', [
-            'mappings' => [
-                ['relatie_type_id' => $this->bestuurType->id, 'role_id' => $role->id],
-            ],
-        ])
-        ->assertSessionHasErrors('mappings.0.role_id');
+        ->put("/admin/relatie-type-rollen/{$this->bestuurType->id}", ['role_id' => $role->id])
+        ->assertSessionHasErrors('role_id');
 
     $this->assertDatabaseCount('soli_relatie_type_role_mappings', 0);
 })->with(['admin', 'ledenadministratie']);

@@ -249,5 +249,8 @@ test('an active contactpersoon type grants the contactpersoon role', function ()
     $user->refresh();
     expect($user->hasRole('contactpersoon'))->toBeTrue();
     expect($user->can('contact.view'))->toBeTrue();
-    expect($user->can('relaties.view'))->toBeFalse();
+    // Their own record, but not everyone's, and not the statistics dashboard
+    expect($user->can('relaties.view'))->toBeTrue();
+    expect($user->can('relaties.view.all'))->toBeFalse();
+    expect($user->can('dashboard.view'))->toBeFalse();
 });
