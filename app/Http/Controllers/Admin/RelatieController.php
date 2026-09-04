@@ -397,6 +397,14 @@ class RelatieController extends Controller
                 ->with('error', __('No linked user account.'));
         }
 
+        // No self-delete: an account is removed by someone else, never by its
+        // own holder. There is deliberately no "delete my account" anywhere.
+        if ($relatie->user_id === auth()->id()) {
+            return redirect()
+                ->back()
+                ->with('error', __('You cannot delete your own account.'));
+        }
+
         $otherRelatiesCount = Relatie::where('user_id', $relatie->user_id)
             ->where('id', '!=', $relatie->id)
             ->count();

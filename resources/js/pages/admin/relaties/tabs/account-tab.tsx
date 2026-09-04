@@ -21,6 +21,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
 import type { Relatie } from '@/types/admin';
 import type { User } from '@/types/auth';
@@ -143,6 +144,7 @@ function PasswordResetSection({
 }
 
 export default function RelatieAccountTab({ relatie, users }: Props) {
+    const { can } = usePermissions();
     const { t } = useTranslation();
     const { delete: destroy, processing } = useForm({});
     const { processing: linking } = useForm({});
@@ -311,45 +313,19 @@ export default function RelatieAccountTab({ relatie, users }: Props) {
                     </div>
                 </dl>
 
-                <PasswordResetSection relatieId={relatie.id} t={t} />
+                {can('users.edit') && (
+                    <PasswordResetSection relatieId={relatie.id} t={t} />
+                )}
 
-                <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-                    <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
-                        <p className="font-medium">
-                            {hasMultipleRelaties
-                                ? t('Disconnect user account')
-                                : t('Delete user account')}
-                        </p>
-                        <p className="text-sm">
-                            {hasMultipleRelaties
-                                ? t(
-                                      'This user is linked to multiple relations. This will disconnect the user from this relation, but the user account will be preserved.',
-                                  )
-                                : t(
-                                      'This will permanently delete the user account. The relation record will be preserved.',
-                                  )}
-                        </p>
-                    </div>
-
-                    <Dialog>
-                        <DialogTrigger asChild>
-                            <Button variant="destructive">
+                {can('relaties.delete') && (
+                    <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
+                        <div className="relative space-y-0.5 text-red-600 dark:text-red-100">
+                            <p className="font-medium">
                                 {hasMultipleRelaties
                                     ? t('Disconnect user account')
                                     : t('Delete user account')}
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogTitle>
-                                {hasMultipleRelaties
-                                    ? t(
-                                          'Are you sure you want to disconnect this user account?',
-                                      )
-                                    : t(
-                                          'Are you sure you want to delete this user account?',
-                                      )}
-                            </DialogTitle>
-                            <DialogDescription>
+                            </p>
+                            <p className="text-sm">
                                 {hasMultipleRelaties
                                     ? t(
                                           'This user is linked to multiple relations. This will disconnect the user from this relation, but the user account will be preserved.',
@@ -357,26 +333,56 @@ export default function RelatieAccountTab({ relatie, users }: Props) {
                                     : t(
                                           'This will permanently delete the user account. The relation record will be preserved.',
                                       )}
-                            </DialogDescription>
-                            <DialogFooter className="gap-2">
-                                <DialogClose asChild>
-                                    <Button variant="secondary">
-                                        {t('Cancel')}
-                                    </Button>
-                                </DialogClose>
-                                <Button
-                                    variant="destructive"
-                                    disabled={processing}
-                                    onClick={handleDelete}
-                                >
+                            </p>
+                        </div>
+
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                <Button variant="destructive">
                                     {hasMultipleRelaties
                                         ? t('Disconnect user account')
                                         : t('Delete user account')}
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </div>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogTitle>
+                                    {hasMultipleRelaties
+                                        ? t(
+                                              'Are you sure you want to disconnect this user account?',
+                                          )
+                                        : t(
+                                              'Are you sure you want to delete this user account?',
+                                          )}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {hasMultipleRelaties
+                                        ? t(
+                                              'This user is linked to multiple relations. This will disconnect the user from this relation, but the user account will be preserved.',
+                                          )
+                                        : t(
+                                              'This will permanently delete the user account. The relation record will be preserved.',
+                                          )}
+                                </DialogDescription>
+                                <DialogFooter className="gap-2">
+                                    <DialogClose asChild>
+                                        <Button variant="secondary">
+                                            {t('Cancel')}
+                                        </Button>
+                                    </DialogClose>
+                                    <Button
+                                        variant="destructive"
+                                        disabled={processing}
+                                        onClick={handleDelete}
+                                    >
+                                        {hasMultipleRelaties
+                                            ? t('Disconnect user account')
+                                            : t('Delete user account')}
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

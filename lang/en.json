@@ -611,5 +611,6 @@
     "No relatie types found.": "No relatie types found.",
     "No role": "No role",
     "One role per relatie type. Several types may point to the same role.": "One role per relatie type. Several types may point to the same role.",
-    "These roles stay manual and cannot be mapped:": "These roles stay manual and cannot be mapped:"
+    "These roles stay manual and cannot be mapped:": "These roles stay manual and cannot be mapped:",
+    "You cannot delete your own account.": "You cannot delete your own account."
 }

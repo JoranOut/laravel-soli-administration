@@ -143,7 +143,8 @@ This is the internal counterpart to `ClientRoleResolver`, which maps the same re
 
 ### Account Rules
 
-- No self-delete. Account management needs `users.edit`.
+- **No self-delete, anywhere.** There is no "delete my account" screen; the `delete-user.tsx` component that offered one was removed — it was unreachable and posted to a `ProfileController::destroy` route that never existed. `destroyAccount` also refuses when the account is the caller's own.
+- Account management needs `users.edit`; **deleting an account needs `relaties.delete`**, which is what `ledenadministratie` holds and `users.edit` does not imply. The account tab is therefore visible with either permission, and gates the password-reset block on `users.edit` and the delete block on `relaties.delete`.
 - Relatie inactive → linked user auto-deleted.
 - Login email edit → syncs to user record, clears `email_verified_at`.
 - Login email can't be deleted from relatie emails.

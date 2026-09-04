@@ -471,3 +471,49 @@ test('user with users.edit permission can reset password', function () {
     $linkedUser->refresh();
     expect($linkedUser->password)->not->toBe($oldHash);
 });
+
+// --- Deleting an account needs relaties.delete ---
+
+test('relaties.delete may delete a user account without users.edit', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'ledenbeheer']);
+    $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'relaties.delete']);
+
+    $actor = User::factory()->create()->assignRole($role);
+    $victim = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $victim->id]);
+
+    $this->actingAs($actor)
+        ->delete("/admin/relaties/{$relatie->id}/account")
+        ->assertRedirect();
+
+    expect(User::find($victim->id))->toBeNull();
+    expect($relatie->fresh()->user_id)->toBeNull();
+});
+
+test('users.edit alone may not delete a user account', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'accountbeheer']);
+    $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'users.edit']);
+
+    $actor = User::factory()->create()->assignRole($role);
+    $victim = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $victim->id]);
+
+    $this->actingAs($actor)
+        ->delete("/admin/relaties/{$relatie->id}/account")
+        ->assertForbidden();
+
+    expect(User::find($victim->id))->not->toBeNull();
+});
+
+test('nobody can delete their own account', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $own = Relatie::factory()->create(['user_id' => $admin->id]);
+
+    $this->actingAs($admin)
+        ->delete("/admin/relaties/{$own->id}/account")
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect(User::find($admin->id))->not->toBeNull();
+    expect($own->fresh()->user_id)->toBe($admin->id);
+});
