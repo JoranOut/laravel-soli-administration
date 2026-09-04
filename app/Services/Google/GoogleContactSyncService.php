@@ -3,9 +3,9 @@
 namespace App\Services\Google;
 
 use App\Models\GoogleContactGroup;
+use App\Models\GoogleContactSync;
 use App\Models\GoogleContactSyncLog;
 use App\Models\GoogleContactTypeGroup;
-use App\Models\GoogleContactSync;
 use App\Models\JobStatus;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
@@ -210,7 +210,7 @@ class GoogleContactSyncService
             foreach ($managedContacts as $contact) {
                 $contactMap[$contact->getResourceName()] = $contact;
             }
-            $this->log("Pre-fetched " . count($contactMap) . " managed contacts from Google for {$googleEmail}");
+            $this->log('Pre-fetched '.count($contactMap)." managed contacts from Google for {$googleEmail}");
         }
 
         // 5. Collect operations
@@ -257,7 +257,7 @@ class GoogleContactSyncService
             }
         }
 
-        $this->log("Collected: " . count($toCreate) . " create, " . count($toUpdate) . " update, " . count($toRecreate) . " recreate, {$stats['skipped']} skipped");
+        $this->log('Collected: '.count($toCreate).' create, '.count($toUpdate).' update, '.count($toRecreate)." recreate, {$stats['skipped']} skipped");
 
         // 6. Execute batch creates (including re-creates)
         $allCreates = array_merge($toCreate, $toRecreate);
@@ -291,8 +291,8 @@ class GoogleContactSyncService
                 }
             } catch (\Throwable $e) {
                 $stats['failed'] += count($chunk);
-                $stats['errors'][] = "Batch create failed ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}";
-                $this->log("ERROR batch create ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}");
+                $stats['errors'][] = "Batch create failed ({$googleEmail}, ".count($chunk)." contacts): {$e->getMessage()}";
+                $this->log("ERROR batch create ({$googleEmail}, ".count($chunk)." contacts): {$e->getMessage()}");
                 Log::warning('Google Contacts batch create failed', [
                     'google_user' => $googleEmail,
                     'count' => count($chunk),
@@ -316,8 +316,8 @@ class GoogleContactSyncService
                 }
             } catch (\Throwable $e) {
                 $stats['failed'] += count($chunk);
-                $stats['errors'][] = "Batch update failed ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}";
-                $this->log("ERROR batch update ({$googleEmail}, " . count($chunk) . " contacts): {$e->getMessage()}");
+                $stats['errors'][] = "Batch update failed ({$googleEmail}, ".count($chunk)." contacts): {$e->getMessage()}";
+                $this->log("ERROR batch update ({$googleEmail}, ".count($chunk)." contacts): {$e->getMessage()}");
                 Log::warning('Google Contacts batch update failed', [
                     'google_user' => $googleEmail,
                     'count' => count($chunk),
@@ -345,8 +345,8 @@ class GoogleContactSyncService
                     }
                 } catch (\Throwable $e) {
                     $stats['failed'] += count($resourceNames);
-                    $stats['errors'][] = "Batch delete failed ({$googleEmail}, " . count($resourceNames) . " contacts): {$e->getMessage()}";
-                    $this->log("ERROR batch delete ({$googleEmail}, " . count($resourceNames) . " contacts): {$e->getMessage()}");
+                    $stats['errors'][] = "Batch delete failed ({$googleEmail}, ".count($resourceNames)." contacts): {$e->getMessage()}";
+                    $this->log("ERROR batch delete ({$googleEmail}, ".count($resourceNames)." contacts): {$e->getMessage()}");
                     Log::warning('Google Contacts batch delete failed', [
                         'google_user' => $googleEmail,
                         'count' => count($resourceNames),

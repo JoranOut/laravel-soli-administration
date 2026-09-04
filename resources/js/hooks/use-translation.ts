@@ -8,13 +8,21 @@ export function useTranslation() {
     const { locale } = usePage().props;
     const translations = translationsByLocale[locale] ?? {};
 
-    function t(key: string, replacements?: Record<string, string | number>): string {
+    function t(
+        key: string,
+        replacements?: Record<string, string | number>,
+    ): string {
         let value = translations[key] ?? key;
 
         if (replacements) {
-            Object.entries(replacements).forEach(([placeholder, replacement]) => {
-                value = value.replace(`:${placeholder}`, String(replacement));
-            });
+            Object.entries(replacements).forEach(
+                ([placeholder, replacement]) => {
+                    value = value.replace(
+                        `:${placeholder}`,
+                        String(replacement),
+                    );
+                },
+            );
         }
 
         return value;

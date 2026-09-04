@@ -24,7 +24,11 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
     const { t } = useTranslation();
 
     const handleTabChange = (newTab: string) => {
-        router.get('/admin/ledenverloop', { tab: newTab }, { preserveState: true, preserveScroll: true });
+        router.get(
+            '/admin/ledenverloop',
+            { tab: newTab },
+            { preserveState: true, preserveScroll: true },
+        );
     };
 
     const isJoined = tab === 'joined';
@@ -44,7 +48,7 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
             key: 'onderdelen',
             label: t('Sections'),
             render: (relatie) => (
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex flex-wrap gap-1">
                     {relatie.onderdelen?.map((onderdeel) => (
                         <Badge key={onderdeel.id} variant="secondary">
                             {onderdeel.naam}
@@ -64,9 +68,13 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
                       label: t('Reason for departure'),
                       render: (relatie: LedenverloopRelatie) =>
                           relatie.reden_vertrek ? (
-                              <span className="text-sm">{relatie.reden_vertrek}</span>
+                              <span className="text-sm">
+                                  {relatie.reden_vertrek}
+                              </span>
                           ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                              <span className="text-sm text-muted-foreground">
+                                  -
+                              </span>
                           ),
                   } satisfies Column<LedenverloopRelatie>,
               ]
@@ -99,7 +107,11 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
                 <DataTable
                     columns={columns}
                     data={data.data}
-                    emptyMessage={isJoined ? t('No members joined.') : t('No members left.')}
+                    emptyMessage={
+                        isJoined
+                            ? t('No members joined.')
+                            : t('No members left.')
+                    }
                 />
 
                 <Pagination pagination={data} />

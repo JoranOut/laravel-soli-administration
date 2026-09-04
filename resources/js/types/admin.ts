@@ -269,7 +269,12 @@ export type GoogleContactSyncLog = {
     id: number;
     type: 'full' | 'relatie';
     relatie_id: number | null;
-    relatie?: { id: number; voornaam: string; tussenvoegsel: string | null; achternaam: string } | null;
+    relatie?: {
+        id: number;
+        voornaam: string;
+        tussenvoegsel: string | null;
+        achternaam: string;
+    } | null;
     status: 'running' | 'completed' | 'completed_with_errors' | 'failed';
     workspace_users: number;
     contacts_created: number;
@@ -339,7 +344,12 @@ export type JobStatus = {
     id: number;
     name: string;
     display_name: string;
-    status: 'pending' | 'running' | 'completed' | 'completed_with_errors' | 'failed';
+    status:
+        | 'pending'
+        | 'running'
+        | 'completed'
+        | 'completed_with_errors'
+        | 'failed';
     last_run_at: string | null;
     last_completed_at: string | null;
     last_error: string | null;

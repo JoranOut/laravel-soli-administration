@@ -1,9 +1,9 @@
 import { Head } from '@inertiajs/react';
-import Heading from '@/components/heading';
 import { Pagination } from '@/components/admin/pagination';
+import Heading from '@/components/heading';
 import { Card, CardContent } from '@/components/ui/card';
-import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { PaginatedResponse } from '@/types/admin';
 
@@ -34,7 +34,9 @@ export default function ActivityLog({
             <div className="space-y-6 p-4">
                 <Heading
                     title={t('Activity log')}
-                    description={t('All changes are logged for audit purposes.')}
+                    description={t(
+                        'All changes are logged for audit purposes.',
+                    )}
                 />
 
                 {activities.data.length > 0 ? (
@@ -43,14 +45,20 @@ export default function ActivityLog({
                             <Card key={activity.id}>
                                 <CardContent className="flex items-center justify-between py-3">
                                     <div>
-                                        <p className="text-sm font-medium">{activity.description}</p>
-                                        <p className="text-muted-foreground text-xs">
-                                            {activity.causer?.name ?? t('System')} &middot;{' '}
-                                            {new Date(activity.created_at).toLocaleString()}
+                                        <p className="text-sm font-medium">
+                                            {activity.description}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {activity.causer?.name ??
+                                                t('System')}{' '}
+                                            &middot;{' '}
+                                            {new Date(
+                                                activity.created_at,
+                                            ).toLocaleString()}
                                         </p>
                                     </div>
                                     {activity.event && (
-                                        <span className="text-muted-foreground text-xs uppercase">
+                                        <span className="text-xs text-muted-foreground uppercase">
                                             {t(activity.event)}
                                         </span>
                                     )}
@@ -61,7 +69,9 @@ export default function ActivityLog({
                         <Pagination pagination={activities} />
                     </div>
                 ) : (
-                    <p className="text-muted-foreground text-sm">{t('No activity recorded.')}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {t('No activity recorded.')}
+                    </p>
                 )}
             </div>
         </AppLayout>

@@ -20,8 +20,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 import type { OauthClient, RelatieType } from '@/types/admin';
 
@@ -84,7 +84,10 @@ function UserCombobox({
     useEffect(() => {
         if (!open) return;
         function onPointerDown(event: PointerEvent) {
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(event.target as Node)
+            ) {
                 setOpen(false);
             }
         }
@@ -103,7 +106,9 @@ function UserCombobox({
     const query = search.trim().toLowerCase();
     const filtered = query
         ? users.filter(
-              (u) => u.name.toLowerCase().includes(query) || u.email.toLowerCase().includes(query),
+              (u) =>
+                  u.name.toLowerCase().includes(query) ||
+                  u.email.toLowerCase().includes(query),
           )
         : users;
 
@@ -115,13 +120,19 @@ function UserCombobox({
                 className="w-full justify-between font-normal"
                 onClick={() => setOpen((o) => !o)}
             >
-                <span className={selected ? 'truncate' : 'text-muted-foreground truncate'}>
-                    {selected ? `${selected.name} — ${selected.email}` : placeholder}
+                <span
+                    className={
+                        selected ? 'truncate' : 'truncate text-muted-foreground'
+                    }
+                >
+                    {selected
+                        ? `${selected.name} — ${selected.email}`
+                        : placeholder}
                 </span>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
             {open && (
-                <div className="bg-popover text-popover-foreground absolute top-full left-0 z-50 mt-1 w-full rounded-md border shadow-md">
+                <div className="absolute top-full left-0 z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md">
                     <div className="border-b p-1">
                         <Input
                             autoFocus
@@ -133,7 +144,7 @@ function UserCombobox({
                     </div>
                     <div className="max-h-60 overflow-y-auto py-1">
                         {filtered.length === 0 ? (
-                            <div className="text-muted-foreground px-3 py-2 text-sm">
+                            <div className="px-3 py-2 text-sm text-muted-foreground">
                                 {t('No results found.')}
                             </div>
                         ) : (
@@ -141,7 +152,7 @@ function UserCombobox({
                                 <button
                                     key={u.id}
                                     type="button"
-                                    className="hover:bg-accent hover:text-accent-foreground block w-full px-3 py-1.5 text-left text-sm"
+                                    className="block w-full px-3 py-1.5 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                                     onClick={() => {
                                         onChange(String(u.id));
                                         setOpen(false);
@@ -149,7 +160,7 @@ function UserCombobox({
                                     }}
                                 >
                                     <div className="truncate">{u.name}</div>
-                                    <div className="text-muted-foreground truncate text-xs">
+                                    <div className="truncate text-xs text-muted-foreground">
                                         {u.email}
                                     </div>
                                 </button>
@@ -172,7 +183,9 @@ export default function OauthClients({
     users: UserOption[];
 }) {
     const { t } = useTranslation();
-    const [editingClient, setEditingClient] = useState<OauthClient | null>(null);
+    const [editingClient, setEditingClient] = useState<OauthClient | null>(
+        null,
+    );
     const [type, setType] = useState('');
     const [defaultRole, setDefaultRole] = useState('');
     const [skipAuthorization, setSkipAuthorization] = useState(false);
@@ -215,8 +228,16 @@ export default function OauthClients({
         setMappings(mappings.filter((_, i) => i !== index));
     }
 
-    function updateMapping(index: number, field: keyof RoleMappingEntry, value: string) {
-        setMappings(mappings.map((m, i) => (i === index ? { ...m, [field]: value } : m)));
+    function updateMapping(
+        index: number,
+        field: keyof RoleMappingEntry,
+        value: string,
+    ) {
+        setMappings(
+            mappings.map((m, i) =>
+                i === index ? { ...m, [field]: value } : m,
+            ),
+        );
     }
 
     function moveMapping(index: number, direction: 'up' | 'down') {
@@ -230,8 +251,12 @@ export default function OauthClients({
     function saveSettings() {
         if (!editingClient) return;
 
-        const validMappings = mappings.filter((m) => m.relatie_type_id && m.mapped_role);
-        const validUserRoles = userRoles.filter((u) => u.user_id && u.mapped_role);
+        const validMappings = mappings.filter(
+            (m) => m.relatie_type_id && m.mapped_role,
+        );
+        const validUserRoles = userRoles.filter(
+            (u) => u.user_id && u.mapped_role,
+        );
 
         router.put(
             `/admin/oauth-clients/${editingClient.id}`,
@@ -271,8 +296,16 @@ export default function OauthClients({
         setUserRoles(userRoles.filter((_, i) => i !== index));
     }
 
-    function updateUserRole(index: number, field: keyof UserRoleEntry, value: string) {
-        setUserRoles(userRoles.map((u, i) => (i === index ? { ...u, [field]: value } : u)));
+    function updateUserRole(
+        index: number,
+        field: keyof UserRoleEntry,
+        value: string,
+    ) {
+        setUserRoles(
+            userRoles.map((u, i) =>
+                i === index ? { ...u, [field]: value } : u,
+            ),
+        );
     }
 
     // Users not yet picked in other rows
@@ -297,52 +330,103 @@ export default function OauthClients({
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="border-b">
-                                <th className="py-3 pr-4 text-left font-medium">{t('Name')}</th>
-                                <th className="px-4 py-3 text-left font-medium">{t('Client type')}</th>
-                                <th className="px-4 py-3 text-left font-medium">{t('Default role')}</th>
-                                <th className="px-4 py-3 text-left font-medium">{t('Role mappings')}</th>
-                                <th className="px-4 py-3 text-right font-medium">{t('Actions')}</th>
+                                <th className="py-3 pr-4 text-left font-medium">
+                                    {t('Name')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    {t('Client type')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    {t('Default role')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium">
+                                    {t('Role mappings')}
+                                </th>
+                                <th className="px-4 py-3 text-right font-medium">
+                                    {t('Actions')}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
                             {clients.map((client) => (
                                 <tr key={client.id} className="border-b">
-                                    <td className="py-3 pr-4 font-medium">{client.name}</td>
+                                    <td className="py-3 pr-4 font-medium">
+                                        {client.name}
+                                    </td>
                                     <td className="px-4 py-3">
                                         <div className="flex flex-wrap gap-1">
                                             {client.setting ? (
-                                                <Badge variant="secondary">{client.setting.type}</Badge>
+                                                <Badge variant="secondary">
+                                                    {client.setting.type}
+                                                </Badge>
                                             ) : (
-                                                <span className="text-muted-foreground">-</span>
+                                                <span className="text-muted-foreground">
+                                                    -
+                                                </span>
                                             )}
-                                            {client.setting?.skip_authorization && (
-                                                <Badge variant="outline">{t('Skip auth')}</Badge>
+                                            {client.setting
+                                                ?.skip_authorization && (
+                                                <Badge variant="outline">
+                                                    {t('Skip auth')}
+                                                </Badge>
                                             )}
                                         </div>
                                     </td>
                                     <td className="px-4 py-3">
                                         {client.setting?.default_role ? (
-                                            roleLabel(client.setting.default_role)
+                                            roleLabel(
+                                                client.setting.default_role,
+                                            )
                                         ) : (
-                                            <span className="text-muted-foreground">-</span>
+                                            <span className="text-muted-foreground">
+                                                -
+                                            </span>
                                         )}
                                     </td>
                                     <td className="px-4 py-3">
-                                        {client.setting?.role_mappings.length || client.setting?.user_roles.length ? (
+                                        {client.setting?.role_mappings.length ||
+                                        client.setting?.user_roles.length ? (
                                             <div className="flex flex-wrap gap-1">
-                                                {client.setting?.role_mappings.map((m) => (
-                                                    <Badge key={m.id} variant={m.mapped_role === NO_ACCESS ? 'destructive' : 'outline'}>
-                                                        {m.relatie_type_naam} &rarr; {roleLabel(m.mapped_role)}
-                                                    </Badge>
-                                                ))}
-                                                {client.setting && client.setting.user_roles.length > 0 && (
-                                                    <Badge variant="secondary">
-                                                        {client.setting.user_roles.length} {t('user overrides')}
-                                                    </Badge>
+                                                {client.setting?.role_mappings.map(
+                                                    (m) => (
+                                                        <Badge
+                                                            key={m.id}
+                                                            variant={
+                                                                m.mapped_role ===
+                                                                NO_ACCESS
+                                                                    ? 'destructive'
+                                                                    : 'outline'
+                                                            }
+                                                        >
+                                                            {
+                                                                m.relatie_type_naam
+                                                            }{' '}
+                                                            &rarr;{' '}
+                                                            {roleLabel(
+                                                                m.mapped_role,
+                                                            )}
+                                                        </Badge>
+                                                    ),
                                                 )}
+                                                {client.setting &&
+                                                    client.setting.user_roles
+                                                        .length > 0 && (
+                                                        <Badge variant="secondary">
+                                                            {
+                                                                client.setting
+                                                                    .user_roles
+                                                                    .length
+                                                            }{' '}
+                                                            {t(
+                                                                'user overrides',
+                                                            )}
+                                                        </Badge>
+                                                    )}
                                             </div>
                                         ) : (
-                                            <span className="text-muted-foreground">-</span>
+                                            <span className="text-muted-foreground">
+                                                -
+                                            </span>
                                         )}
                                     </td>
                                     <td className="px-4 py-3 text-right">
@@ -358,7 +442,10 @@ export default function OauthClients({
                             ))}
                             {clients.length === 0 && (
                                 <tr>
-                                    <td colSpan={5} className="py-6 text-center text-muted-foreground">
+                                    <td
+                                        colSpan={5}
+                                        className="py-6 text-center text-muted-foreground"
+                                    >
                                         {t('No OAuth clients found.')}
                                     </td>
                                 </tr>
@@ -368,7 +455,10 @@ export default function OauthClients({
                 </div>
             </div>
 
-            <Dialog open={!!editingClient} onOpenChange={(open) => !open && setEditingClient(null)}>
+            <Dialog
+                open={!!editingClient}
+                onOpenChange={(open) => !open && setEditingClient(null)}
+            >
                 <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
@@ -385,22 +475,36 @@ export default function OauthClients({
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="wordpress">WordPress</SelectItem>
-                                        <SelectItem value="muziek_bibliotheek">{t('Muziekbibliotheek')}</SelectItem>
-                                        <SelectItem value="other">{t('Other')}</SelectItem>
+                                        <SelectItem value="wordpress">
+                                            WordPress
+                                        </SelectItem>
+                                        <SelectItem value="muziek_bibliotheek">
+                                            {t('Muziekbibliotheek')}
+                                        </SelectItem>
+                                        <SelectItem value="other">
+                                            {t('Other')}
+                                        </SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-2">
                                 <Label>{t('Default role')}</Label>
                                 {PREDEFINED_ROLES[type] ? (
-                                    <Select value={defaultRole} onValueChange={setDefaultRole}>
+                                    <Select
+                                        value={defaultRole}
+                                        onValueChange={setDefaultRole}
+                                    >
                                         <SelectTrigger>
-                                            <SelectValue placeholder={t('Select...')} />
+                                            <SelectValue
+                                                placeholder={t('Select...')}
+                                            />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {PREDEFINED_ROLES[type].map((r) => (
-                                                <SelectItem key={r.value} value={r.value}>
+                                                <SelectItem
+                                                    key={r.value}
+                                                    value={r.value}
+                                                >
                                                     {r.label}
                                                 </SelectItem>
                                             ))}
@@ -409,7 +513,9 @@ export default function OauthClients({
                                 ) : (
                                     <Input
                                         value={defaultRole}
-                                        onChange={(e) => setDefaultRole(e.target.value)}
+                                        onChange={(e) =>
+                                            setDefaultRole(e.target.value)
+                                        }
                                         placeholder="e.g. subscriber"
                                     />
                                 )}
@@ -420,12 +526,18 @@ export default function OauthClients({
                             <Checkbox
                                 id="skip-authorization"
                                 checked={skipAuthorization}
-                                onCheckedChange={(checked) => setSkipAuthorization(checked === true)}
+                                onCheckedChange={(checked) =>
+                                    setSkipAuthorization(checked === true)
+                                }
                             />
                             <div>
-                                <Label htmlFor="skip-authorization">{t('Skip authorization screen')}</Label>
+                                <Label htmlFor="skip-authorization">
+                                    {t('Skip authorization screen')}
+                                </Label>
                                 <p className="text-xs text-muted-foreground">
-                                    {t('Automatically approve authorization for this client')}
+                                    {t(
+                                        'Automatically approve authorization for this client',
+                                    )}
                                 </p>
                             </div>
                         </div>
@@ -435,7 +547,9 @@ export default function OauthClients({
                                 <div>
                                     <Label>{t('Role mappings')}</Label>
                                     {mappings.length > 1 && (
-                                        <p className="text-xs text-muted-foreground">{t('Highest priority first')}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {t('Highest priority first')}
+                                        </p>
                                     )}
                                 </div>
                                 <Button
@@ -443,7 +557,9 @@ export default function OauthClients({
                                     variant="outline"
                                     size="sm"
                                     onClick={addMapping}
-                                    disabled={mappings.length >= relatieTypes.length}
+                                    disabled={
+                                        mappings.length >= relatieTypes.length
+                                    }
                                 >
                                     {t('Add')}
                                 </Button>
@@ -451,12 +567,17 @@ export default function OauthClients({
 
                             {mappings.length === 0 && (
                                 <p className="text-sm text-muted-foreground">
-                                    {t('No role mappings configured. System roles will be used.')}
+                                    {t(
+                                        'No role mappings configured. System roles will be used.',
+                                    )}
                                 </p>
                             )}
 
                             {mappings.map((mapping, index) => (
-                                <div key={index} className="flex items-center gap-2">
+                                <div
+                                    key={index}
+                                    className="flex items-center gap-2"
+                                >
                                     <div className="flex flex-col">
                                         <Button
                                             type="button"
@@ -464,7 +585,9 @@ export default function OauthClients({
                                             size="icon"
                                             className="h-5 w-5"
                                             disabled={index === 0}
-                                            onClick={() => moveMapping(index, 'up')}
+                                            onClick={() =>
+                                                moveMapping(index, 'up')
+                                            }
                                         >
                                             <ArrowUp className="h-3 w-3" />
                                         </Button>
@@ -473,49 +596,87 @@ export default function OauthClients({
                                             variant="ghost"
                                             size="icon"
                                             className="h-5 w-5"
-                                            disabled={index === mappings.length - 1}
-                                            onClick={() => moveMapping(index, 'down')}
+                                            disabled={
+                                                index === mappings.length - 1
+                                            }
+                                            onClick={() =>
+                                                moveMapping(index, 'down')
+                                            }
                                         >
                                             <ArrowDown className="h-3 w-3" />
                                         </Button>
                                     </div>
-                                    <span className="w-6 text-center text-xs text-muted-foreground">{index + 1}</span>
+                                    <span className="w-6 text-center text-xs text-muted-foreground">
+                                        {index + 1}
+                                    </span>
                                     <Select
                                         value={mapping.relatie_type_id}
-                                        onValueChange={(v) => updateMapping(index, 'relatie_type_id', v)}
+                                        onValueChange={(v) =>
+                                            updateMapping(
+                                                index,
+                                                'relatie_type_id',
+                                                v,
+                                            )
+                                        }
                                     >
                                         <SelectTrigger className="w-[180px]">
-                                            <SelectValue placeholder={t('Select type')} />
+                                            <SelectValue
+                                                placeholder={t('Select type')}
+                                            />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {availableTypes(index).map((rt) => (
-                                                <SelectItem key={rt.id} value={String(rt.id)}>
+                                                <SelectItem
+                                                    key={rt.id}
+                                                    value={String(rt.id)}
+                                                >
                                                     {rt.naam}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <span className="text-muted-foreground">&rarr;</span>
+                                    <span className="text-muted-foreground">
+                                        &rarr;
+                                    </span>
                                     {PREDEFINED_ROLES[type] ? (
                                         <Select
                                             value={mapping.mapped_role}
-                                            onValueChange={(v) => updateMapping(index, 'mapped_role', v)}
+                                            onValueChange={(v) =>
+                                                updateMapping(
+                                                    index,
+                                                    'mapped_role',
+                                                    v,
+                                                )
+                                            }
                                         >
                                             <SelectTrigger className="flex-1">
-                                                <SelectValue placeholder={t('Select...')} />
+                                                <SelectValue
+                                                    placeholder={t('Select...')}
+                                                />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {PREDEFINED_ROLES[type].map((r) => (
-                                                    <SelectItem key={r.value} value={r.value}>
-                                                        {r.label}
-                                                    </SelectItem>
-                                                ))}
+                                                {PREDEFINED_ROLES[type].map(
+                                                    (r) => (
+                                                        <SelectItem
+                                                            key={r.value}
+                                                            value={r.value}
+                                                        >
+                                                            {r.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
                                             </SelectContent>
                                         </Select>
                                     ) : (
                                         <Input
                                             value={mapping.mapped_role}
-                                            onChange={(e) => updateMapping(index, 'mapped_role', e.target.value)}
+                                            onChange={(e) =>
+                                                updateMapping(
+                                                    index,
+                                                    'mapped_role',
+                                                    e.target.value,
+                                                )
+                                            }
                                             placeholder={t('Mapped role')}
                                             className="flex-1"
                                         />
@@ -537,7 +698,9 @@ export default function OauthClients({
                                 <div>
                                     <Label>{t('User-specific roles')}</Label>
                                     <p className="text-xs text-muted-foreground">
-                                        {t('Overrides type mapping for specific users')}
+                                        {t(
+                                            'Overrides type mapping for specific users',
+                                        )}
                                     </p>
                                 </div>
                                 <Button
@@ -552,34 +715,60 @@ export default function OauthClients({
                             </div>
 
                             {userRoles.map((userRole, index) => (
-                                <div key={index} className="flex items-center gap-2">
+                                <div
+                                    key={index}
+                                    className="flex items-center gap-2"
+                                >
                                     <UserCombobox
                                         users={availableUsers(index)}
                                         value={userRole.user_id}
-                                        onChange={(v) => updateUserRole(index, 'user_id', v)}
+                                        onChange={(v) =>
+                                            updateUserRole(index, 'user_id', v)
+                                        }
                                         placeholder={t('Select user')}
                                     />
-                                    <span className="text-muted-foreground">&rarr;</span>
+                                    <span className="text-muted-foreground">
+                                        &rarr;
+                                    </span>
                                     {PREDEFINED_ROLES[type] ? (
                                         <Select
                                             value={userRole.mapped_role}
-                                            onValueChange={(v) => updateUserRole(index, 'mapped_role', v)}
+                                            onValueChange={(v) =>
+                                                updateUserRole(
+                                                    index,
+                                                    'mapped_role',
+                                                    v,
+                                                )
+                                            }
                                         >
                                             <SelectTrigger className="flex-1">
-                                                <SelectValue placeholder={t('Select...')} />
+                                                <SelectValue
+                                                    placeholder={t('Select...')}
+                                                />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {PREDEFINED_ROLES[type].map((r) => (
-                                                    <SelectItem key={r.value} value={r.value}>
-                                                        {r.label}
-                                                    </SelectItem>
-                                                ))}
+                                                {PREDEFINED_ROLES[type].map(
+                                                    (r) => (
+                                                        <SelectItem
+                                                            key={r.value}
+                                                            value={r.value}
+                                                        >
+                                                            {r.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
                                             </SelectContent>
                                         </Select>
                                     ) : (
                                         <Input
                                             value={userRole.mapped_role}
-                                            onChange={(e) => updateUserRole(index, 'mapped_role', e.target.value)}
+                                            onChange={(e) =>
+                                                updateUserRole(
+                                                    index,
+                                                    'mapped_role',
+                                                    e.target.value,
+                                                )
+                                            }
                                             placeholder={t('Mapped role')}
                                             className="flex-1"
                                         />
@@ -597,7 +786,10 @@ export default function OauthClients({
                         </div>
 
                         <div className="flex justify-end gap-2 pt-4">
-                            <Button variant="outline" onClick={() => setEditingClient(null)}>
+                            <Button
+                                variant="outline"
+                                onClick={() => setEditingClient(null)}
+                            >
                                 {t('Cancel')}
                             </Button>
                             <Button onClick={saveSettings}>{t('Save')}</Button>

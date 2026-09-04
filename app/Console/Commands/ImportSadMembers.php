@@ -478,6 +478,7 @@ class ImportSadMembers extends Command
 
                 if ($baseCodes === null) {
                     $errors->push("Cannot decompose '{$code}' for lid_id {$member['lid_id']} ({$member['naam']})");
+
                     continue;
                 }
 
@@ -827,6 +828,7 @@ class ImportSadMembers extends Command
         foreach ($ranges as $range) {
             if (empty($merged)) {
                 $merged[] = $range;
+
                 continue;
             }
 

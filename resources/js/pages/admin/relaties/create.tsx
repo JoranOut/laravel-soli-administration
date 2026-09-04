@@ -1,15 +1,22 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
+import { WizardStepIndicator } from '@/components/admin/wizard-step-indicator';
+import type { WizardStep } from '@/components/admin/wizard-step-indicator';
 import { Button } from '@/components/ui/button';
-import { WizardStepIndicator, type WizardStep } from '@/components/admin/wizard-step-indicator';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import Step1Personal from '@/pages/admin/relaties/wizard/step-1-personal';
 import Step2Contact from '@/pages/admin/relaties/wizard/step-2-contact';
 import Step3Membership from '@/pages/admin/relaties/wizard/step-3-membership';
 import Step4Education from '@/pages/admin/relaties/wizard/step-4-education';
 import Step5Summary from '@/pages/admin/relaties/wizard/step-5-summary';
-import type { EmailEntry, InstrumentSoort, Onderdeel, RelatieCreateFormData, RelatieType } from '@/types/admin';
+import type {
+    EmailEntry,
+    InstrumentSoort,
+    Onderdeel,
+    RelatieCreateFormData,
+    RelatieType,
+} from '@/types/admin';
 
 type Props = {
     relatieTypes: RelatieType[];
@@ -23,7 +30,10 @@ const TOTAL_STEPS = 5;
 
 // Map error key prefixes to the step they belong to
 const errorStepMap: [RegExp, number][] = [
-    [/^(relatie_nummer|voornaam|tussenvoegsel|achternaam|geboortedatum|types\.)/, 1],
+    [
+        /^(relatie_nummer|voornaam|tussenvoegsel|achternaam|geboortedatum|types\.)/,
+        1,
+    ],
     [/^(adressen\.|emails|telefoons\.|giro_gegevens\.)/, 2],
     [/^(lidmaatschappen\.|onderdelen\.)/, 3],
     [/^(opleidingen\.)/, 4],
@@ -45,9 +55,21 @@ function emptyEmail(): EmailEntry {
     return { email: '' };
 }
 
-function createInitialData(nextRelatieNummer: number, preselectedTypeId: number | null): RelatieCreateFormData {
+function createInitialData(
+    nextRelatieNummer: number,
+    preselectedTypeId: number | null,
+): RelatieCreateFormData {
     const types = preselectedTypeId
-        ? [{ type_id: preselectedTypeId.toString(), van: today(), tot: '', functie: '', email: '', onderdeel_id: '' }]
+        ? [
+              {
+                  type_id: preselectedTypeId.toString(),
+                  van: today(),
+                  tot: '',
+                  functie: '',
+                  email: '',
+                  onderdeel_id: '',
+              },
+          ]
         : [];
 
     return {
@@ -67,14 +89,25 @@ function createInitialData(nextRelatieNummer: number, preselectedTypeId: number 
     };
 }
 
-export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderdelen, instrumentSoorten, preselectedTypeId }: Props) {
+export default function RelatieCreate({
+    relatieTypes,
+    nextRelatieNummer,
+    onderdelen,
+    instrumentSoorten,
+    preselectedTypeId,
+}: Props) {
     const { t } = useTranslation();
     const [currentStep, setCurrentStep] = useState(1);
-    const [data, setDataState] = useState<RelatieCreateFormData>(() => createInitialData(nextRelatieNummer, preselectedTypeId));
+    const [data, setDataState] = useState<RelatieCreateFormData>(() =>
+        createInitialData(nextRelatieNummer, preselectedTypeId),
+    );
     const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
     const [processing, setProcessing] = useState(false);
 
-    const setData = <K extends keyof RelatieCreateFormData>(key: K, value: RelatieCreateFormData[K]) => {
+    const setData = <K extends keyof RelatieCreateFormData>(
+        key: K,
+        value: RelatieCreateFormData[K],
+    ) => {
         setDataState((prev) => ({ ...prev, [key]: value }));
     };
 
@@ -141,30 +174,64 @@ export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderde
 
                 <div className="min-h-[400px]">
                     {currentStep === 1 && (
-                        <Step1Personal data={data} setData={setData} errors={errors} relatieTypes={relatieTypes} onderdelen={onderdelen} />
+                        <Step1Personal
+                            data={data}
+                            setData={setData}
+                            errors={errors}
+                            relatieTypes={relatieTypes}
+                            onderdelen={onderdelen}
+                        />
                     )}
                     {currentStep === 2 && (
-                        <Step2Contact data={data} setData={setData} errors={errors} />
+                        <Step2Contact
+                            data={data}
+                            setData={setData}
+                            errors={errors}
+                        />
                     )}
                     {currentStep === 3 && (
-                        <Step3Membership data={data} setData={setData} errors={errors} onderdelen={onderdelen} instrumentSoorten={instrumentSoorten} />
+                        <Step3Membership
+                            data={data}
+                            setData={setData}
+                            errors={errors}
+                            onderdelen={onderdelen}
+                            instrumentSoorten={instrumentSoorten}
+                        />
                     )}
                     {currentStep === 4 && (
-                        <Step4Education data={data} setData={setData} errors={errors} />
+                        <Step4Education
+                            data={data}
+                            setData={setData}
+                            errors={errors}
+                        />
                     )}
                     {currentStep === 5 && (
-                        <Step5Summary data={data} relatieTypes={relatieTypes} onderdelen={onderdelen} instrumentSoorten={instrumentSoorten} onNavigateToStep={setCurrentStep} />
+                        <Step5Summary
+                            data={data}
+                            relatieTypes={relatieTypes}
+                            onderdelen={onderdelen}
+                            instrumentSoorten={instrumentSoorten}
+                            onNavigateToStep={setCurrentStep}
+                        />
                     )}
                 </div>
 
                 <div className="flex items-center justify-between border-t pt-4">
-                    <Button type="button" variant="outline" onClick={() => router.get('/admin/relaties')}>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => router.get('/admin/relaties')}
+                    >
                         {t('Cancel')}
                     </Button>
 
                     <div className="flex gap-2">
                         {currentStep > 1 && (
-                            <Button type="button" variant="outline" onClick={goBack}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={goBack}
+                            >
                                 {t('Previous')}
                             </Button>
                         )}
@@ -172,18 +239,30 @@ export default function RelatieCreate({ relatieTypes, nextRelatieNummer, onderde
                         {currentStep < TOTAL_STEPS && (
                             <>
                                 {isSkippableStep && (
-                                    <Button type="button" variant="ghost" onClick={goNext}>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={goNext}
+                                    >
                                         {t('Skip')}
                                     </Button>
                                 )}
-                                <Button type="button" onClick={goNext} disabled={!canGoNext()}>
+                                <Button
+                                    type="button"
+                                    onClick={goNext}
+                                    disabled={!canGoNext()}
+                                >
                                     {t('Next')}
                                 </Button>
                             </>
                         )}
 
                         {currentStep === TOTAL_STEPS && (
-                            <Button type="button" onClick={handleSubmit} disabled={processing}>
+                            <Button
+                                type="button"
+                                onClick={handleSubmit}
+                                disabled={processing}
+                            >
                                 {t('Save')}
                             </Button>
                         )}

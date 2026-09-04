@@ -45,7 +45,6 @@ class ThrottleRequestsWithHigherDefault extends ThrottleRequests
      * login throttle dies with "Rate limiter [login] is not defined."
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  mixed  ...$args
      * @return \Symfony\Component\HttpFoundation\Response
      *

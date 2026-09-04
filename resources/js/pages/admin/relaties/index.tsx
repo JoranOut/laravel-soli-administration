@@ -1,17 +1,24 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { Mail, Plus } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 import { CopyEmailsDialog } from '@/components/admin/copy-emails-dialog';
+import { DataTable } from '@/components/admin/data-table';
+import type { Column } from '@/components/admin/data-table';
+import { Pagination } from '@/components/admin/pagination';
+import { SearchInput } from '@/components/admin/search-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DataTable, type Column } from '@/components/admin/data-table';
-import { Pagination } from '@/components/admin/pagination';
-import { SearchInput } from '@/components/admin/search-input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { PaginatedResponse, Relatie, RelatieType } from '@/types/admin';
 
 type Props = {
@@ -26,7 +33,11 @@ type Props = {
     relatieTypes: RelatieType[];
 };
 
-export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props) {
+export default function RelatiesIndex({
+    relaties,
+    filters,
+    relatieTypes,
+}: Props) {
     const { can } = usePermissions();
     const { t } = useTranslation();
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -38,7 +49,10 @@ export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props
             label: t('Name'),
             sortable: true,
             render: (relatie) => (
-                <Link href={`/admin/relaties/${relatie.id}`} className="text-primary hover:underline font-medium">
+                <Link
+                    href={`/admin/relaties/${relatie.id}`}
+                    className="font-medium text-primary hover:underline"
+                >
                     {relatie.volledige_naam}
                 </Link>
             ),
@@ -68,7 +82,10 @@ export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props
     ];
 
     const handleSort = (key: string) => {
-        const direction = filters.sort === key && filters.direction === 'asc' ? 'desc' : 'asc';
+        const direction =
+            filters.sort === key && filters.direction === 'asc'
+                ? 'desc'
+                : 'asc';
         router.get(
             '/admin/relaties',
             { ...filters, sort: key, direction },
@@ -82,7 +99,10 @@ export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props
         if (filters.show_inactive) params.show_inactive = filters.show_inactive;
         if (type !== 'all') params.type = type;
 
-        router.get('/admin/relaties', params, { preserveState: true, preserveScroll: true });
+        router.get('/admin/relaties', params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     const handleShowInactive = (checked: boolean) => {
@@ -91,83 +111,109 @@ export default function RelatiesIndex({ relaties, filters, relatieTypes }: Props
         if (filters.type) params.type = filters.type;
         if (checked) params.show_inactive = '1';
 
-        router.get('/admin/relaties', params, { preserveState: true, preserveScroll: true });
+        router.get('/admin/relaties', params, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
 
     return (
         <AppLayout>
             <Head title={t('Relations')} />
-                <div className="space-y-4 p-4">
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <h2 className="text-lg font-semibold">{t('Relations')}</h2>
-                        {can('relaties.create') && (
-                            <Button asChild>
-                                <Link href={filters.type ? `/admin/relaties/create?type=${filters.type}` : '/admin/relaties/create'}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    {filters.type
-                                        ? t('New :type', { type: filters.type })
-                                        : t('New relation')}
-                                </Link>
-                            </Button>
-                        )}
-                    </div>
-
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                        <div className="w-full sm:w-64">
-                            <SearchInput
-                                value={filters.search}
-                                placeholder={t('Search...')}
-                                routeName="/admin/relaties"
-                                queryParams={{
-                                    type: filters.type,
-                                    show_inactive: filters.show_inactive,
-                                }}
-                            />
-                        </div>
-
-                        <Select value={filters.type ?? 'all'} onValueChange={handleTypeFilter}>
-                            <SelectTrigger className="w-full sm:w-40">
-                                <SelectValue placeholder={t('All types')} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">{t('All types')}</SelectItem>
-                                {relatieTypes.map((type) => (
-                                    <SelectItem key={type.id} value={type.naam}>
-                                        {type.naam.charAt(0).toUpperCase() + type.naam.slice(1)}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex items-center gap-2">
-                            <Checkbox
-                                id="show-inactive"
-                                checked={filters.show_inactive === '1'}
-                                onCheckedChange={(checked) => handleShowInactive(checked === true)}
-                            />
-                            <label htmlFor="show-inactive" className="text-sm">
-                                {t('Show inactive')}
-                            </label>
-                        </div>
-
-                        <Button variant="outline" size="sm" onClick={() => setEmailDialogOpen(true)}>
-                            <Mail className="mr-2 h-4 w-4" />{t('Copy emails')}
+            <div className="space-y-4 p-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-lg font-semibold">{t('Relations')}</h2>
+                    {can('relaties.create') && (
+                        <Button asChild>
+                            <Link
+                                href={
+                                    filters.type
+                                        ? `/admin/relaties/create?type=${filters.type}`
+                                        : '/admin/relaties/create'
+                                }
+                            >
+                                <Plus className="mr-2 h-4 w-4" />
+                                {filters.type
+                                    ? t('New :type', { type: filters.type })
+                                    : t('New relation')}
+                            </Link>
                         </Button>
+                    )}
+                </div>
+
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className="w-full sm:w-64">
+                        <SearchInput
+                            value={filters.search}
+                            placeholder={t('Search...')}
+                            routeName="/admin/relaties"
+                            queryParams={{
+                                type: filters.type,
+                                show_inactive: filters.show_inactive,
+                            }}
+                        />
                     </div>
 
-                    <CopyEmailsDialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen} relaties={relaties.data} />
+                    <Select
+                        value={filters.type ?? 'all'}
+                        onValueChange={handleTypeFilter}
+                    >
+                        <SelectTrigger className="w-full sm:w-40">
+                            <SelectValue placeholder={t('All types')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                {t('All types')}
+                            </SelectItem>
+                            {relatieTypes.map((type) => (
+                                <SelectItem key={type.id} value={type.naam}>
+                                    {type.naam.charAt(0).toUpperCase() +
+                                        type.naam.slice(1)}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-                    <DataTable
-                        columns={columns}
-                        data={relaties.data}
-                        sortKey={filters.sort}
-                        sortDirection={filters.direction}
-                        onSort={handleSort}
-                        emptyMessage={t('No relations found.')}
-                    />
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            id="show-inactive"
+                            checked={filters.show_inactive === '1'}
+                            onCheckedChange={(checked) =>
+                                handleShowInactive(checked === true)
+                            }
+                        />
+                        <label htmlFor="show-inactive" className="text-sm">
+                            {t('Show inactive')}
+                        </label>
+                    </div>
 
-                    <Pagination pagination={relaties} />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEmailDialogOpen(true)}
+                    >
+                        <Mail className="mr-2 h-4 w-4" />
+                        {t('Copy emails')}
+                    </Button>
                 </div>
+
+                <CopyEmailsDialog
+                    open={emailDialogOpen}
+                    onOpenChange={setEmailDialogOpen}
+                    relaties={relaties.data}
+                />
+
+                <DataTable
+                    columns={columns}
+                    data={relaties.data}
+                    sortKey={filters.sort}
+                    sortDirection={filters.direction}
+                    onSort={handleSort}
+                    emptyMessage={t('No relations found.')}
+                />
+
+                <Pagination pagination={relaties} />
+            </div>
         </AppLayout>
     );
 }

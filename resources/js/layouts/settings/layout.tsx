@@ -41,8 +41,8 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     return (
         <div className="px-4 py-6">
             <Heading
-                title={t("Settings")}
-                description={t("Manage your profile and account settings")}
+                title={t('Settings')}
+                description={t('Manage your profile and account settings')}
             />
 
             <div className="flex flex-col lg:flex-row lg:space-x-12">

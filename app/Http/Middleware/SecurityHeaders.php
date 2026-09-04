@@ -29,8 +29,8 @@ class SecurityHeaders
 
         if (! app()->isProduction()) {
             // Allow Vite dev server (HMR websocket + script loading)
-            $scriptSrc .= " http://localhost:5173";
-            $connectSrc .= " ws://localhost:5173 http://localhost:5173";
+            $scriptSrc .= ' http://localhost:5173';
+            $connectSrc .= ' ws://localhost:5173 http://localhost:5173';
         }
 
         if (app()->isProduction()) {

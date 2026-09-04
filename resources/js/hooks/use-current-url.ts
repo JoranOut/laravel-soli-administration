@@ -39,7 +39,8 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
     ) => {
         const urlString = toUrl(urlToCheck);
         const hasQuery = urlString.includes('?');
-        const urlToCompare = currentUrl ?? (hasQuery ? currentUrlFull : currentUrlPath);
+        const urlToCompare =
+            currentUrl ?? (hasQuery ? currentUrlFull : currentUrlPath);
 
         const comparePath = (path: string): boolean =>
             startsWith ? urlToCompare.startsWith(path) : path === urlToCompare;
@@ -50,7 +51,9 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
 
         try {
             const absoluteUrl = new URL(urlString);
-            const absPath = hasQuery ? absoluteUrl.pathname + absoluteUrl.search : absoluteUrl.pathname;
+            const absPath = hasQuery
+                ? absoluteUrl.pathname + absoluteUrl.search
+                : absoluteUrl.pathname;
             return comparePath(absPath);
         } catch {
             return false;

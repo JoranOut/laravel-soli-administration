@@ -3,7 +3,14 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useClipboard } from '@/hooks/use-clipboard';
 import { useTranslation } from '@/hooks/use-translation';
 import type { EmailRecord } from '@/types/admin';
@@ -27,7 +34,12 @@ export function CopyEmailsDialog({ open, onOpenChange, relaties }: Props) {
 
     const emailString = useMemo(() => {
         const filtered = excludeDirigent
-            ? relaties.filter((r) => !r.types?.some((t) => t.naam.toLowerCase() === 'dirigent'))
+            ? relaties.filter(
+                  (r) =>
+                      !r.types?.some(
+                          (t) => t.naam.toLowerCase() === 'dirigent',
+                      ),
+              )
             : relaties;
         return filtered
             .map((r) => {
@@ -56,7 +68,9 @@ export function CopyEmailsDialog({ open, onOpenChange, relaties }: Props) {
                         <Checkbox
                             id="exclude-dirigent"
                             checked={excludeDirigent}
-                            onCheckedChange={(checked) => setExcludeDirigent(!!checked)}
+                            onCheckedChange={(checked) =>
+                                setExcludeDirigent(!!checked)
+                            }
                         />
                         <label htmlFor="exclude-dirigent" className="text-sm">
                             {t('Exclude dirigent')}
@@ -64,11 +78,13 @@ export function CopyEmailsDialog({ open, onOpenChange, relaties }: Props) {
                     </div>
 
                     {emailString ? (
-                        <pre className="bg-muted max-h-60 overflow-auto rounded-md border p-3 text-sm whitespace-pre-wrap break-all">
+                        <pre className="max-h-60 overflow-auto rounded-md border bg-muted p-3 text-sm break-all whitespace-pre-wrap">
                             {emailString}
                         </pre>
                     ) : (
-                        <p className="text-muted-foreground text-sm">{t('No emails found.')}</p>
+                        <p className="text-sm text-muted-foreground">
+                            {t('No emails found.')}
+                        </p>
                     )}
                 </div>
 
@@ -77,7 +93,11 @@ export function CopyEmailsDialog({ open, onOpenChange, relaties }: Props) {
                         <Button variant="secondary">{t('Close')}</Button>
                     </DialogClose>
                     <Button onClick={handleCopy} disabled={!emailString}>
-                        {copiedText ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                        {copiedText ? (
+                            <Check className="mr-2 h-4 w-4" />
+                        ) : (
+                            <Copy className="mr-2 h-4 w-4" />
+                        )}
                         {copiedText ? t('Emails copied!') : t('Copy emails')}
                     </Button>
                 </DialogFooter>

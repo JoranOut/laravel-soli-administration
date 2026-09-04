@@ -16,18 +16,15 @@ type Props = {
     canResetPassword: boolean;
 };
 
-export default function Login({
-    status,
-    canResetPassword,
-}: Props) {
+export default function Login({ status, canResetPassword }: Props) {
     const { t } = useTranslation();
 
     return (
         <AuthLayout
-            title={t("Log in to your account")}
-            description={t("Enter your email and password below to log in")}
+            title={t('Log in to your account')}
+            description={t('Enter your email and password below to log in')}
         >
-            <Head title={t("Log in")} />
+            <Head title={t('Log in')} />
 
             <Form
                 {...store.form()}
@@ -38,7 +35,9 @@ export default function Login({
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
-                                <Label htmlFor="email">{t("Email address")}</Label>
+                                <Label htmlFor="email">
+                                    {t('Email address')}
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
@@ -47,21 +46,23 @@ export default function Login({
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="email"
-                                    placeholder={t("email@example.com")}
+                                    placeholder={t('email@example.com')}
                                 />
                                 <InputError message={errors.email} />
                             </div>
 
                             <div className="grid gap-2">
                                 <div className="flex items-center">
-                                    <Label htmlFor="password">{t("Password")}</Label>
+                                    <Label htmlFor="password">
+                                        {t('Password')}
+                                    </Label>
                                     {canResetPassword && (
                                         <TextLink
                                             href={request()}
                                             className="ml-auto text-sm"
                                             tabIndex={5}
                                         >
-                                            {t("Forgot password?")}
+                                            {t('Forgot password?')}
                                         </TextLink>
                                     )}
                                 </div>
@@ -72,7 +73,7 @@ export default function Login({
                                     required
                                     tabIndex={2}
                                     autoComplete="current-password"
-                                    placeholder={t("Password")}
+                                    placeholder={t('Password')}
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -83,7 +84,9 @@ export default function Login({
                                     name="remember"
                                     tabIndex={3}
                                 />
-                                <Label htmlFor="remember">{t("Remember me")}</Label>
+                                <Label htmlFor="remember">
+                                    {t('Remember me')}
+                                </Label>
                             </div>
 
                             <Button
@@ -94,10 +97,9 @@ export default function Login({
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                {t("Log in")}
+                                {t('Log in')}
                             </Button>
                         </div>
-
                     </>
                 )}
             </Form>

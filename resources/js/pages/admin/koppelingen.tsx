@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
+import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -10,7 +11,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import Heading from '@/components/heading';
 import {
     Select,
     SelectContent,
@@ -18,8 +18,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 type UnlinkedUser = {
@@ -78,7 +78,10 @@ function UserRow({
             <td className="px-4 py-2 text-muted-foreground">{user.email}</td>
             <td className="px-4 py-2">
                 <div className="flex items-center gap-2">
-                    <Select value={selectedRelatieId} onValueChange={setSelectedRelatieId}>
+                    <Select
+                        value={selectedRelatieId}
+                        onValueChange={setSelectedRelatieId}
+                    >
                         <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder={t('Select relation')} />
                         </SelectTrigger>
@@ -90,7 +93,11 @@ function UserRow({
                             ))}
                         </SelectContent>
                     </Select>
-                    <Button size="sm" onClick={link} disabled={!selectedRelatieId}>
+                    <Button
+                        size="sm"
+                        onClick={link}
+                        disabled={!selectedRelatieId}
+                    >
                         {t('Link')}
                     </Button>
                     <Dialog>
@@ -100,15 +107,26 @@ function UserRow({
                             </Button>
                         </DialogTrigger>
                         <DialogContent>
-                            <DialogTitle>{t('Delete user account')}</DialogTitle>
+                            <DialogTitle>
+                                {t('Delete user account')}
+                            </DialogTitle>
                             <DialogDescription>
-                                {t('Are you sure you want to delete the account for :name?', { name: user.name })}
+                                {t(
+                                    'Are you sure you want to delete the account for :name?',
+                                    { name: user.name },
+                                )}
                             </DialogDescription>
                             <DialogFooter className="gap-2">
                                 <DialogClose asChild>
-                                    <Button variant="secondary">{t('Cancel')}</Button>
+                                    <Button variant="secondary">
+                                        {t('Cancel')}
+                                    </Button>
                                 </DialogClose>
-                                <Button variant="destructive" disabled={deleting} onClick={deleteUser}>
+                                <Button
+                                    variant="destructive"
+                                    disabled={deleting}
+                                    onClick={deleteUser}
+                                >
                                     {t('Delete')}
                                 </Button>
                             </DialogFooter>
@@ -146,7 +164,10 @@ function RelatieRow({
             <td className="px-4 py-2">{relatie.volledige_naam}</td>
             <td className="px-4 py-2">
                 <div className="flex items-center gap-2">
-                    <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                    <Select
+                        value={selectedUserId}
+                        onValueChange={setSelectedUserId}
+                    >
                         <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder={t('Select user')} />
                         </SelectTrigger>
@@ -167,7 +188,10 @@ function RelatieRow({
     );
 }
 
-export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) {
+export default function Koppelingen({
+    unlinkedUsers,
+    unlinkedRelaties,
+}: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -185,24 +209,39 @@ export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) 
                 <div className="space-y-6">
                     <Heading
                         title={t('Users without a relation')}
-                        description={t('These users do not have a linked relation record')}
+                        description={t(
+                            'These users do not have a linked relation record',
+                        )}
                     />
 
                     <div className="overflow-x-auto">
                         {unlinkedUsers.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">{t('No unlinked users found.')}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {t('No unlinked users found.')}
+                            </p>
                         ) : (
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="py-3 pr-4 text-left font-medium">{t('Name')}</th>
-                                        <th className="px-4 py-3 text-left font-medium">{t('E-mail')}</th>
-                                        <th className="px-4 py-3 text-left font-medium">{t('Actions')}</th>
+                                        <th className="py-3 pr-4 text-left font-medium">
+                                            {t('Name')}
+                                        </th>
+                                        <th className="px-4 py-3 text-left font-medium">
+                                            {t('E-mail')}
+                                        </th>
+                                        <th className="px-4 py-3 text-left font-medium">
+                                            {t('Actions')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {unlinkedUsers.map((user) => (
-                                        <UserRow key={user.id} user={user} relaties={unlinkedRelaties} t={t} />
+                                        <UserRow
+                                            key={user.id}
+                                            user={user}
+                                            relaties={unlinkedRelaties}
+                                            t={t}
+                                        />
                                     ))}
                                 </tbody>
                             </table>
@@ -213,24 +252,39 @@ export default function Koppelingen({ unlinkedUsers, unlinkedRelaties }: Props) 
                 <div className="space-y-6">
                     <Heading
                         title={t('Relations without a user')}
-                        description={t('These active relations do not have a linked user account')}
+                        description={t(
+                            'These active relations do not have a linked user account',
+                        )}
                     />
 
                     <div className="overflow-x-auto">
                         {unlinkedRelaties.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">{t('No unlinked relations found.')}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {t('No unlinked relations found.')}
+                            </p>
                         ) : (
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="border-b">
-                                        <th className="py-3 pr-4 text-left font-medium">{t('No.')}</th>
-                                        <th className="px-4 py-3 text-left font-medium">{t('Name')}</th>
-                                        <th className="px-4 py-3 text-left font-medium">{t('Link to user')}</th>
+                                        <th className="py-3 pr-4 text-left font-medium">
+                                            {t('No.')}
+                                        </th>
+                                        <th className="px-4 py-3 text-left font-medium">
+                                            {t('Name')}
+                                        </th>
+                                        <th className="px-4 py-3 text-left font-medium">
+                                            {t('Link to user')}
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {unlinkedRelaties.map((relatie) => (
-                                        <RelatieRow key={relatie.id} relatie={relatie} users={unlinkedUsers} t={t} />
+                                        <RelatieRow
+                                            key={relatie.id}
+                                            relatie={relatie}
+                                            users={unlinkedUsers}
+                                            t={t}
+                                        />
                                     ))}
                                 </tbody>
                             </table>

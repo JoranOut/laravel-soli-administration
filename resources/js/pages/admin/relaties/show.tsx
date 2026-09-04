@@ -1,26 +1,41 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Info } from 'lucide-react';
 import { useState } from 'react';
-import AppLayout from '@/layouts/app-layout';
 
+import { TabNavigation } from '@/components/admin/tab-navigation';
+import type { Tab } from '@/components/admin/tab-navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TabNavigation, type Tab } from '@/components/admin/tab-navigation';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
-import RelatieOverviewTab from '@/pages/admin/relaties/tabs/overview-tab';
-import RelatieTypesTab from '@/pages/admin/relaties/tabs/types-tab';
+import AppLayout from '@/layouts/app-layout';
+import RelatieAccountTab from '@/pages/admin/relaties/tabs/account-tab';
 import RelatieContactTab from '@/pages/admin/relaties/tabs/contact-tab';
+import RelatieInstrumentenTab from '@/pages/admin/relaties/tabs/instrumenten-tab';
 import RelatieLidmaatschapTab from '@/pages/admin/relaties/tabs/lidmaatschap-tab';
 import RelatieOpleidingTab from '@/pages/admin/relaties/tabs/opleiding-tab';
-import RelatieInstrumentenTab from '@/pages/admin/relaties/tabs/instrumenten-tab';
-import RelatieAccountTab from '@/pages/admin/relaties/tabs/account-tab';
-import type { InstrumentSoort, Onderdeel, Relatie, RelatieType } from '@/types/admin';
+import RelatieOverviewTab from '@/pages/admin/relaties/tabs/overview-tab';
+import RelatieTypesTab from '@/pages/admin/relaties/tabs/types-tab';
+import type {
+    InstrumentSoort,
+    Onderdeel,
+    Relatie,
+    RelatieType,
+} from '@/types/admin';
 import type { User } from '@/types/auth';
 
-type RelatieSummary = Pick<Relatie, 'id' | 'voornaam' | 'tussenvoegsel' | 'achternaam' | 'relatie_nummer'>;
+type RelatieSummary = Pick<
+    Relatie,
+    'id' | 'voornaam' | 'tussenvoegsel' | 'achternaam' | 'relatie_nummer'
+>;
 
 type Props = {
     relatie: Relatie;
@@ -32,10 +47,19 @@ type Props = {
 };
 
 function formatName(r: RelatieSummary): string {
-    return [r.voornaam, r.tussenvoegsel, r.achternaam].filter(Boolean).join(' ');
+    return [r.voornaam, r.tussenvoegsel, r.achternaam]
+        .filter(Boolean)
+        .join(' ');
 }
 
-export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrumentSoorten, users, userRelaties }: Props) {
+export default function RelatieShow({
+    relatie,
+    relatieTypes,
+    onderdelen,
+    instrumentSoorten,
+    users,
+    userRelaties,
+}: Props) {
     const [activeTab, setActiveTab] = useState('overview');
     const { can } = usePermissions();
     const { t } = useTranslation();
@@ -53,10 +77,12 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         { key: 'types', label: t('Types') },
         ...(seesAllRelaties ? [{ key: 'contact', label: t('Contact') }] : []),
         { key: 'lidmaatschap', label: t('Membership') },
-        ...(seesAllRelaties ? [
-            { key: 'opleiding', label: t('Education') },
-            { key: 'instrumenten', label: t('Instruments') },
-        ] : []),
+        ...(seesAllRelaties
+            ? [
+                  { key: 'opleiding', label: t('Education') },
+                  { key: 'instrumenten', label: t('Instruments') },
+              ]
+            : []),
         ...(can('users.edit') ? [{ key: 'account', label: t('Account') }] : []),
     ];
 
@@ -64,76 +90,103 @@ export default function RelatieShow({ relatie, relatieTypes, onderdelen, instrum
         <AppLayout>
             <Head title={relatie.volledige_naam} />
             <div className="space-y-6 p-4">
-                    {seesAllRelaties && (
-                        <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href="/admin/relaties">
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    {t('Back')}
-                                </Link>
-                            </Button>
-                        </div>
+                {seesAllRelaties && (
+                    <div className="flex items-center gap-4">
+                        <Button variant="ghost" size="sm" asChild>
+                            <Link href="/admin/relaties">
+                                <ArrowLeft className="mr-2 h-4 w-4" />
+                                {t('Back')}
+                            </Link>
+                        </Button>
+                    </div>
+                )}
+
+                <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>{t('Please note')}</AlertTitle>
+                    <AlertDescription>
+                        {t(
+                            'All relation data is currently stored in a different system. This page only stores information needed for communication with other systems.',
+                        )}
+                    </AlertDescription>
+                </Alert>
+
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold">
+                            {relatie.volledige_naam}
+                        </h2>
+                        <p className="text-muted-foreground">
+                            {t('Relation number')}: {relatie.relatie_nummer}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        {showSwitcher && (
+                            <Select
+                                value={String(relatie.id)}
+                                onValueChange={handleRelatieSwitched}
+                            >
+                                <SelectTrigger className="w-[220px]">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {userRelaties.map((r) => (
+                                        <SelectItem
+                                            key={r.id}
+                                            value={String(r.id)}
+                                        >
+                                            {formatName(r)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                        <Badge variant={relatie.actief ? 'default' : 'outline'}>
+                            {relatie.actief ? t('Active') : t('Inactive')}
+                        </Badge>
+                    </div>
+                </div>
+
+                <TabNavigation
+                    tabs={tabs}
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                />
+
+                <div className="pt-4">
+                    {activeTab === 'overview' && (
+                        <RelatieOverviewTab relatie={relatie} />
                     )}
-
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>{t('Please note')}</AlertTitle>
-                        <AlertDescription>
-                            {t('All relation data is currently stored in a different system. This page only stores information needed for communication with other systems.')}
-                        </AlertDescription>
-                    </Alert>
-
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 className="text-2xl font-bold">{relatie.volledige_naam}</h2>
-                            <p className="text-muted-foreground">{t('Relation number')}: {relatie.relatie_nummer}</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            {showSwitcher && (
-                                <Select value={String(relatie.id)} onValueChange={handleRelatieSwitched}>
-                                    <SelectTrigger className="w-[220px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {userRelaties.map((r) => (
-                                            <SelectItem key={r.id} value={String(r.id)}>
-                                                {formatName(r)}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
-                            <Badge variant={relatie.actief ? 'default' : 'outline'}>
-                                {relatie.actief ? t('Active') : t('Inactive')}
-                            </Badge>
-                        </div>
-                    </div>
-
-                    <TabNavigation tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
-
-                    <div className="pt-4">
-                        {activeTab === 'overview' && (
-                            <RelatieOverviewTab relatie={relatie} />
-                        )}
-                        {activeTab === 'types' && (
-                            <RelatieTypesTab relatie={relatie} relatieTypes={relatieTypes ?? []} onderdelen={onderdelen ?? []} />
-                        )}
-                        {activeTab === 'contact' && (
-                            <RelatieContactTab relatie={relatie} />
-                        )}
-                        {activeTab === 'lidmaatschap' && (
-                            <RelatieLidmaatschapTab relatie={relatie} onderdelen={onderdelen ?? []} instrumentSoorten={instrumentSoorten ?? []} />
-                        )}
-                        {activeTab === 'opleiding' && (
-                            <RelatieOpleidingTab relatie={relatie} />
-                        )}
-                        {activeTab === 'instrumenten' && (
-                            <RelatieInstrumentenTab relatie={relatie} />
-                        )}
-                        {activeTab === 'account' && can('users.edit') && (
-                            <RelatieAccountTab relatie={relatie} users={users ?? []} />
-                        )}
-                    </div>
+                    {activeTab === 'types' && (
+                        <RelatieTypesTab
+                            relatie={relatie}
+                            relatieTypes={relatieTypes ?? []}
+                            onderdelen={onderdelen ?? []}
+                        />
+                    )}
+                    {activeTab === 'contact' && (
+                        <RelatieContactTab relatie={relatie} />
+                    )}
+                    {activeTab === 'lidmaatschap' && (
+                        <RelatieLidmaatschapTab
+                            relatie={relatie}
+                            onderdelen={onderdelen ?? []}
+                            instrumentSoorten={instrumentSoorten ?? []}
+                        />
+                    )}
+                    {activeTab === 'opleiding' && (
+                        <RelatieOpleidingTab relatie={relatie} />
+                    )}
+                    {activeTab === 'instrumenten' && (
+                        <RelatieInstrumentenTab relatie={relatie} />
+                    )}
+                    {activeTab === 'account' && can('users.edit') && (
+                        <RelatieAccountTab
+                            relatie={relatie}
+                            users={users ?? []}
+                        />
+                    )}
+                </div>
             </div>
         </AppLayout>
     );

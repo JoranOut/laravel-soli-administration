@@ -21,21 +21,23 @@ export default function Profile() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t("Profile settings")} />
+            <Head title={t('Profile settings')} />
 
-            <h1 className="sr-only">{t("Profile settings")}</h1>
+            <h1 className="sr-only">{t('Profile settings')}</h1>
 
             <SettingsLayout>
                 <div className="space-y-6">
                     <Heading
                         variant="small"
-                        title={t("Profile information")}
-                        description={t("Contact ledenadministratie@soli.nl to update your name or email address.")}
+                        title={t('Profile information')}
+                        description={t(
+                            'Contact ledenadministratie@soli.nl to update your name or email address.',
+                        )}
                     />
 
                     <div className="space-y-6">
                         <div className="grid gap-2">
-                            <Label htmlFor="name">{t("Name")}</Label>
+                            <Label htmlFor="name">{t('Name')}</Label>
                             <Input
                                 id="name"
                                 className="mt-1 block w-full"
@@ -45,7 +47,7 @@ export default function Profile() {
                         </div>
 
                         <div className="grid gap-2">
-                            <Label htmlFor="email">{t("Email address")}</Label>
+                            <Label htmlFor="email">{t('Email address')}</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -56,7 +58,6 @@ export default function Profile() {
                         </div>
                     </div>
                 </div>
-
             </SettingsLayout>
         </AppLayout>
     );

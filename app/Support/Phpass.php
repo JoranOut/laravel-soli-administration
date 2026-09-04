@@ -47,12 +47,12 @@ class Phpass
 
         do {
             $value = ord($input[$i++]);
-            $output .= self::ITOA64[$value & 0x3f];
+            $output .= self::ITOA64[$value & 0x3F];
 
             if ($i < $count) {
                 $value |= ord($input[$i]) << 8;
             }
-            $output .= self::ITOA64[($value >> 6) & 0x3f];
+            $output .= self::ITOA64[($value >> 6) & 0x3F];
 
             if ($i++ >= $count) {
                 break;
@@ -61,13 +61,13 @@ class Phpass
             if ($i < $count) {
                 $value |= ord($input[$i]) << 16;
             }
-            $output .= self::ITOA64[($value >> 12) & 0x3f];
+            $output .= self::ITOA64[($value >> 12) & 0x3F];
 
             if ($i++ >= $count) {
                 break;
             }
 
-            $output .= self::ITOA64[($value >> 18) & 0x3f];
+            $output .= self::ITOA64[($value >> 18) & 0x3F];
         } while ($i < $count);
 
         return $output;

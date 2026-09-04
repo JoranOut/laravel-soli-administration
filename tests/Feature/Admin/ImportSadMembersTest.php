@@ -2,7 +2,6 @@
 
 use App\Models\Onderdeel;
 use App\Models\Relatie;
-use App\Models\RelatieInstrument;
 use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;

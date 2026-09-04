@@ -16,10 +16,10 @@ export default function ForgotPassword({ status }: { status?: string }) {
 
     return (
         <AuthLayout
-            title={t("Forgot password")}
-            description={t("Enter your email to receive a password reset link")}
+            title={t('Forgot password')}
+            description={t('Enter your email to receive a password reset link')}
         >
-            <Head title={t("Forgot password")} />
+            <Head title={t('Forgot password')} />
 
             {status && (
                 <div className="mb-4 text-center text-sm font-medium text-green-600">
@@ -32,14 +32,16 @@ export default function ForgotPassword({ status }: { status?: string }) {
                     {({ processing, errors }) => (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="email">{t("Email address")}</Label>
+                                <Label htmlFor="email">
+                                    {t('Email address')}
+                                </Label>
                                 <Input
                                     id="email"
                                     type="email"
                                     name="email"
                                     autoComplete="off"
                                     autoFocus
-                                    placeholder={t("email@example.com")}
+                                    placeholder={t('email@example.com')}
                                 />
 
                                 <InputError message={errors.email} />
@@ -54,7 +56,7 @@ export default function ForgotPassword({ status }: { status?: string }) {
                                     {processing && (
                                         <LoaderCircle className="h-4 w-4 animate-spin" />
                                     )}
-                                    {t("Email password reset link")}
+                                    {t('Email password reset link')}
                                 </Button>
                             </div>
                         </>
@@ -62,8 +64,8 @@ export default function ForgotPassword({ status }: { status?: string }) {
                 </Form>
 
                 <div className="space-x-1 text-center text-sm text-muted-foreground">
-                    <span>{t("Or, return to")}</span>
-                    <TextLink href={login()}>{t("log in")}</TextLink>
+                    <span>{t('Or, return to')}</span>
+                    <TextLink href={login()}>{t('log in')}</TextLink>
                 </div>
             </div>
         </AuthLayout>
