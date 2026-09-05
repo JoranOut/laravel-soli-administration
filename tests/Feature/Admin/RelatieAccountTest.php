@@ -472,11 +472,11 @@ test('user with users.edit permission can reset password', function () {
     expect($linkedUser->password)->not->toBe($oldHash);
 });
 
-// --- Deleting an account needs relaties.delete ---
+// --- Deleting an account needs users.edit AND relaties.delete ---
 
-test('relaties.delete may delete a user account without users.edit', function () {
-    $role = Spatie\Permission\Models\Role::create(['name' => 'ledenbeheer']);
-    $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'relaties.delete']);
+test('deleting an account needs both users.edit and relaties.delete', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'accountbeheer']);
+    $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'users.edit', 'relaties.delete']);
 
     $actor = User::factory()->create()->assignRole($role);
     $victim = User::factory()->create();
@@ -490,8 +490,24 @@ test('relaties.delete may delete a user account without users.edit', function ()
     expect($relatie->fresh()->user_id)->toBeNull();
 });
 
-test('users.edit alone may not delete a user account', function () {
-    $role = Spatie\Permission\Models\Role::create(['name' => 'accountbeheer']);
+test('relaties.delete without users.edit may not delete an account', function () {
+    // This is ledenadministratie's shape: it never sees the account tab
+    $actor = User::factory()->create()->assignRole('ledenadministratie');
+    $victim = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $victim->id]);
+
+    expect($actor->can('relaties.delete'))->toBeTrue();
+    expect($actor->can('users.edit'))->toBeFalse();
+
+    $this->actingAs($actor)
+        ->delete("/admin/relaties/{$relatie->id}/account")
+        ->assertForbidden();
+
+    expect(User::find($victim->id))->not->toBeNull();
+});
+
+test('users.edit without relaties.delete may not delete an account', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'accountbeheer_light']);
     $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'users.edit']);
 
     $actor = User::factory()->create()->assignRole($role);
@@ -516,4 +532,28 @@ test('nobody can delete their own account', function () {
 
     expect(User::find($admin->id))->not->toBeNull();
     expect($own->fresh()->user_id)->toBe($admin->id);
+});
+
+test('disconnecting an account syncs the roles it no longer earns', function () {
+    $this->seed(Database\Seeders\RelatieTypeRoleMappingSeeder::class);
+
+    $user = User::factory()->create();
+    $bestuurType = RelatieType::where('naam', 'bestuur')->first();
+
+    $withBestuur = Relatie::factory()->create(['user_id' => $user->id]);
+    $withBestuur->types()->attach($bestuurType->id, ['van' => '2026-01-01']);
+    Relatie::factory()->create(['user_id' => $user->id]);
+
+    app(App\Services\DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+    expect($user->fresh()->hasRole('bestuur'))->toBeTrue();
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    // Disconnect the relatie carrying the type; the other one keeps the account
+    $this->actingAs($admin)
+        ->delete("/admin/relaties/{$withBestuur->id}/account")
+        ->assertRedirect();
+
+    expect(User::find($user->id))->not->toBeNull();
+    expect($user->fresh()->hasRole('bestuur'))->toBeFalse();
 });

@@ -411,8 +411,12 @@ class RelatieController extends Controller
 
         if ($otherRelatiesCount > 0) {
             // User is linked to other relaties — just disconnect
+            $user = $relatie->user;
             $relatie->user_id = null;
             $relatie->save();
+
+            // This relatie's types no longer count towards their roles
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
 
             return redirect()
                 ->back()

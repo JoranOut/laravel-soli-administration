@@ -61,7 +61,7 @@ export default function RelatieShow({
     userRelaties,
 }: Props) {
     const [activeTab, setActiveTab] = useState('overview');
-    const { can, canAny } = usePermissions();
+    const { can } = usePermissions();
     const { t } = useTranslation();
 
     const showSwitcher = userRelaties && userRelaties.length > 1;
@@ -83,9 +83,7 @@ export default function RelatieShow({
                   { key: 'instrumenten', label: t('Instruments') },
               ]
             : []),
-        ...(canAny(['users.edit', 'relaties.delete'])
-            ? [{ key: 'account', label: t('Account') }]
-            : []),
+        ...(can('users.edit') ? [{ key: 'account', label: t('Account') }] : []),
     ];
 
     return (
@@ -182,13 +180,12 @@ export default function RelatieShow({
                     {activeTab === 'instrumenten' && (
                         <RelatieInstrumentenTab relatie={relatie} />
                     )}
-                    {activeTab === 'account' &&
-                        canAny(['users.edit', 'relaties.delete']) && (
-                            <RelatieAccountTab
-                                relatie={relatie}
-                                users={users ?? []}
-                            />
-                        )}
+                    {activeTab === 'account' && can('users.edit') && (
+                        <RelatieAccountTab
+                            relatie={relatie}
+                            users={users ?? []}
+                        />
+                    )}
                 </div>
             </div>
         </AppLayout>

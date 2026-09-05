@@ -52,6 +52,8 @@ Then `php artisan permission:cache-reset` — the permission cache holds for 24h
 
 From there, `/admin/roles` assigns the permissions to roles and `/admin/relatie-type-rollen` fills the mapping table. **Until the mapping table has rows, no account gets any role** — including every relatie created or SAD-imported in the meantime — so do it in the same sitting, and run `roles:sync-derived --dry-run` before letting the nightly run loose.
 
+`roles:sync-derived` refuses to run at all while the mapping table is empty. Without that guard the first nightly run after a deploy would revoke every role outside `NEVER_MANAGED` from every account — `bestuur`, `contactpersoon`, `minimal` and the `member` role the expand migration keeps around for rollback. The cost of the guard is that emptying the table completely no longer revokes anything; removing one mapping while others remain does.
+
 **Roles and mappings do not reach production through a deploy.** `deploy.yml` runs `migrate --force` and never `db:seed`, so a new role or mapping needs `db:seed --class=RolesAndPermissionsSeeder --force` on the server (idempotent) plus the mapping set in the UI at `/admin/relatie-type-rollen`. **The `member`→`minimal` rename is expand/contract across two deploys.** This deploy adds `minimal` beside `member` and copies its permissions and every assignment, leaving `member` untouched, because migrations run before the swap and the previous release still calls `hasRole('member')`. Dropping `member` is a separate migration for the *next* deploy, once this one is healthy.
 
 ---
@@ -144,7 +146,7 @@ This is the internal counterpart to `ClientRoleResolver`, which maps the same re
 ### Account Rules
 
 - **No self-delete, anywhere.** There is no "delete my account" screen; the `delete-user.tsx` component that offered one was removed — it was unreachable and posted to a `ProfileController::destroy` route that never existed. `destroyAccount` also refuses when the account is the caller's own.
-- Account management needs `users.edit`; **deleting an account needs `relaties.delete`**, which is what `ledenadministratie` holds and `users.edit` does not imply. The account tab is therefore visible with either permission, and gates the password-reset block on `users.edit` and the delete block on `relaties.delete`.
+- Account management needs `users.edit`, and the account tab is shown on that permission alone. **Deleting an account needs `users.edit` *and* `relaties.delete`** — the route chains both middleware, so it is AND rather than Spatie's `|` OR. `ledenadministratie` holds `relaties.delete` without `users.edit` and therefore cannot delete accounts.
 - Relatie inactive → linked user auto-deleted.
 - Login email edit → syncs to user record, clears `email_verified_at`.
 - Login email can't be deleted from relatie emails.

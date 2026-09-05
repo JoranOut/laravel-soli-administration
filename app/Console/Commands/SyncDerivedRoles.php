@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\RelatieTypeRoleMapping;
 use App\Models\User;
 use App\Services\DerivedRoleSyncService;
 use Illuminate\Console\Command;
@@ -17,13 +18,16 @@ class SyncDerivedRoles extends Command
     {
         $dryRun = (bool) $this->option('dry-run');
 
-        $managed = $service->managedRoleNames();
-
-        if ($managed === []) {
+        // An unconfigured system must not strip roles: with no mapping rows
+        // nobody earns anything, so a sync would revoke every role outside
+        // NEVER_MANAGED from every account.
+        if (! RelatieTypeRoleMapping::query()->exists()) {
             $this->warn('No relatie type is mapped to a role, so there is nothing to sync.');
 
             return self::SUCCESS;
         }
+
+        $managed = $service->managedRoleNames();
 
         if ($dryRun) {
             $this->info('[DRY RUN] No roles will be changed.');

@@ -79,8 +79,10 @@ Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(funct
         ->middleware('permission:users.edit');
     Route::put('admin/relaties/{relatie}/account/password', [RelatieController::class, 'resetPassword'])->name('admin.relaties.account.reset-password')
         ->middleware(['permission:users.edit', 'throttle:6,1']);
+    // Both: the account tab lives behind users.edit, and deleting an account on
+    // top of that needs relaties.delete. Chained, so this is AND, not OR.
     Route::delete('admin/relaties/{relatie}/account', [RelatieController::class, 'destroyAccount'])->name('admin.relaties.account.destroy')
-        ->middleware('permission:relaties.delete');
+        ->middleware(['permission:users.edit', 'permission:relaties.delete']);
 
     // Relatie sub-resources
     Route::middleware('permission:relaties.edit')->group(function () {

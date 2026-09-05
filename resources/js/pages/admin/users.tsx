@@ -12,6 +12,8 @@ import { useTranslation } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
+const NO_ROLE = 'none';
+
 type UserData = {
     id: number;
     name: string;
@@ -47,13 +49,17 @@ export default function Users({
     );
 
     function manualRole(user: UserData) {
-        return user.roles.find((role) => !managedRoles.includes(role)) ?? '';
+        return (
+            user.roles.find((role) => !managedRoles.includes(role)) ?? NO_ROLE
+        );
     }
 
     function updateRole(user: UserData, role: string) {
         router.put(
             `/admin/users/${user.id}`,
-            { roles: [role] },
+            // NO_ROLE clears the manual role; derived roles are re-added
+            // server-side, so this only drops what was granted by hand.
+            { roles: role === NO_ROLE ? [] : [role] },
             { preserveScroll: true },
         );
     }
@@ -116,6 +122,9 @@ export default function Users({
                                                 />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value={NO_ROLE}>
+                                                    {t('No role')}
+                                                </SelectItem>
                                                 {assignableRoles.map((role) => (
                                                     <SelectItem
                                                         key={role}

@@ -313,9 +313,7 @@ export default function RelatieAccountTab({ relatie, users }: Props) {
                     </div>
                 </dl>
 
-                {can('users.edit') && (
-                    <PasswordResetSection relatieId={relatie.id} t={t} />
-                )}
+                <PasswordResetSection relatieId={relatie.id} t={t} />
 
                 {can('relaties.delete') && (
                     <div className="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">

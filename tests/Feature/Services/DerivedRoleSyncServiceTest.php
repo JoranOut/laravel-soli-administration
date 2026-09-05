@@ -189,14 +189,18 @@ test('a user without a relatie loses a derived role', function () {
     expect($user->fresh()->hasRole('minimal'))->toBeFalse();
 });
 
-test('an empty mapping table revokes every derived role', function () {
+test('the command does nothing while no type is mapped', function () {
     $user = User::factory()->create();
     $user->assignRole('bestuur');
     ($this->relatieFor)($user, null);
 
-    $this->service->syncUser($user->load('roles'));
+    // An unconfigured system must not strip roles: right after a deploy the
+    // mapping table is empty, and the daily run would empty every account.
+    $this->artisan('roles:sync-derived')
+        ->expectsOutputToContain('nothing to sync')
+        ->assertSuccessful();
 
-    expect($user->fresh()->hasRole('bestuur'))->toBeFalse();
+    expect($user->fresh()->hasRole('bestuur'))->toBeTrue();
 });
 
 test('dry run reports changes without applying them', function () {

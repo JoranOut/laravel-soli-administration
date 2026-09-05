@@ -201,7 +201,13 @@ test('the nightly command also revokes a role whose mapping was removed', functi
         ->types()->attach($this->bestuurType->id, ['van' => '2026-01-01']);
     $lid->assignRole('bestuur');
 
-    // No mapping rows at all
+    // The bestuur mapping is gone but the table is configured: another type
+    // still maps, so the command runs instead of bailing out.
+    RelatieTypeRoleMapping::create([
+        'relatie_type_id' => RelatieType::where('naam', 'lid')->first()->id,
+        'role_id' => Role::where('name', 'minimal')->first()->id,
+    ]);
+
     $this->artisan('roles:sync-derived')->assertSuccessful();
 
     expect($lid->fresh()->hasRole('bestuur'))->toBeFalse();
