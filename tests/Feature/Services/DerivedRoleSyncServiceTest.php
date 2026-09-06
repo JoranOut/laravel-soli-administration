@@ -258,3 +258,19 @@ test('an active contactpersoon type grants the contactpersoon role', function ()
     expect($user->can('relaties.view.all'))->toBeFalse();
     expect($user->can('dashboard.view'))->toBeFalse();
 });
+
+test('a never-managed role that no seeder creates is still left alone', function () {
+    // muziekbeheer exists in production but in no seeder, so a test that only
+    // uses seeded roles would never notice it being revoked.
+    Role::create(['name' => 'muziekbeheer']);
+    ($this->mapBestuur)();
+
+    $user = User::factory()->create();
+    $user->assignRole('muziekbeheer');
+    ($this->relatieFor)($user, null);
+
+    $this->service->syncUser($user->load('roles'));
+
+    expect($this->service->managedRoleNames())->not->toContain('muziekbeheer');
+    expect($user->fresh()->hasRole('muziekbeheer'))->toBeTrue();
+});
