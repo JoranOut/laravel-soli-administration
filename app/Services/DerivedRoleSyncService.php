@@ -21,9 +21,12 @@ class DerivedRoleSyncService
      * Roles that can never be derived, no matter what the mapping table says.
      *
      * admin is the escape hatch and ledenadministratie is granted on trust, so
-     * both stay hand-granted.
+     * both stay hand-granted. muziekbeheer is a real role in production even
+     * though nothing in this repo creates it — it was dropped from this list
+     * once on the strength of a grep, which would have let the sync revoke it
+     * from everyone holding it. Verify against the database, not the seeder.
      */
-    public const NEVER_MANAGED = ['admin', 'ledenadministratie'];
+    public const NEVER_MANAGED = ['admin', 'ledenadministratie', 'muziekbeheer'];
 
     /**
      * Role names this service is allowed to grant and revoke.
