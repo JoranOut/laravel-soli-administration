@@ -19,6 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/use-translation';
+import type { Translate } from '@/hooks/use-translation';
 import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
@@ -49,7 +50,7 @@ function UserRow({
 }: {
     user: UnlinkedUser;
     relaties: UnlinkedRelatie[];
-    t: (key: string) => string;
+    t: Translate;
 }) {
     const [selectedRelatieId, setSelectedRelatieId] = useState<string>('');
 
@@ -145,7 +146,7 @@ function RelatieRow({
 }: {
     relatie: UnlinkedRelatie;
     users: UnlinkedUser[];
-    t: (key: string) => string;
+    t: Translate;
 }) {
     const [selectedUserId, setSelectedUserId] = useState<string>('');
 

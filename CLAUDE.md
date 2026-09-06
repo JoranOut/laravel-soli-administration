@@ -178,6 +178,10 @@ overview, types, contact, lidmaatschap, opleiding, financieel, instrumenten, acc
 
 `lang/en.json` + `lang/nl.json`. Always add to both. Frontend: `t('Key')` via `useTranslation()`. Placeholders: `t('Hello :name', { name: 'Jan' })`.
 
+When passing `t` down to a sub-component, type the prop as the exported `Translate` rather than writing a signature by hand — `koppelingen.tsx` had it as `(key: string) => string`, which made every placeholder call a type error.
+
+`npm run types:check` is clean and is **not** in CI, so nothing keeps it that way. It was worth running: it had been flagging a "delete my account" dialog posting to a `ProfileController::destroy` route that never existed.
+
 ---
 
 ## Testing

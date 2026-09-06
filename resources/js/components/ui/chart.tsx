@@ -279,12 +279,14 @@ function ChartLegendContent({
   nameKey,
   activeKey,
   onToggle,
-}: React.ComponentProps<"div"> & {
+  // A div has its own onToggle (ToggleEvent), so the intersection widened the
+  // key argument to string | ToggleEvent and broke every caller's inference.
+}: Omit<React.ComponentProps<"div">, "onToggle"> & {
   hideIcon?: boolean
   nameKey?: string
   activeKey?: string | null
   onToggle?: (key: string) => void
-} & RechartsPrimitive.DefaultLegendContentProps) {
+} & Omit<RechartsPrimitive.DefaultLegendContentProps, "onToggle">) {
   const { config } = useChart()
 
   if (!payload?.length) {

@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { usePermissions } from '@/hooks/use-permissions';
 import { useTranslation } from '@/hooks/use-translation';
+import type { Translate } from '@/hooks/use-translation';
 import type { Relatie } from '@/types/admin';
 import type { User } from '@/types/auth';
 
@@ -59,7 +60,7 @@ function PasswordResetSection({
     t,
 }: {
     relatieId: number;
-    t: (key: string, replacements?: Record<string, string>) => string;
+    t: Translate;
 }) {
     const [password, setPassword] = useState('');
     const [saving, setSaving] = useState(false);

@@ -2,6 +2,11 @@ import { usePage } from '@inertiajs/react';
 import en from '../../../lang/en.json';
 import nl from '../../../lang/nl.json';
 
+export type Translate = (
+    key: string,
+    replacements?: Record<string, string | number>,
+) => string;
+
 const translationsByLocale: Record<string, Record<string, string>> = { en, nl };
 
 export function useTranslation() {
