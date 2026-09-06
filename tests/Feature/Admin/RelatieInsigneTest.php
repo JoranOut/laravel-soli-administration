@@ -56,7 +56,7 @@ test('ledenadministratie can add insigne', function () {
 });
 
 test('member cannot add insigne', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
 
     $response = $this->actingAs($member)->post("/admin/relaties/{$relatie->id}/insignes", [
@@ -102,7 +102,7 @@ test('admin can update insigne', function () {
 });
 
 test('member cannot update insigne', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
     $insigne = $relatie->insignes()->create([
         'naam' => 'Origineel',
@@ -149,7 +149,7 @@ test('admin can delete insigne', function () {
 });
 
 test('member cannot delete insigne', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create();
     $insigne = $relatie->insignes()->create([
         'naam' => 'Te verwijderen',

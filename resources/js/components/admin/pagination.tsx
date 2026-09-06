@@ -8,7 +8,10 @@ type PaginationProps = {
 };
 
 function decodeLabel(label: string): string {
-    return label.replace(/&laquo;/g, '\u00AB').replace(/&raquo;/g, '\u00BB').replace(/&amp;/g, '&');
+    return label
+        .replace(/&laquo;/g, '\u00AB')
+        .replace(/&raquo;/g, '\u00BB')
+        .replace(/&amp;/g, '&');
 }
 
 export function Pagination({ pagination }: PaginationProps) {
@@ -18,8 +21,12 @@ export function Pagination({ pagination }: PaginationProps) {
 
     return (
         <div className="flex items-center justify-between pt-4">
-            <p className="text-muted-foreground text-sm">
-                {t(':from–:to of :total results', { from: pagination.from ?? 0, to: pagination.to ?? 0, total: pagination.total })}
+            <p className="text-sm text-muted-foreground">
+                {t(':from–:to of :total results', {
+                    from: pagination.from ?? 0,
+                    to: pagination.to ?? 0,
+                    total: pagination.total,
+                })}
             </p>
             <div className="flex gap-1">
                 {pagination.links.map((link, i) => (
@@ -31,11 +38,7 @@ export function Pagination({ pagination }: PaginationProps) {
                         asChild={!!link.url}
                     >
                         {link.url ? (
-                            <Link
-                                href={link.url}
-                                preserveState
-                                preserveScroll
-                            >
+                            <Link href={link.url} preserveState preserveScroll>
                                 {decodeLabel(link.label)}
                             </Link>
                         ) : (

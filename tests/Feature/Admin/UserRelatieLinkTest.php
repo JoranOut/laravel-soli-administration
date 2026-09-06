@@ -167,7 +167,7 @@ test('cannot delete a user that is linked to a relatie', function () {
 
 test('non-admin gets 403 on koppelingen page', function () {
     $member = User::factory()->create();
-    $member->assignRole('member');
+    $member->assignRole('minimal');
 
     $this->actingAs($member)
         ->get('/admin/koppelingen')

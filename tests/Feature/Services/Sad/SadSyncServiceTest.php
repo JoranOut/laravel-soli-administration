@@ -2,9 +2,9 @@
 
 use App\Models\JobStatus;
 use App\Models\Relatie;
+use App\Services\MemberSyncService;
 use App\Services\Sad\SadApiClient;
 use App\Services\Sad\SadSyncService;
-use App\Services\MemberSyncService;
 use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;

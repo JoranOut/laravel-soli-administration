@@ -77,7 +77,7 @@ test('member with linked relatie is redirected to dashboard after login', functi
     $this->seed(RolesAndPermissionsSeeder::class);
     $this->seed(RelatieTypeSeeder::class);
 
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     Relatie::factory()->create(['user_id' => $member->id]);
 
     $response = $this->post(route('login.store'), [

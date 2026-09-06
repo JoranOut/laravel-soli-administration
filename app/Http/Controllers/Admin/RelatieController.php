@@ -12,6 +12,7 @@ use App\Models\Relatie;
 use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\User;
+use App\Services\DerivedRoleSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -28,7 +29,7 @@ class RelatieController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('member')) {
+        if (! $user->can('relaties.view.all')) {
             if ($relatie = $user->relaties->first()) {
                 return redirect()->route('admin.relaties.show', $relatie);
             }
@@ -122,7 +123,6 @@ class RelatieController extends Controller
                 'email' => $firstEmail,
                 'password' => Str::random(32),
             ]);
-            $user->assignRole('member');
             $relatie->user_id = $user->id;
             $relatie->save();
 
@@ -166,6 +166,12 @@ class RelatieController extends Controller
             return $relatie;
         });
 
+        // The wizard can attach a type that maps to a role, which is what
+        // gives the fresh account any role at all.
+        if ($relatie->user) {
+            app(DerivedRoleSyncService::class)->syncUser($relatie->user->load('roles'));
+        }
+
         SyncGoogleContactsJob::dispatch($relatie->id)->afterResponse();
 
         return redirect()
@@ -177,7 +183,7 @@ class RelatieController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->hasRole('member') && $relatie->user_id !== $user->id) {
+        if (! $user->can('relaties.view.all') && $relatie->user_id !== $user->id) {
             abort(403);
         }
 
@@ -223,7 +229,7 @@ class RelatieController extends Controller
             $props['users'] = User::orderBy('name')->get(['id', 'name', 'email']);
         }
 
-        if ($user->hasRole('member') && $relatie->user_id === $user->id) {
+        if (! $user->can('relaties.view.all') && $relatie->user_id === $user->id) {
             $props['userRelaties'] = $user->relaties()
                 ->orderBy('achternaam')
                 ->get(['id', 'voornaam', 'tussenvoegsel', 'achternaam', 'relatie_nummer']);
@@ -244,6 +250,11 @@ class RelatieController extends Controller
             $relatie->save();
         }
 
+        // Reactivating brings the relatie's types back into scope
+        if (! $wasActief && $relatie->actief && $relatie->user) {
+            app(DerivedRoleSyncService::class)->syncUser($relatie->user->load('roles'));
+        }
+
         return redirect()
             ->back()
             ->with('success', __('Relation updated.'));
@@ -251,7 +262,14 @@ class RelatieController extends Controller
 
     public function destroy(Relatie $relatie): RedirectResponse
     {
+        $user = $relatie->user;
+
         $relatie->delete();
+
+        // A soft-deleted relatie no longer counts towards derived roles
+        if ($user) {
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+        }
 
         return redirect()
             ->route('admin.relaties.index')
@@ -317,10 +335,12 @@ class RelatieController extends Controller
             'email' => $email->email,
             'password' => Str::random(32),
         ]);
-        $user->assignRole('member');
-
         $relatie->user_id = $user->id;
         $relatie->save();
+
+        // The minimal role follows from the relatie's types, not from creating
+        // the account, so this is what grants it.
+        app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
 
         return redirect()
             ->back()
@@ -377,14 +397,26 @@ class RelatieController extends Controller
                 ->with('error', __('No linked user account.'));
         }
 
+        // No self-delete: an account is removed by someone else, never by its
+        // own holder. There is deliberately no "delete my account" anywhere.
+        if ($relatie->user_id === auth()->id()) {
+            return redirect()
+                ->back()
+                ->with('error', __('You cannot delete your own account.'));
+        }
+
         $otherRelatiesCount = Relatie::where('user_id', $relatie->user_id)
             ->where('id', '!=', $relatie->id)
             ->count();
 
         if ($otherRelatiesCount > 0) {
             // User is linked to other relaties — just disconnect
+            $user = $relatie->user;
             $relatie->user_id = null;
             $relatie->save();
+
+            // This relatie's types no longer count towards their roles
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
 
             return redirect()
                 ->back()

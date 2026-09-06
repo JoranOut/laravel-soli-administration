@@ -37,7 +37,8 @@ export function DataTable<T extends { id: number }>({
     };
 
     const getSortIcon = (key: string) => {
-        if (sortKey !== key) return <ArrowUpDown className="ml-1 inline h-4 w-4" />;
+        if (sortKey !== key)
+            return <ArrowUpDown className="ml-1 inline h-4 w-4" />;
         return sortDirection === 'asc' ? (
             <ArrowUp className="ml-1 inline h-4 w-4" />
         ) : (
@@ -49,9 +50,12 @@ export function DataTable<T extends { id: number }>({
         <div className="overflow-x-auto rounded-md border">
             <table className="w-full text-sm">
                 <thead>
-                    <tr className="bg-muted/50 border-b">
+                    <tr className="border-b bg-muted/50">
                         {columns.map((col) => (
-                            <th key={col.key} className="px-4 py-3 text-left font-medium">
+                            <th
+                                key={col.key}
+                                className="px-4 py-3 text-left font-medium"
+                            >
                                 {col.sortable ? (
                                     <Button
                                         variant="ghost"
@@ -72,18 +76,29 @@ export function DataTable<T extends { id: number }>({
                 <tbody>
                     {data.length === 0 ? (
                         <tr>
-                            <td colSpan={columns.length} className="text-muted-foreground px-4 py-8 text-center">
+                            <td
+                                colSpan={columns.length}
+                                className="px-4 py-8 text-center text-muted-foreground"
+                            >
                                 {resolvedEmptyMessage}
                             </td>
                         </tr>
                     ) : (
                         data.map((item) => (
-                            <tr key={item.id} className="hover:bg-muted/50 border-b last:border-0">
+                            <tr
+                                key={item.id}
+                                className="border-b last:border-0 hover:bg-muted/50"
+                            >
                                 {columns.map((col) => (
                                     <td key={col.key} className="px-4 py-3">
                                         {col.render
                                             ? col.render(item)
-                                            : (item as Record<string, unknown>)[col.key]?.toString() ?? ''}
+                                            : ((
+                                                  item as Record<
+                                                      string,
+                                                      unknown
+                                                  >
+                                              )[col.key]?.toString() ?? '')}
                                     </td>
                                 ))}
                             </tr>

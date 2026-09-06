@@ -1,8 +1,8 @@
 import { router } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 type SearchInputProps = {
     value?: string;
@@ -11,7 +11,12 @@ type SearchInputProps = {
     queryParams?: Record<string, string | undefined>;
 };
 
-export function SearchInput({ value = '', placeholder = 'Zoeken...', routeName, queryParams = {} }: SearchInputProps) {
+export function SearchInput({
+    value = '',
+    placeholder = 'Zoeken...',
+    routeName,
+    queryParams = {},
+}: SearchInputProps) {
     const [search, setSearch] = useState(value);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
@@ -47,13 +52,13 @@ export function SearchInput({ value = '', placeholder = 'Zoeken...', routeName, 
 
     return (
         <div className="relative">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
                 type="text"
                 value={search}
                 onChange={handleChange}
                 placeholder={placeholder}
-                className="pl-9 pr-9"
+                className="pr-9 pl-9"
             />
             {search && (
                 <Button

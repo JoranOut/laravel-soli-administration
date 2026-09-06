@@ -1,10 +1,12 @@
-import { Head, Link, router } from '@inertiajs/react';
-import AppLayout from '@/layouts/app-layout';
+import { Head, router } from '@inertiajs/react';
+import { DataTable } from '@/components/admin/data-table';
+import type { Column } from '@/components/admin/data-table';
+import { Pagination } from '@/components/admin/pagination';
+import { RelatieLink } from '@/components/admin/relatie-link';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DataTable, type Column } from '@/components/admin/data-table';
-import { Pagination } from '@/components/admin/pagination';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { PaginatedResponse, Relatie } from '@/types/admin';
 
 type LedenverloopRelatie = Relatie & {
@@ -22,7 +24,11 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
     const { t } = useTranslation();
 
     const handleTabChange = (newTab: string) => {
-        router.get('/admin/ledenverloop', { tab: newTab }, { preserveState: true, preserveScroll: true });
+        router.get(
+            '/admin/ledenverloop',
+            { tab: newTab },
+            { preserveState: true, preserveScroll: true },
+        );
     };
 
     const isJoined = tab === 'joined';
@@ -33,16 +39,16 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
             key: 'achternaam',
             label: t('Name'),
             render: (relatie) => (
-                <Link href={`/admin/relaties/${relatie.id}`} className="text-primary hover:underline font-medium">
+                <RelatieLink relatieId={relatie.id} className="font-medium">
                     {relatie.volledige_naam}
-                </Link>
+                </RelatieLink>
             ),
         },
         {
             key: 'onderdelen',
             label: t('Sections'),
             render: (relatie) => (
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex flex-wrap gap-1">
                     {relatie.onderdelen?.map((onderdeel) => (
                         <Badge key={onderdeel.id} variant="secondary">
                             {onderdeel.naam}
@@ -62,9 +68,13 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
                       label: t('Reason for departure'),
                       render: (relatie: LedenverloopRelatie) =>
                           relatie.reden_vertrek ? (
-                              <span className="text-sm">{relatie.reden_vertrek}</span>
+                              <span className="text-sm">
+                                  {relatie.reden_vertrek}
+                              </span>
                           ) : (
-                              <span className="text-muted-foreground text-sm">-</span>
+                              <span className="text-sm text-muted-foreground">
+                                  -
+                              </span>
                           ),
                   } satisfies Column<LedenverloopRelatie>,
               ]
@@ -97,7 +107,11 @@ export default function LedenverloopIndex({ joined, left, tab }: Props) {
                 <DataTable
                     columns={columns}
                     data={data.data}
-                    emptyMessage={isJoined ? t('No members joined.') : t('No members left.')}
+                    emptyMessage={
+                        isJoined
+                            ? t('No members joined.')
+                            : t('No members left.')
+                    }
                 />
 
                 <Pagination pagination={data} />

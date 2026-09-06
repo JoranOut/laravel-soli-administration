@@ -1,6 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     SidebarGroup,
     SidebarGroupLabel,
@@ -14,7 +18,13 @@ import {
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
 
-export function NavMain({ items = [], label = 'Platform' }: { items: NavItem[]; label?: string }) {
+export function NavMain({
+    items = [],
+    label = 'Platform',
+}: {
+    items: NavItem[];
+    label?: string;
+}) {
     const { isCurrentUrl, isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
@@ -26,7 +36,12 @@ export function NavMain({ items = [], label = 'Platform' }: { items: NavItem[]; 
                         <Collapsible
                             key={item.title}
                             asChild
-                            defaultOpen={isCurrentOrParentUrl(item.href) || item.children.some((child) => isCurrentUrl(child.href))}
+                            defaultOpen={
+                                isCurrentOrParentUrl(item.href) ||
+                                item.children.some((child) =>
+                                    isCurrentUrl(child.href),
+                                )
+                            }
                             className="group/collapsible"
                         >
                             <SidebarMenuItem>
@@ -43,17 +58,37 @@ export function NavMain({ items = [], label = 'Platform' }: { items: NavItem[]; 
                                 <CollapsibleContent>
                                     <SidebarMenuSub>
                                         <SidebarMenuSubItem>
-                                            <SidebarMenuSubButton asChild isActive={isCurrentUrl(item.href)}>
+                                            <SidebarMenuSubButton
+                                                asChild
+                                                isActive={isCurrentUrl(
+                                                    item.href,
+                                                )}
+                                            >
                                                 <Link href={item.href} prefetch>
-                                                    <span>{item.allLabel ?? item.title}</span>
+                                                    <span>
+                                                        {item.allLabel ??
+                                                            item.title}
+                                                    </span>
                                                 </Link>
                                             </SidebarMenuSubButton>
                                         </SidebarMenuSubItem>
                                         {item.children.map((child) => (
-                                            <SidebarMenuSubItem key={child.title}>
-                                                <SidebarMenuSubButton asChild isActive={isCurrentUrl(child.href)}>
-                                                    <Link href={child.href} prefetch>
-                                                        <span>{child.title}</span>
+                                            <SidebarMenuSubItem
+                                                key={child.title}
+                                            >
+                                                <SidebarMenuSubButton
+                                                    asChild
+                                                    isActive={isCurrentUrl(
+                                                        child.href,
+                                                    )}
+                                                >
+                                                    <Link
+                                                        href={child.href}
+                                                        prefetch
+                                                    >
+                                                        <span>
+                                                            {child.title}
+                                                        </span>
                                                     </Link>
                                                 </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>

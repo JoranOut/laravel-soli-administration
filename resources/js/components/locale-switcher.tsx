@@ -12,14 +12,14 @@ export function LocaleSwitcher() {
         <div className="flex items-center gap-1 px-2 text-xs group-data-[collapsible=icon]:hidden">
             <button
                 onClick={() => switchLocale('nl')}
-                className={`rounded px-1.5 py-0.5 ${locale === 'nl' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`rounded px-1.5 py-0.5 ${locale === 'nl' ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
                 NL
             </button>
             <span className="text-muted-foreground">/</span>
             <button
                 onClick={() => switchLocale('en')}
-                className={`rounded px-1.5 py-0.5 ${locale === 'en' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`rounded px-1.5 py-0.5 ${locale === 'en' ? 'bg-primary font-medium text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
                 EN
             </button>

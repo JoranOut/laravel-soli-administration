@@ -1,8 +1,9 @@
-import { Head, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import Heading from '@/components/heading';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import AppLayout from '@/layouts/app-layout';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import type { BreadcrumbItem } from '@/types';
 
 type RoleData = {
@@ -57,74 +58,82 @@ export default function Roles({
             <Head title={t('Roles & permissions')} />
 
             <div className="space-y-6 p-4">
-                <Heading
-                    title={t('Permission matrix')}
-                    description={t('Toggle permissions per role')}
-                />
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <Heading
+                        title={t('Permission matrix')}
+                        description={t('Toggle permissions per role')}
+                    />
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b">
-                                    <th className="py-3 pr-4 text-left font-medium">
-                                        {t('Permission')}
+                    <Button variant="outline" size="sm" asChild>
+                        <Link href="/admin/relatie-type-rollen">
+                            {t('Relatie type roles')}
+                        </Link>
+                    </Button>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                        <thead>
+                            <tr className="border-b">
+                                <th className="py-3 pr-4 text-left font-medium">
+                                    {t('Permission')}
+                                </th>
+                                {roles.map((role) => (
+                                    <th
+                                        key={role.id}
+                                        className="px-4 py-3 text-center font-medium capitalize"
+                                    >
+                                        {role.name}
                                     </th>
-                                    {roles.map((role) => (
-                                        <th
-                                            key={role.id}
-                                            className="px-4 py-3 text-center font-medium capitalize"
-                                        >
-                                            {role.name}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(groupedPermissions).map(
-                                    ([resource, perms]) => (
-                                        <>
-                                            <tr key={`group-${resource}`}>
-                                                <td
-                                                    colSpan={roles.length + 1}
-                                                    className="pt-4 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground"
-                                                >
-                                                    {resource}
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Object.entries(groupedPermissions).map(
+                                ([resource, perms]) => (
+                                    <>
+                                        <tr key={`group-${resource}`}>
+                                            <td
+                                                colSpan={roles.length + 1}
+                                                className="pt-4 pb-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                                            >
+                                                {resource}
+                                            </td>
+                                        </tr>
+                                        {perms.map((permission) => (
+                                            <tr
+                                                key={permission}
+                                                className="border-b"
+                                            >
+                                                <td className="py-2 pr-4 font-mono text-xs">
+                                                    {permission}
                                                 </td>
-                                            </tr>
-                                            {perms.map((permission) => (
-                                                <tr
-                                                    key={permission}
-                                                    className="border-b"
-                                                >
-                                                    <td className="py-2 pr-4 font-mono text-xs">
-                                                        {permission}
-                                                    </td>
-                                                    {roles.map((role) => (
-                                                        <td
-                                                            key={`${role.id}-${permission}`}
-                                                            className="px-4 py-2 text-center"
-                                                        >
-                                                            <Checkbox
-                                                                checked={role.permissions.includes(
+                                                {roles.map((role) => (
+                                                    <td
+                                                        key={`${role.id}-${permission}`}
+                                                        className="px-4 py-2 text-center"
+                                                    >
+                                                        <Checkbox
+                                                            checked={role.permissions.includes(
+                                                                permission,
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                                togglePermission(
+                                                                    role,
                                                                     permission,
-                                                                )}
-                                                                onCheckedChange={() =>
-                                                                    togglePermission(
-                                                                        role,
-                                                                        permission,
-                                                                    )
-                                                                }
-                                                            />
-                                                        </td>
-                                                    ))}
-                                                </tr>
-                                            ))}
-                                        </>
-                                    ),
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                                                )
+                                                            }
+                                                        />
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </>
+                                ),
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </AppLayout>
     );

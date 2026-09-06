@@ -27,7 +27,7 @@ class SyncInstruments extends Command
         $familyIdMap = $this->syncFamilies($data['families']);
         $typeCount = $this->syncSoorten($data['soorten'], $familyIdMap);
 
-        $this->info("Synced ".count($data['families'])." families, {$typeCount} instrument types");
+        $this->info('Synced '.count($data['families'])." families, {$typeCount} instrument types");
 
         return self::SUCCESS;
     }

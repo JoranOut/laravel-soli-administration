@@ -97,7 +97,7 @@ test('admin can delete instrument', function () {
 });
 
 test('member cannot access instrumenten', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get('/admin/instrumenten');
     $response->assertForbidden();

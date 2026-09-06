@@ -1,8 +1,8 @@
 import { Head } from '@inertiajs/react';
 import { Mail } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 
 type ContactPerson = {
     id: number;
@@ -33,10 +33,15 @@ export default function Contact({ bestuur, contactpersonen }: Props) {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-muted-foreground mb-2">
-                            {t('For questions about your membership, contributions, or personal data, please contact the membership administration.')}
+                        <p className="mb-2 text-muted-foreground">
+                            {t(
+                                'For questions about your membership, contributions, or personal data, please contact the membership administration.',
+                            )}
                         </p>
-                        <a href="mailto:ledenadministratie@soli.nl" className="font-medium underline">
+                        <a
+                            href="mailto:ledenadministratie@soli.nl"
+                            className="font-medium underline"
+                        >
                             ledenadministratie@soli.nl
                         </a>
                     </CardContent>
@@ -50,14 +55,24 @@ export default function Contact({ bestuur, contactpersonen }: Props) {
                         {bestuur.length > 0 ? (
                             <div className="space-y-3">
                                 {bestuur.map((member) => (
-                                    <div key={member.id} className="flex items-center justify-between rounded-md border p-3">
+                                    <div
+                                        key={member.id}
+                                        className="flex items-center justify-between rounded-md border p-3"
+                                    >
                                         <div>
                                             <p className="font-medium">
-                                                {member.functie && <>{member.functie} — </>}
-                                                <span className="text-muted-foreground text-sm">{member.volledige_naam}</span>
+                                                {member.functie && (
+                                                    <>{member.functie} — </>
+                                                )}
+                                                <span className="text-sm text-muted-foreground">
+                                                    {member.volledige_naam}
+                                                </span>
                                             </p>
                                             {member.email && (
-                                                <a href={`mailto:${member.email}`} className="text-muted-foreground text-sm underline">
+                                                <a
+                                                    href={`mailto:${member.email}`}
+                                                    className="text-sm text-muted-foreground underline"
+                                                >
                                                     {member.email}
                                                 </a>
                                             )}
@@ -66,7 +81,9 @@ export default function Contact({ bestuur, contactpersonen }: Props) {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-muted-foreground text-sm">{t('No board members found.')}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {t('No board members found.')}
+                            </p>
                         )}
                     </CardContent>
                 </Card>
@@ -79,14 +96,24 @@ export default function Contact({ bestuur, contactpersonen }: Props) {
                         {contactpersonen.length > 0 ? (
                             <div className="space-y-3">
                                 {contactpersonen.map((person) => (
-                                    <div key={person.id} className="flex items-center justify-between rounded-md border p-3">
+                                    <div
+                                        key={person.id}
+                                        className="flex items-center justify-between rounded-md border p-3"
+                                    >
                                         <div>
                                             <p className="font-medium">
-                                                {person.functie && <>{person.functie} — </>}
-                                                <span className="text-muted-foreground text-sm">{person.volledige_naam}</span>
+                                                {person.functie && (
+                                                    <>{person.functie} — </>
+                                                )}
+                                                <span className="text-sm text-muted-foreground">
+                                                    {person.volledige_naam}
+                                                </span>
                                             </p>
                                             {person.email && (
-                                                <a href={`mailto:${person.email}`} className="text-muted-foreground text-sm underline">
+                                                <a
+                                                    href={`mailto:${person.email}`}
+                                                    className="text-sm text-muted-foreground underline"
+                                                >
                                                     {person.email}
                                                 </a>
                                             )}
@@ -95,7 +122,9 @@ export default function Contact({ bestuur, contactpersonen }: Props) {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-muted-foreground text-sm">{t('No contact persons found.')}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {t('No contact persons found.')}
+                            </p>
                         )}
                     </CardContent>
                 </Card>

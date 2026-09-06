@@ -79,7 +79,7 @@ class GoogleContactSyncLogSeeder extends Seeder
             'workspace_users' => 0,
             'started_at' => now()->subDays(5)->setTime(2, 0),
             'completed_at' => now()->subDays(5)->setTime(2, 0, 3),
-            'error_message' => "file_get_contents(/var/www/admin.soli.nl/shared/google-service-account.json): Failed to open stream: Permission denied",
+            'error_message' => 'file_get_contents(/var/www/admin.soli.nl/shared/google-service-account.json): Failed to open stream: Permission denied',
         ]);
     }
 }

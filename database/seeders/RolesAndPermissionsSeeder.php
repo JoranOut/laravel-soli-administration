@@ -27,9 +27,17 @@ class RolesAndPermissionsSeeder extends Seeder
             }
         }
 
-        // Standalone view-only permissions (no CRUD needed)
+        // Standalone permissions (no CRUD needed)
         Permission::findOrCreate('dashboard.view');
         Permission::findOrCreate('contact.view');
+
+        // Splits "every relatie" from "my own record": both used to be
+        // relaties.view, which is why the controllers had to test role names.
+        Permission::findOrCreate('relaties.view.all');
+
+        // The /admin authentication group: roles, users, links, activity log,
+        // OAuth clients and the sync pages. Replaces the role:admin middleware.
+        Permission::findOrCreate('beheer.manage');
 
         // Admin: all permissions
         Role::findOrCreate('admin')
@@ -41,19 +49,34 @@ class RolesAndPermissionsSeeder extends Seeder
                 'dashboard.view',
                 'contact.view',
                 'relaties.view',
+                'relaties.view.all',
                 'onderdelen.view',
                 'instrumenten.view',
                 'instrumentsoorten.view',
             ]);
 
-        // Ledenadministratie: full CRUD on all resources except users
+        // Ledenadministratie: full CRUD on all resources except users, and not
+        // the authentication pages either
         Role::findOrCreate('ledenadministratie')
             ->syncPermissions(
-                Permission::where('name', 'not like', 'users.%')->pluck('name')->toArray()
+                Permission::where('name', 'not like', 'users.%')
+                    ->where('name', '!=', 'beheer.manage')
+                    ->pluck('name')
+                    ->toArray()
             );
 
-        // Member: view own data only (enforced at policy level)
-        Role::findOrCreate('member')
+        // Contactpersoon: the contact page plus their own record. No
+        // dashboard.view: that permission routes to the statistics dashboard,
+        // not to a landing page, and would show association-wide reporting.
+        Role::findOrCreate('contactpersoon')
+            ->syncPermissions([
+                'contact.view',
+                'relaties.view',
+            ]);
+
+        // Minimal: view own data only (enforced at policy level). Derived from
+        // the lid, donateur and vrijwilliger types.
+        Role::findOrCreate('minimal')
             ->syncPermissions([
                 'relaties.view',
                 'contact.view',

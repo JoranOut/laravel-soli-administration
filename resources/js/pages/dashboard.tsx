@@ -1,16 +1,51 @@
 import { Head, Link } from '@inertiajs/react';
+import {
+    Music,
+    Users,
+    Wrench,
+    Heart,
+    AlertTriangle,
+    Activity,
+    CheckCircle2,
+    XCircle,
+    Loader2,
+    Clock,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Music, Users, Wrench, Heart, AlertTriangle, Activity, CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import {
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Line,
+    LineChart,
+    XAxis,
+    YAxis,
+} from 'recharts';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent, type ChartConfig } from '@/components/ui/chart';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import AppLayout from '@/layouts/app-layout';
+import {
+    ChartContainer,
+    ChartTooltip,
+    ChartTooltipContent,
+    ChartLegend,
+    ChartLegendContent,
+} from '@/components/ui/chart';
+import type { ChartConfig } from '@/components/ui/chart';
 import { useTranslation } from '@/hooks/use-translation';
+import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
-import type { BreadcrumbItem, DashboardStats, DashboardAlerts, OnderdeelHistoryEntry, ResidenceStats, InstrumentStat, AgeDistribution, JobStatus } from '@/types';
+import type {
+    BreadcrumbItem,
+    DashboardStats,
+    DashboardAlerts,
+    OnderdeelHistoryEntry,
+    ResidenceStats,
+    InstrumentStat,
+    AgeDistribution,
+    JobStatus,
+} from '@/types';
 
 type Props = {
     stats: DashboardStats;
@@ -32,7 +67,10 @@ const CHART_COLORS = [
 ];
 
 function slugify(name: string): string {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    return name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -53,19 +91,48 @@ function formatRelativeTime(dateString: string): string {
 function JobStatusBadge({ status }: { status: JobStatus['status'] }) {
     switch (status) {
         case 'completed':
-            return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"><CheckCircle2 className="h-3 w-3" /> Completed</Badge>;
+            return (
+                <Badge className="border-green-200 bg-green-100 text-green-800 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400">
+                    <CheckCircle2 className="h-3 w-3" /> Completed
+                </Badge>
+            );
         case 'completed_with_errors':
-            return <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800"><AlertTriangle className="h-3 w-3" /> Completed with errors</Badge>;
+            return (
+                <Badge className="border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                    <AlertTriangle className="h-3 w-3" /> Completed with errors
+                </Badge>
+            );
         case 'running':
-            return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"><Loader2 className="h-3 w-3 animate-spin" /> Running</Badge>;
+            return (
+                <Badge className="border-blue-200 bg-blue-100 text-blue-800 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Running
+                </Badge>
+            );
         case 'failed':
-            return <Badge variant="destructive"><XCircle className="h-3 w-3" /> Failed</Badge>;
+            return (
+                <Badge variant="destructive">
+                    <XCircle className="h-3 w-3" /> Failed
+                </Badge>
+            );
         default:
-            return <Badge variant="outline"><Clock className="h-3 w-3" /> Pending</Badge>;
+            return (
+                <Badge variant="outline">
+                    <Clock className="h-3 w-3" /> Pending
+                </Badge>
+            );
     }
 }
 
-export default function Dashboard({ stats, alerts, job_statuses, onderdeel_history, onderdeel_names, residence_stats, instrument_stats, age_distribution }: Props) {
+export default function Dashboard({
+    stats,
+    alerts,
+    job_statuses,
+    onderdeel_history,
+    onderdeel_names,
+    residence_stats,
+    instrument_stats,
+    age_distribution,
+}: Props) {
     const { t } = useTranslation();
 
     const breadcrumbs: BreadcrumbItem[] = [
@@ -82,10 +149,14 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
             icon: Users,
             description: t('Current active members'),
             extra: (
-                <p className="text-muted-foreground mt-1 text-xs">
-                    <span className="text-green-600 dark:text-green-400">+{stats.leden_joined_12m}</span>
+                <p className="mt-1 text-xs text-muted-foreground">
+                    <span className="text-green-600 dark:text-green-400">
+                        +{stats.leden_joined_12m}
+                    </span>
                     {' / '}
-                    <span className="text-red-600 dark:text-red-400">-{stats.leden_left_12m}</span>
+                    <span className="text-red-600 dark:text-red-400">
+                        -{stats.leden_left_12m}
+                    </span>
                     {' ' + t('last 12 months')}
                 </p>
             ),
@@ -115,10 +186,16 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
 
     const { chartConfig, chartData, chartKeys } = useMemo(() => {
         if (!onderdeel_names?.length || !onderdeel_history?.length) {
-            return { chartConfig: {} as ChartConfig, chartData: [] as OnderdeelHistoryEntry[], chartKeys: [] as string[] };
+            return {
+                chartConfig: {} as ChartConfig,
+                chartData: [] as OnderdeelHistoryEntry[],
+                chartKeys: [] as string[],
+            };
         }
 
-        const nameToSlug = new Map(onderdeel_names.map((name) => [name, slugify(name)]));
+        const nameToSlug = new Map(
+            onderdeel_names.map((name) => [name, slugify(name)]),
+        );
 
         // Filter to last 5 years unless showing all
         let filteredHistory = onderdeel_history;
@@ -126,7 +203,9 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
             const fiveYearsAgo = new Date();
             fiveYearsAgo.setFullYear(fiveYearsAgo.getFullYear() - 5);
             const cutoff = `${fiveYearsAgo.getFullYear()}-${String(fiveYearsAgo.getMonth() + 1).padStart(2, '0')}`;
-            filteredHistory = onderdeel_history.filter((entry) => entry.month >= cutoff);
+            filteredHistory = onderdeel_history.filter(
+                (entry) => entry.month >= cutoff,
+            );
         }
 
         const data = filteredHistory.map((entry) => {
@@ -142,18 +221,25 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
             .map((name) => nameToSlug.get(name)!)
             .filter((slug) => data.some((row) => (row[slug] as number) > 0));
 
-        const config = onderdeel_names.reduce<ChartConfig>((acc, name, index) => {
-            const slug = nameToSlug.get(name)!;
-            if (visibleSlugs.includes(slug)) {
-                acc[slug] = {
-                    label: name,
-                    color: CHART_COLORS[index % CHART_COLORS.length],
-                };
-            }
-            return acc;
-        }, {});
+        const config = onderdeel_names.reduce<ChartConfig>(
+            (acc, name, index) => {
+                const slug = nameToSlug.get(name)!;
+                if (visibleSlugs.includes(slug)) {
+                    acc[slug] = {
+                        label: name,
+                        color: CHART_COLORS[index % CHART_COLORS.length],
+                    };
+                }
+                return acc;
+            },
+            {},
+        );
 
-        return { chartConfig: config, chartData: data, chartKeys: visibleSlugs };
+        return {
+            chartConfig: config,
+            chartData: data,
+            chartKeys: visibleSlugs,
+        };
     }, [onderdeel_names, onderdeel_history, showAllYears]);
 
     return (
@@ -162,33 +248,58 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
             <div className="flex h-full flex-1 flex-col gap-6 p-4">
                 <div>
                     <h1 className="text-2xl font-bold">{t('Dashboard')}</h1>
-                    <p className="text-muted-foreground">{t('Overview of Muziekvereniging Soli')}</p>
+                    <p className="text-muted-foreground">
+                        {t('Overview of Muziekvereniging Soli')}
+                    </p>
                 </div>
 
-                {alerts && (alerts.unlinked_users > 0 || alerts.unlinked_relaties > 0) && (
-                    <Alert className="border-amber-500/50 bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>{t('Linking issues detected')}</AlertTitle>
-                        <AlertDescription>
-                            <ul className="list-disc pl-4">
-                                {alerts.unlinked_users > 0 && (
-                                    <li>{t(':count users without a linked relation').replace(':count', String(alerts.unlinked_users))}</li>
-                                )}
-                                {alerts.unlinked_relaties > 0 && (
-                                    <li>{t(':count active relations without a linked user').replace(':count', String(alerts.unlinked_relaties))}</li>
-                                )}
-                            </ul>
-                            <Link href="/admin/koppelingen" className="mt-2 inline-block font-medium underline underline-offset-4">
-                                {t('Fix linking issues')}
-                            </Link>
-                        </AlertDescription>
-                    </Alert>
-                )}
+                {alerts &&
+                    (alerts.unlinked_users > 0 ||
+                        alerts.unlinked_relaties > 0) && (
+                        <Alert className="border-amber-500/50 bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>
+                                {t('Linking issues detected')}
+                            </AlertTitle>
+                            <AlertDescription>
+                                <ul className="list-disc pl-4">
+                                    {alerts.unlinked_users > 0 && (
+                                        <li>
+                                            {t(
+                                                ':count users without a linked relation',
+                                            ).replace(
+                                                ':count',
+                                                String(alerts.unlinked_users),
+                                            )}
+                                        </li>
+                                    )}
+                                    {alerts.unlinked_relaties > 0 && (
+                                        <li>
+                                            {t(
+                                                ':count active relations without a linked user',
+                                            ).replace(
+                                                ':count',
+                                                String(
+                                                    alerts.unlinked_relaties,
+                                                ),
+                                            )}
+                                        </li>
+                                    )}
+                                </ul>
+                                <Link
+                                    href="/admin/koppelingen"
+                                    className="mt-2 inline-block font-medium underline underline-offset-4"
+                                >
+                                    {t('Fix linking issues')}
+                                </Link>
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                 {job_statuses && job_statuses.length > 0 && (
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-sm font-medium">
                                 <Activity className="h-4 w-4" />
                                 {t('Background Jobs')}
                             </CardTitle>
@@ -196,30 +307,67 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                         <CardContent>
                             <div className="space-y-3">
                                 {job_statuses.map((job) => (
-                                    <div key={job.id} className="flex items-center justify-between gap-4">
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <span className="text-sm font-medium truncate">{job.display_name}</span>
-                                            <JobStatusBadge status={job.status} />
+                                    <div
+                                        key={job.id}
+                                        className="flex items-center justify-between gap-4"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <span className="truncate text-sm font-medium">
+                                                {job.display_name}
+                                            </span>
+                                            <JobStatusBadge
+                                                status={job.status}
+                                            />
                                         </div>
-                                        <div className="flex items-center gap-3 shrink-0">
+                                        <div className="flex shrink-0 items-center gap-3">
                                             {job.metadata && (
-                                                <span className="text-muted-foreground text-xs hidden sm:inline">
-                                                    {Object.entries(job.metadata).map(([k, v]) => `${v} ${k}`).join(', ')}
+                                                <span className="hidden text-xs text-muted-foreground sm:inline">
+                                                    {Object.entries(
+                                                        job.metadata,
+                                                    )
+                                                        .map(
+                                                            ([k, v]) =>
+                                                                `${v} ${k}`,
+                                                        )
+                                                        .join(', ')}
                                                 </span>
                                             )}
                                             {job.last_run_at && (
-                                                <span className="text-muted-foreground text-xs">{formatRelativeTime(job.last_run_at)}</span>
+                                                <span className="text-xs text-muted-foreground">
+                                                    {formatRelativeTime(
+                                                        job.last_run_at,
+                                                    )}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
                                 ))}
-                                {job_statuses.some((j) => (j.status === 'failed' || j.status === 'completed_with_errors') && j.last_error) && (
+                                {job_statuses.some(
+                                    (j) =>
+                                        (j.status === 'failed' ||
+                                            j.status ===
+                                                'completed_with_errors') &&
+                                        j.last_error,
+                                ) && (
                                     <div className="mt-2 space-y-1">
-                                        {job_statuses.filter((j) => (j.status === 'failed' || j.status === 'completed_with_errors') && j.last_error).map((job) => (
-                                            <p key={job.id} className="text-xs text-red-600 dark:text-red-400 truncate" title={job.last_error!}>
-                                                {job.display_name}: {job.last_error}
-                                            </p>
-                                        ))}
+                                        {job_statuses
+                                            .filter(
+                                                (j) =>
+                                                    (j.status === 'failed' ||
+                                                        j.status ===
+                                                            'completed_with_errors') &&
+                                                    j.last_error,
+                                            )
+                                            .map((job) => (
+                                                <p
+                                                    key={job.id}
+                                                    className="truncate text-xs text-red-600 dark:text-red-400"
+                                                    title={job.last_error!}
+                                                >
+                                                    {job.display_name}:{' '}
+                                                    {job.last_error}
+                                                </p>
+                                            ))}
                                     </div>
                                 )}
                             </div>
@@ -231,12 +379,18 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                     {statCards.map((stat) => (
                         <Card key={stat.title}>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                                <stat.icon className="text-muted-foreground h-4 w-4" />
+                                <CardTitle className="text-sm font-medium">
+                                    {stat.title}
+                                </CardTitle>
+                                <stat.icon className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold">{stat.value}</div>
-                                <p className="text-muted-foreground text-xs">{stat.description}</p>
+                                <div className="text-2xl font-bold">
+                                    {stat.value}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                    {stat.description}
+                                </p>
                                 {'extra' in stat && stat.extra}
                             </CardContent>
                         </Card>
@@ -246,18 +400,33 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                 {chartData.length > 0 && chartKeys.length > 0 && (
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>{t('Sections membership over time')}</CardTitle>
+                            <CardTitle>
+                                {t('Sections membership over time')}
+                            </CardTitle>
                             <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => setShowAllYears(!showAllYears)}
                             >
-                                {showAllYears ? t('Last 5 years') : t('All years')}
+                                {showAllYears
+                                    ? t('Last 5 years')
+                                    : t('All years')}
                             </Button>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={chartConfig} className="aspect-auto h-[350px] w-full">
-                                <LineChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 0 }}>
+                            <ChartContainer
+                                config={chartConfig}
+                                className="aspect-auto h-[350px] w-full"
+                            >
+                                <LineChart
+                                    data={chartData}
+                                    margin={{
+                                        top: 5,
+                                        right: 10,
+                                        left: 10,
+                                        bottom: 0,
+                                    }}
+                                >
                                     <CartesianGrid vertical={false} />
                                     <XAxis
                                         dataKey="month"
@@ -265,22 +434,54 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                                         axisLine={false}
                                         tickMargin={8}
                                         tickFormatter={(value: string) => {
-                                            const [year, month] = value.split('-');
+                                            const [year, month] =
+                                                value.split('-');
                                             return month === '01' ? year : '';
                                         }}
                                     />
-                                    <YAxis tickLine={false} axisLine={false} tickMargin={8} allowDecimals={false} scale="sqrt" domain={[0, 'auto']} />
+                                    <YAxis
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        allowDecimals={false}
+                                        scale="sqrt"
+                                        domain={[0, 'auto']}
+                                    />
                                     <ChartTooltip
                                         wrapperStyle={{ zIndex: 10 }}
                                         content={<ChartTooltipContent />}
                                         labelFormatter={(label) => {
                                             const str = String(label);
-                                            const [year, month] = str.split('-');
-                                            const date = new Date(Number(year), Number(month) - 1);
-                                            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+                                            const [year, month] =
+                                                str.split('-');
+                                            const date = new Date(
+                                                Number(year),
+                                                Number(month) - 1,
+                                            );
+                                            return date.toLocaleDateString(
+                                                undefined,
+                                                {
+                                                    year: 'numeric',
+                                                    month: 'long',
+                                                },
+                                            );
                                         }}
                                     />
-                                    <ChartLegend content={<ChartLegendContent className="flex-wrap" activeKey={activeKey} onToggle={(key) => setActiveKey((prev) => prev === key ? null : key)} />} />
+                                    <ChartLegend
+                                        content={
+                                            <ChartLegendContent
+                                                className="flex-wrap"
+                                                activeKey={activeKey}
+                                                onToggle={(key) =>
+                                                    setActiveKey((prev) =>
+                                                        prev === key
+                                                            ? null
+                                                            : key,
+                                                    )
+                                                }
+                                            />
+                                        }
+                                    />
                                     {chartKeys.map((key) => (
                                         <Line
                                             key={key}
@@ -288,7 +489,12 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                                             dataKey={key}
                                             stroke={`var(--color-${key})`}
                                             strokeWidth={2}
-                                            strokeOpacity={activeKey == null || activeKey === key ? 1 : 0.05}
+                                            strokeOpacity={
+                                                activeKey == null ||
+                                                activeKey === key
+                                                    ? 1
+                                                    : 0.05
+                                            }
                                             dot={false}
                                         />
                                     ))}
@@ -303,68 +509,197 @@ export default function Dashboard({ stats, alerts, job_statuses, onderdeel_histo
                         <Card>
                             <CardHeader>
                                 <CardTitle>{t('Place of residence')}</CardTitle>
-                                <p className="text-muted-foreground text-sm">
-                                    <span className="text-green-600 dark:text-green-400">{residence_stats.inside_velsen}</span>
+                                <p className="text-sm text-muted-foreground">
+                                    <span className="text-green-600 dark:text-green-400">
+                                        {residence_stats.inside_velsen}
+                                    </span>
                                     {' ' + t('inside Velsen') + ' / '}
-                                    <span className="text-amber-600 dark:text-amber-400">{residence_stats.outside_velsen}</span>
+                                    <span className="text-amber-600 dark:text-amber-400">
+                                        {residence_stats.outside_velsen}
+                                    </span>
                                     {' ' + t('outside Velsen')}
                                 </p>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={{ count: { label: t('Members'), color: 'var(--chart-1)' } }} className="aspect-auto h-[200px] w-full">
-                                    <BarChart data={residence_stats.top} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                                <ChartContainer
+                                    config={{
+                                        count: {
+                                            label: t('Members'),
+                                            color: 'var(--chart-1)',
+                                        },
+                                    }}
+                                    className="aspect-auto h-[200px] w-full"
+                                >
+                                    <BarChart
+                                        data={residence_stats.top}
+                                        layout="vertical"
+                                        margin={{
+                                            top: 0,
+                                            right: 10,
+                                            left: 0,
+                                            bottom: 0,
+                                        }}
+                                    >
                                         <CartesianGrid horizontal={false} />
-                                        <YAxis dataKey="plaats" type="category" tickLine={false} axisLine={false} tickMargin={8} width={120} />
-                                        <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
-                                        <Bar dataKey="count" fill="var(--chart-1)" radius={[0, 4, 4, 0]} />
+                                        <YAxis
+                                            dataKey="plaats"
+                                            type="category"
+                                            tickLine={false}
+                                            axisLine={false}
+                                            tickMargin={8}
+                                            width={120}
+                                        />
+                                        <XAxis
+                                            type="number"
+                                            tickLine={false}
+                                            axisLine={false}
+                                            allowDecimals={false}
+                                        />
+                                        <ChartTooltip
+                                            content={<ChartTooltipContent />}
+                                        />
+                                        <Bar
+                                            dataKey="count"
+                                            fill="var(--chart-1)"
+                                            radius={[0, 4, 4, 0]}
+                                        />
                                     </BarChart>
                                 </ChartContainer>
                             </CardContent>
                         </Card>
                     )}
 
-                    {age_distribution && age_distribution.brackets.length > 0 && (
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>{t('Age distribution')}</CardTitle>
-                                {age_distribution.average_age !== null && (
-                                    <p className="text-muted-foreground text-sm">
-                                        {t('Average age')}: <span className="font-medium">{age_distribution.average_age}</span>
-                                    </p>
-                                )}
-                            </CardHeader>
-                            <CardContent>
-                                <ChartContainer config={{ count: { label: t('Members'), color: 'var(--chart-2)' } }} className="aspect-auto h-[200px] w-full">
-                                    <BarChart data={age_distribution.brackets} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-                                        <CartesianGrid vertical={false} />
-                                        <XAxis dataKey="bracket" tickLine={false} axisLine={false} tickMargin={8} />
-                                        <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
-                                        <ChartTooltip content={<ChartTooltipContent />} />
-                                        <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-                                    </BarChart>
-                                </ChartContainer>
-                            </CardContent>
-                        </Card>
-                    )}
+                    {age_distribution &&
+                        age_distribution.brackets.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>
+                                        {t('Age distribution')}
+                                    </CardTitle>
+                                    {age_distribution.average_age !== null && (
+                                        <p className="text-sm text-muted-foreground">
+                                            {t('Average age')}:{' '}
+                                            <span className="font-medium">
+                                                {age_distribution.average_age}
+                                            </span>
+                                        </p>
+                                    )}
+                                </CardHeader>
+                                <CardContent>
+                                    <ChartContainer
+                                        config={{
+                                            count: {
+                                                label: t('Members'),
+                                                color: 'var(--chart-2)',
+                                            },
+                                        }}
+                                        className="aspect-auto h-[200px] w-full"
+                                    >
+                                        <BarChart
+                                            data={age_distribution.brackets}
+                                            margin={{
+                                                top: 0,
+                                                right: 10,
+                                                left: 0,
+                                                bottom: 0,
+                                            }}
+                                        >
+                                            <CartesianGrid vertical={false} />
+                                            <XAxis
+                                                dataKey="bracket"
+                                                tickLine={false}
+                                                axisLine={false}
+                                                tickMargin={8}
+                                            />
+                                            <YAxis
+                                                tickLine={false}
+                                                axisLine={false}
+                                                allowDecimals={false}
+                                            />
+                                            <ChartTooltip
+                                                content={
+                                                    <ChartTooltipContent />
+                                                }
+                                            />
+                                            <Bar
+                                                dataKey="count"
+                                                fill="var(--chart-2)"
+                                                radius={[4, 4, 0, 0]}
+                                            />
+                                        </BarChart>
+                                    </ChartContainer>
+                                </CardContent>
+                            </Card>
+                        )}
                 </div>
 
                 {instrument_stats && instrument_stats.length > 0 && (
                     <Card>
                         <CardHeader>
                             <CardTitle>{t('Instruments played')}</CardTitle>
-                            <p className="text-muted-foreground text-sm">{t('Instrument types played by active members')}</p>
+                            <p className="text-sm text-muted-foreground">
+                                {t('Instrument types played by active members')}
+                            </p>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={{ total: { label: t('Total'), color: 'var(--chart-3)' }, over_60: { label: '60+', color: 'var(--chart-4)' } }} className="aspect-auto h-[300px] w-full">
-                                <BarChart data={instrument_stats} barCategoryGap="20%" barGap={-30} margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+                            <ChartContainer
+                                config={{
+                                    total: {
+                                        label: t('Total'),
+                                        color: 'var(--chart-3)',
+                                    },
+                                    over_60: {
+                                        label: '60+',
+                                        color: 'var(--chart-4)',
+                                    },
+                                }}
+                                className="aspect-auto h-[300px] w-full"
+                            >
+                                <BarChart
+                                    data={instrument_stats}
+                                    barCategoryGap="20%"
+                                    barGap={-30}
+                                    margin={{
+                                        top: 0,
+                                        right: 10,
+                                        left: 0,
+                                        bottom: 0,
+                                    }}
+                                >
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="naam" tickLine={false} axisLine={false} tickMargin={8} interval={0} angle={-45} textAnchor="end" height={80} />
-                                    <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
-                                    <ChartTooltip content={<ChartTooltipContent />} />
-                                    <ChartLegend content={<ChartLegendContent />} />
-                                    <Bar dataKey="total" fill="var(--chart-3)" radius={[4, 4, 0, 0]} barSize={30} />
-                                    <Bar dataKey="over_60" fill="var(--chart-4)" radius={[4, 4, 0, 0]} barSize={30} />
+                                    <XAxis
+                                        dataKey="naam"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                        interval={0}
+                                        angle={-45}
+                                        textAnchor="end"
+                                        height={80}
+                                    />
+                                    <YAxis
+                                        tickLine={false}
+                                        axisLine={false}
+                                        allowDecimals={false}
+                                    />
+                                    <ChartTooltip
+                                        content={<ChartTooltipContent />}
+                                    />
+                                    <ChartLegend
+                                        content={<ChartLegendContent />}
+                                    />
+                                    <Bar
+                                        dataKey="total"
+                                        fill="var(--chart-3)"
+                                        radius={[4, 4, 0, 0]}
+                                        barSize={30}
+                                    />
+                                    <Bar
+                                        dataKey="over_60"
+                                        fill="var(--chart-4)"
+                                        radius={[4, 4, 0, 0]}
+                                        barSize={30}
+                                    />
                                 </BarChart>
                             </ChartContainer>
                         </CardContent>

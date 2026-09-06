@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Relatie;
 use App\Models\User;
+use App\Services\DerivedRoleSyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -12,6 +13,8 @@ use Inertia\Response;
 
 class UserRelatieLinkController extends Controller
 {
+    public function __construct(private readonly DerivedRoleSyncService $derivedRoles) {}
+
     public function index(): Response
     {
         $unlinkedUsers = User::whereDoesntHave('relaties')
@@ -51,13 +54,22 @@ class UserRelatieLinkController extends Controller
             $relatie->emails()->create(['email' => $user->email]);
         }
 
+        // The user inherits the relatie's types, and any role they map to.
+        $this->derivedRoles->syncUser($user->load('roles'));
+
         return back();
     }
 
     public function destroy(Relatie $relatie): RedirectResponse
     {
+        $user = $relatie->user;
+
         $relatie->user_id = null;
         $relatie->save();
+
+        if ($user) {
+            $this->derivedRoles->syncUser($user->load('roles'));
+        }
 
         return back();
     }

@@ -80,7 +80,7 @@ test('admin can delete onderdeel', function () {
 });
 
 test('member cannot access onderdelen', function () {
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get('/admin/onderdelen');
     $response->assertForbidden();
@@ -251,4 +251,32 @@ test('onderdeel show includes emails for relatie with accented name', function (
 test('guest is redirected to login', function () {
     $response = $this->get('/admin/onderdelen');
     $response->assertRedirect('/login');
+});
+
+test('onderdelen.view without relaties.view cannot open a relatie', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'onderdeelkijker']);
+    $role->givePermissionTo('onderdelen.view');
+
+    $user = User::factory()->create()->assignRole($role);
+    $onderdeel = Onderdeel::factory()->create();
+    $relatie = Relatie::factory()->create();
+    $onderdeel->relaties()->attach($relatie->id, ['van' => '2026-01-01']);
+
+    // The onderdeel page lists the member name, so the name must not be a link
+    $this->actingAs($user)->get("/admin/onderdelen/{$onderdeel->id}")->assertOk();
+    $this->actingAs($user)->get("/admin/relaties/{$relatie->id}")->assertForbidden();
+});
+
+test('relaties.view alone does not open someone elses relatie', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'eigenkijker']);
+    $role->givePermissionTo(['onderdelen.view', 'relaties.view']);
+
+    $user = User::factory()->create()->assignRole($role);
+    $own = Relatie::factory()->create(['user_id' => $user->id]);
+    $someoneElse = Relatie::factory()->create();
+
+    // Own record is fine, anyone else's is not: this is why RelatieLink
+    // checks relaties.view.all rather than relaties.view.
+    $this->actingAs($user)->get("/admin/relaties/{$own->id}")->assertOk();
+    $this->actingAs($user)->get("/admin/relaties/{$someoneElse->id}")->assertForbidden();
 });

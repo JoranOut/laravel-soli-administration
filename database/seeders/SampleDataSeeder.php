@@ -42,6 +42,7 @@ class SampleDataSeeder extends Seeder
         $docentType = RelatieType::where('naam', 'docent')->first();
         $dirigentType = RelatieType::where('naam', 'dirigent')->first();
         $bestuurType = RelatieType::where('naam', 'bestuur')->first();
+        $contactpersoonType = RelatieType::where('naam', 'contactpersoon')->first();
 
         $onderdelen = Onderdeel::all();
         $harmonieOrkest = $onderdelen->firstWhere('naam', 'Harmonie orkest');
@@ -77,7 +78,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $lid->update(['user_id' => $user->id]);
 
             Telefoon::create([
@@ -135,7 +136,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $donateur->update(['user_id' => $user->id]);
         }
 
@@ -165,7 +166,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $docent->update(['user_id' => $user->id]);
 
             // Assign to a random training group
@@ -203,7 +204,7 @@ class SampleDataSeeder extends Seeder
                 'email' => $emailAddress,
                 'password' => Hash::make('password'),
             ]);
-            $user->assignRole('member');
+            $user->assignRole('minimal');
             $dirigent->update(['user_id' => $user->id]);
 
             if ($harmonieOrkest) {
@@ -223,6 +224,20 @@ class SampleDataSeeder extends Seeder
                 'functie' => $bestuurFuncties[$i],
                 'email' => strtolower(str_replace(' ', '', $bestuurFuncties[$i])).'@soli.nl',
             ]);
+        }
+
+        // Create 2 contactpersonen from existing leden, so the contact page and
+        // the contactpersoon role both have something to show locally
+        if ($contactpersoonType) {
+            $contactFuncties = ['Contactpersoon Bigband', 'Contactpersoon Slagwerkgroep'];
+
+            foreach ($leden->slice(5, 2)->values() as $i => $lid) {
+                $lid->types()->attach($contactpersoonType->id, [
+                    'van' => fake()->dateTimeBetween('-5 years', '-1 year')->format('Y-m-d'),
+                    'functie' => $contactFuncties[$i],
+                    'email' => 'contact'.($i + 1).'@soli.nl',
+                ]);
+            }
         }
 
         // Create 5 inactive relaties

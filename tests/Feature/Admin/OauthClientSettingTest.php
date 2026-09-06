@@ -2,7 +2,6 @@
 
 use App\Models\ClientRoleMapping;
 use App\Models\OauthClientSetting;
-use App\Models\OauthClientUserRole;
 use App\Models\RelatieType;
 use App\Models\User;
 use Database\Seeders\RelatieTypeSeeder;
@@ -28,7 +27,7 @@ test('guests are redirected to the login page', function () {
 test('non-admin gets 403 on oauth clients page', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
 
     $response = $this->actingAs($member)->get(route('admin.oauth-clients.index'));
     $response->assertForbidden();
@@ -124,7 +123,7 @@ test('admin can update existing client settings', function () {
 test('non-admin cannot update client settings', function () {
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    $member = User::factory()->create()->assignRole('member');
+    $member = User::factory()->create()->assignRole('minimal');
     $client = createOauthClient();
 
     $response = $this->actingAs($member)->put(route('admin.oauth-clients.update', $client->id), [

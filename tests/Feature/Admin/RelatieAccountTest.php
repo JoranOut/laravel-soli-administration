@@ -1,18 +1,23 @@
 <?php
 
 use App\Models\Relatie;
+use App\Models\RelatieType;
 use App\Models\User;
+use Database\Seeders\RelatieTypeRoleMappingSeeder;
+use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(RelatieTypeSeeder::class);
+    $this->seed(RelatieTypeRoleMappingSeeder::class);
     $this->withoutVite();
 });
 
 test('admin can delete a linked user account', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($admin)
@@ -27,7 +32,7 @@ test('admin can delete a linked user account', function () {
 test('non-admin gets 403 when deleting a linked user account', function () {
     $bestuur = User::factory()->create()->assignRole('bestuur');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($bestuur)
@@ -38,7 +43,7 @@ test('non-admin gets 403 when deleting a linked user account', function () {
 });
 
 test('guest gets redirected when deleting a linked user account', function () {
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->delete("/admin/relaties/{$relatie->id}/account")
@@ -58,7 +63,7 @@ test('deleting account when no user is linked redirects with error', function ()
 test('setting relatie inactive auto-deletes linked user account', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id, 'actief' => true]);
 
     $this->actingAs($admin)
@@ -69,7 +74,6 @@ test('setting relatie inactive auto-deletes linked user account', function () {
 
             'geboortedatum' => $relatie->geboortedatum?->format('Y-m-d'),
             'actief' => false,
-
 
         ])
         ->assertRedirect();
@@ -93,7 +97,6 @@ test('setting relatie inactive without linked user does not error', function () 
             'geboortedatum' => $relatie->geboortedatum?->format('Y-m-d'),
             'actief' => false,
 
-
         ])
         ->assertRedirect();
 
@@ -104,7 +107,7 @@ test('setting relatie inactive without linked user does not error', function () 
 test('keeping relatie active does not delete linked user', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id, 'actief' => true]);
 
     $this->actingAs($admin)
@@ -115,7 +118,6 @@ test('keeping relatie active does not delete linked user', function () {
 
             'geboortedatum' => $relatie->geboortedatum?->format('Y-m-d'),
             'actief' => true,
-
 
         ])
         ->assertRedirect();
@@ -128,7 +130,7 @@ test('keeping relatie active does not delete linked user', function () {
 test('admin can update login email to a relatie email address', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'old@example.com', 'email_verified_at' => now()])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'old@example.com', 'email_verified_at' => now()])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'old@example.com']);
     $relatie->emails()->create(['email' => 'new@example.com']);
@@ -145,7 +147,7 @@ test('admin can update login email to a relatie email address', function () {
 test('updating login email clears email_verified_at', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'old@example.com', 'email_verified_at' => now()])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'old@example.com', 'email_verified_at' => now()])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'old@example.com']);
     $relatie->emails()->create(['email' => 'new@example.com']);
@@ -162,7 +164,7 @@ test('cannot update login email to one already used by another user', function (
     $admin = User::factory()->create()->assignRole('admin');
 
     $otherUser = User::factory()->create(['email' => 'taken@example.com']);
-    $linkedUser = User::factory()->create(['email' => 'current@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'current@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'current@example.com']);
     $relatie->emails()->create(['email' => 'taken@example.com']);
@@ -178,7 +180,7 @@ test('cannot update login email to one already used by another user', function (
 test('cannot update login email to one not in relatie emails', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'current@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'current@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'current@example.com']);
 
@@ -193,7 +195,7 @@ test('cannot update login email to one not in relatie emails', function () {
 test('non-admin gets 403 when updating login email', function () {
     $bestuur = User::factory()->create()->assignRole('bestuur');
 
-    $linkedUser = User::factory()->create(['email' => 'current@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'current@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie->emails()->create(['email' => 'new@example.com']);
 
@@ -203,7 +205,7 @@ test('non-admin gets 403 when updating login email', function () {
 });
 
 test('guest gets redirected when updating login email', function () {
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->put("/admin/relaties/{$relatie->id}/account", ['email' => 'new@example.com'])
@@ -214,6 +216,10 @@ test('admin can generate a user account for relatie without one', function () {
     $admin = User::factory()->create()->assignRole('admin');
     $relatie = Relatie::factory()->create(['user_id' => null]);
     $relatie->emails()->create(['email' => 'generate@example.com']);
+    $relatie->types()->attach(
+        RelatieType::where('naam', 'lid')->first()->id,
+        ['van' => '2026-01-01'],
+    );
 
     $this->actingAs($admin)
         ->post("/admin/relaties/{$relatie->id}/account/create")
@@ -226,12 +232,26 @@ test('admin can generate a user account for relatie without one', function () {
     $user = User::find($relatie->user_id);
     expect($user->email)->toBe('generate@example.com');
     expect($user->name)->toBe($relatie->volledige_naam);
-    expect($user->hasRole('member'))->toBeTrue();
+    expect($user->hasRole('minimal'))->toBeTrue();
+});
+
+test('a generated account gets no role when no type maps to one', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $relatie = Relatie::factory()->create(['user_id' => null]);
+    $relatie->emails()->create(['email' => 'geenrol@example.com']);
+
+    $this->actingAs($admin)
+        ->post("/admin/relaties/{$relatie->id}/account/create")
+        ->assertRedirect();
+
+    $user = User::where('email', 'geenrol@example.com')->first();
+    expect($user)->not->toBeNull();
+    expect($user->roles)->toBeEmpty();
 });
 
 test('generate account fails when relatie already has user', function () {
     $admin = User::factory()->create()->assignRole('admin');
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($admin)
@@ -286,7 +306,7 @@ test('guest gets redirected when generating user account', function () {
 });
 
 test('self-service profile delete route no longer exists', function () {
-    $user = User::factory()->create()->assignRole('member');
+    $user = User::factory()->create()->assignRole('minimal');
 
     $this->actingAs($user)
         ->delete('/settings/profile', ['password' => 'password'])
@@ -298,7 +318,7 @@ test('user with users.edit permission can delete a linked user account', functio
     // ledenadministratie doesn't have users.edit, so give it explicitly
     $ledenadmin->givePermissionTo('users.edit');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($ledenadmin)
@@ -313,7 +333,7 @@ test('user with users.edit permission can delete a linked user account', functio
 test('destroying account disconnects when user has multiple relaties', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie1 = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $relatie2 = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
@@ -362,7 +382,7 @@ test('linking user to relatie does not duplicate existing email', function () {
 test('admin can reset password for a linked user account', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $oldHash = $linkedUser->password;
 
@@ -378,7 +398,7 @@ test('admin can reset password for a linked user account', function () {
 test('admin can reset password and user can login with new password', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create(['email' => 'member@example.com'])->assignRole('member');
+    $linkedUser = User::factory()->create(['email' => 'member@example.com'])->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($admin)
@@ -398,7 +418,7 @@ test('admin can reset password and user can login with new password', function (
 test('password reset requires minimum 8 characters', function () {
     $admin = User::factory()->create()->assignRole('admin');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($admin)
@@ -419,7 +439,7 @@ test('password reset fails when no user is linked', function () {
 test('non-admin gets 403 when resetting password', function () {
     $bestuur = User::factory()->create()->assignRole('bestuur');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->actingAs($bestuur)
@@ -428,7 +448,7 @@ test('non-admin gets 403 when resetting password', function () {
 });
 
 test('guest gets redirected when resetting password', function () {
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
 
     $this->put("/admin/relaties/{$relatie->id}/account/password", ['password' => 'newpassword123'])
@@ -439,7 +459,7 @@ test('user with users.edit permission can reset password', function () {
     $ledenadmin = User::factory()->create()->assignRole('ledenadministratie');
     $ledenadmin->givePermissionTo('users.edit');
 
-    $linkedUser = User::factory()->create()->assignRole('member');
+    $linkedUser = User::factory()->create()->assignRole('minimal');
     $relatie = Relatie::factory()->create(['user_id' => $linkedUser->id]);
     $oldHash = $linkedUser->password;
 
@@ -450,4 +470,90 @@ test('user with users.edit permission can reset password', function () {
 
     $linkedUser->refresh();
     expect($linkedUser->password)->not->toBe($oldHash);
+});
+
+// --- Deleting an account needs users.edit AND relaties.delete ---
+
+test('deleting an account needs both users.edit and relaties.delete', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'accountbeheer']);
+    $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'users.edit', 'relaties.delete']);
+
+    $actor = User::factory()->create()->assignRole($role);
+    $victim = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $victim->id]);
+
+    $this->actingAs($actor)
+        ->delete("/admin/relaties/{$relatie->id}/account")
+        ->assertRedirect();
+
+    expect(User::find($victim->id))->toBeNull();
+    expect($relatie->fresh()->user_id)->toBeNull();
+});
+
+test('relaties.delete without users.edit may not delete an account', function () {
+    // This is ledenadministratie's shape: it never sees the account tab
+    $actor = User::factory()->create()->assignRole('ledenadministratie');
+    $victim = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $victim->id]);
+
+    expect($actor->can('relaties.delete'))->toBeTrue();
+    expect($actor->can('users.edit'))->toBeFalse();
+
+    $this->actingAs($actor)
+        ->delete("/admin/relaties/{$relatie->id}/account")
+        ->assertForbidden();
+
+    expect(User::find($victim->id))->not->toBeNull();
+});
+
+test('users.edit without relaties.delete may not delete an account', function () {
+    $role = Spatie\Permission\Models\Role::create(['name' => 'accountbeheer_light']);
+    $role->givePermissionTo(['relaties.view', 'relaties.view.all', 'users.edit']);
+
+    $actor = User::factory()->create()->assignRole($role);
+    $victim = User::factory()->create();
+    $relatie = Relatie::factory()->create(['user_id' => $victim->id]);
+
+    $this->actingAs($actor)
+        ->delete("/admin/relaties/{$relatie->id}/account")
+        ->assertForbidden();
+
+    expect(User::find($victim->id))->not->toBeNull();
+});
+
+test('nobody can delete their own account', function () {
+    $admin = User::factory()->create()->assignRole('admin');
+    $own = Relatie::factory()->create(['user_id' => $admin->id]);
+
+    $this->actingAs($admin)
+        ->delete("/admin/relaties/{$own->id}/account")
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect(User::find($admin->id))->not->toBeNull();
+    expect($own->fresh()->user_id)->toBe($admin->id);
+});
+
+test('disconnecting an account syncs the roles it no longer earns', function () {
+    $this->seed(Database\Seeders\RelatieTypeRoleMappingSeeder::class);
+
+    $user = User::factory()->create();
+    $bestuurType = RelatieType::where('naam', 'bestuur')->first();
+
+    $withBestuur = Relatie::factory()->create(['user_id' => $user->id]);
+    $withBestuur->types()->attach($bestuurType->id, ['van' => '2026-01-01']);
+    Relatie::factory()->create(['user_id' => $user->id]);
+
+    app(App\Services\DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+    expect($user->fresh()->hasRole('bestuur'))->toBeTrue();
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    // Disconnect the relatie carrying the type; the other one keeps the account
+    $this->actingAs($admin)
+        ->delete("/admin/relaties/{$withBestuur->id}/account")
+        ->assertRedirect();
+
+    expect(User::find($user->id))->not->toBeNull();
+    expect($user->fresh()->hasRole('bestuur'))->toBeFalse();
 });

@@ -27,16 +27,18 @@ export default function Password() {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={t("Password settings")} />
+            <Head title={t('Password settings')} />
 
-            <h1 className="sr-only">{t("Password settings")}</h1>
+            <h1 className="sr-only">{t('Password settings')}</h1>
 
             <SettingsLayout>
                 <div className="space-y-6">
                     <Heading
                         variant="small"
-                        title={t("Update password")}
-                        description={t("Ensure your account is using a long, random password to stay secure")}
+                        title={t('Update password')}
+                        description={t(
+                            'Ensure your account is using a long, random password to stay secure',
+                        )}
                     />
 
                     <Form
@@ -65,7 +67,7 @@ export default function Password() {
                             <>
                                 <div className="grid gap-2">
                                     <Label htmlFor="current_password">
-                                        {t("Current password")}
+                                        {t('Current password')}
                                     </Label>
 
                                     <Input
@@ -75,7 +77,7 @@ export default function Password() {
                                         type="password"
                                         className="mt-1 block w-full"
                                         autoComplete="current-password"
-                                        placeholder={t("Current password")}
+                                        placeholder={t('Current password')}
                                     />
 
                                     <InputError
@@ -85,7 +87,7 @@ export default function Password() {
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="password">
-                                        {t("New password")}
+                                        {t('New password')}
                                     </Label>
 
                                     <Input
@@ -95,7 +97,7 @@ export default function Password() {
                                         type="password"
                                         className="mt-1 block w-full"
                                         autoComplete="new-password"
-                                        placeholder={t("New password")}
+                                        placeholder={t('New password')}
                                     />
 
                                     <InputError message={errors.password} />
@@ -103,7 +105,7 @@ export default function Password() {
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="password_confirmation">
-                                        {t("Confirm password")}
+                                        {t('Confirm password')}
                                     </Label>
 
                                     <Input
@@ -112,7 +114,7 @@ export default function Password() {
                                         type="password"
                                         className="mt-1 block w-full"
                                         autoComplete="new-password"
-                                        placeholder={t("Confirm password")}
+                                        placeholder={t('Confirm password')}
                                     />
 
                                     <InputError
@@ -125,7 +127,7 @@ export default function Password() {
                                         disabled={processing}
                                         data-test="update-password-button"
                                     >
-                                        {t("Save password")}
+                                        {t('Save password')}
                                     </Button>
 
                                     <Transition
@@ -136,7 +138,7 @@ export default function Password() {
                                         leaveTo="opacity-0"
                                     >
                                         <p className="text-sm text-neutral-600">
-                                            {t("Saved")}
+                                            {t('Saved')}
                                         </p>
                                     </Transition>
                                 </div>

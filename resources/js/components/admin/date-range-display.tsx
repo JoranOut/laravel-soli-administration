@@ -17,7 +17,7 @@ export function DateRangeDisplay({ van, tot }: DateRangeDisplayProps) {
     };
 
     return (
-        <span className="text-muted-foreground text-sm">
+        <span className="text-sm text-muted-foreground">
             {formatDate(van)} – {tot ? formatDate(tot) : t('present')}
         </span>
     );

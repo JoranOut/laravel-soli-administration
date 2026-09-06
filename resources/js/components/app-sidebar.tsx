@@ -1,5 +1,18 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Globe, Guitar, LayoutGrid, ListMusic, Mail, Music, Music2, Shield, ShoppingCart, User, UserRoundPlus, Users } from 'lucide-react';
+import {
+    Globe,
+    Guitar,
+    LayoutGrid,
+    ListMusic,
+    Mail,
+    Music,
+    Music2,
+    Shield,
+    ShoppingCart,
+    User,
+    UserRoundPlus,
+    Users,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import AppLogo from '@/components/app-logo';
 import { LocaleSwitcher } from '@/components/locale-switcher';
@@ -24,7 +37,7 @@ import type { RelatieType } from '@/types/admin';
 let cachedRelatieTypes: Pick<RelatieType, 'id' | 'naam'>[] | null = null;
 
 export function AppSidebar() {
-    const { can, canAny, hasRole } = usePermissions();
+    const { can, canAny } = usePermissions();
     const { t } = useTranslation();
     const [relatieTypes, setRelatieTypes] = useState(cachedRelatieTypes ?? []);
     const { relatie_ids } = usePage().props.auth;
@@ -32,9 +45,14 @@ export function AppSidebar() {
 
     useEffect(() => {
         if (cachedRelatieTypes) return;
-        fetch('/admin/relatie-types', { headers: { 'Accept': 'application/json' } })
-            .then((r) => r.ok ? r.json() : [])
-            .then((data) => { cachedRelatieTypes = data; setRelatieTypes(data); });
+        fetch('/admin/relatie-types', {
+            headers: { Accept: 'application/json' },
+        })
+            .then((r) => (r.ok ? r.json() : []))
+            .then((data) => {
+                cachedRelatieTypes = data;
+                setRelatieTypes(data);
+            });
     }, []);
 
     const mainNavItems: NavItem[] = [];
@@ -50,7 +68,9 @@ export function AppSidebar() {
     if (hasRelatie) {
         mainNavItems.push({
             title: t('My data'),
-            href: can('dashboard.view') ? dashboard.url({ query: { view: 'member' } }) : dashboard(),
+            href: can('dashboard.view')
+                ? dashboard.url({ query: { view: 'member' } })
+                : dashboard(),
             icon: User,
         });
     }
@@ -135,7 +155,7 @@ export function AppSidebar() {
         });
     }
 
-    if (hasRole('admin')) {
+    if (can('beheer.manage')) {
         adminNavItems.push({
             title: t('Authentication'),
             href: '/admin/roles',
@@ -143,10 +163,17 @@ export function AppSidebar() {
             allLabel: t('Roles & permissions'),
             children: [
                 { title: t('Users'), href: '/admin/users' },
+                {
+                    title: t('Relatie type roles'),
+                    href: '/admin/relatie-type-rollen',
+                },
                 { title: t('Links'), href: '/admin/koppelingen' },
                 { title: t('Activity log'), href: '/admin/activity-log' },
                 { title: t('OAuth clients'), href: '/admin/oauth-clients' },
-                { title: t('Google Contacts'), href: '/admin/google-contacts-sync' },
+                {
+                    title: t('Google Contacts'),
+                    href: '/admin/google-contacts-sync',
+                },
                 { title: t('SAD Sync'), href: '/admin/sad-sync' },
             ],
         });
@@ -167,9 +194,15 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                {mainNavItems.length > 0 && <NavMain items={mainNavItems} label={t('Platform')} />}
-                {dataNavItems.length > 0 && <NavMain items={dataNavItems} label={t('Management')} />}
-                {adminNavItems.length > 0 && <NavMain items={adminNavItems} label={t('System')} />}
+                {mainNavItems.length > 0 && (
+                    <NavMain items={mainNavItems} label={t('Platform')} />
+                )}
+                {dataNavItems.length > 0 && (
+                    <NavMain items={dataNavItems} label={t('Management')} />
+                )}
+                {adminNavItems.length > 0 && (
+                    <NavMain items={adminNavItems} label={t('System')} />
+                )}
             </SidebarContent>
 
             <SidebarFooter>
