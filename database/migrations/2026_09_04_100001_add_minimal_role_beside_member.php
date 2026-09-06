@@ -21,7 +21,7 @@ return new class extends Migration
     {
         $rolesTable = config('permission.table_names.roles');
         $pivotTable = config('permission.table_names.model_has_roles');
-        $roleKey = config('permission.column_names.role_pivot_key', 'role_id');
+        $roleKey = config('permission.column_names.role_pivot_key') ?: 'role_id';
 
         $member = DB::table($rolesTable)->where('name', 'member')->first();
 
@@ -43,7 +43,7 @@ return new class extends Migration
 
         // Same permissions, so the new role behaves like the old one
         $permissionPivot = config('permission.table_names.role_has_permissions');
-        $permissionKey = config('permission.column_names.permission_pivot_key', 'permission_id');
+        $permissionKey = config('permission.column_names.permission_pivot_key') ?: 'permission_id';
 
         $permissionIds = DB::table($permissionPivot)
             ->where($roleKey, $member->id)
@@ -76,7 +76,7 @@ return new class extends Migration
     {
         $rolesTable = config('permission.table_names.roles');
         $pivotTable = config('permission.table_names.model_has_roles');
-        $roleKey = config('permission.column_names.role_pivot_key', 'role_id');
+        $roleKey = config('permission.column_names.role_pivot_key') ?: 'role_id';
 
         $minimalId = DB::table($rolesTable)->where('name', 'minimal')->value('id');
 

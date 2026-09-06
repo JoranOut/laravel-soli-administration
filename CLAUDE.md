@@ -215,6 +215,18 @@ This is what makes a failed deploy safe. A rollback rewinds the code but never t
 
 **When reversal is genuinely impossible, `throw` rather than writing a `down()` that lies.** See `2026_05_04_100001_restructure_instrument_families`, which deletes and restructures rows across tables and correctly refuses to pretend otherwise.
 
+### config() defaults do not fire on an explicit null
+
+`config('permission.column_names.role_pivot_key', 'role_id')` returns **null**, not `'role_id'`: the published config sets those keys explicitly to `null`, and the default argument only applies when a key is *absent*. Spatie's own code uses `config(...) ?: 'role_id'` for exactly this reason. Getting it wrong builds `select `` from ...` and fails with `Unknown column ''`. Use the `?:` form for anything read out of `config/permission.php`.
+
+This shipped to production in `2026_09_04_100001_add_minimal_role_beside_member` because the branch that reads those keys only runs when a `member` role already exists — under `migrate:fresh` the migration returns early, so every local run took the untested path. **A migration whose behaviour depends on existing rows is not tested by `migrate:fresh`.** Build the precondition and call `up()` directly; see `tests/Feature/Migrations/`.
+
+### config() defaults do not fire on an explicit null
+
+`config('permission.column_names.role_pivot_key', 'role_id')` returns **null**, not `'role_id'`: the published config sets those keys explicitly to `null`, and the default argument only applies when a key is *absent*. Spatie's own code uses `config(...) ?: 'role_id'` for exactly this reason. Getting it wrong builds `select `` from ...` and fails with `Unknown column ''`.
+
+This reached production in `2026_09_04_100001_add_minimal_role_beside_member`, because the branch reading those keys only runs when a `member` role already exists — under `migrate:fresh` the migration returns early, so every local run took the untested path. **A migration whose behaviour depends on existing rows is not covered by `migrate:fresh`.** Build the precondition and call `up()` directly; see `tests/Feature/Migrations/`.
+
 ### down() is unproven
 
 Nothing runs `down()` — not CI, not the deploy. Treat every one as untested until executed. Quick manual check against a scratch database, never your dev DB:
