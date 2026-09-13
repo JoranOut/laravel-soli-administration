@@ -50,6 +50,8 @@ WHERE p.name IN ('beheer.manage', 'relaties.view.all') AND p.guard_name = 'web';
 
 Then `php artisan permission:cache-reset` — the permission cache holds for 24h and a raw `INSERT` does not clear it. The grant is direct to the user rather than to a role on purpose: it works even if the roles are misconfigured. Verified against a database with both permissions deleted.
 
+`ledenverloop.view` (2026-09-13) has the same shape: `/admin/ledenverloop` answers 403 for everyone, admin included, until the permission row exists. Run `db:seed --class=RolesAndPermissionsSeeder --force` after the deploy, or add it to the `INSERT` above. The seeder grants it to `admin`, `bestuur` and `ledenadministratie`.
+
 From there, `/admin/roles` assigns the permissions to roles and `/admin/relatie-type-rollen` fills the mapping table. **Until the mapping table has rows, no account gets any role** — including every relatie created or SAD-imported in the meantime — so do it in the same sitting, and run `roles:sync-derived --dry-run` before letting the nightly run loose.
 
 `roles:sync-derived` refuses to run at all while the mapping table is empty. Without that guard the first nightly run after a deploy would revoke every role outside `NEVER_MANAGED` from every account — `bestuur`, `contactpersoon`, `minimal` and the `member` role the expand migration keeps around for rollback. The cost of the guard is that emptying the table completely no longer revokes anything; removing one mapping while others remain does.
@@ -113,7 +115,7 @@ Spatie Laravel Permission. Format: `{resource}.{action}` (e.g. `relaties.view`).
 | contactpersoon | contact.view + relaties.view (own record) |
 | minimal | relaties.view only (own record) |
 
-Besides `{resource}.{action}` there are four standalone permissions: `dashboard.view`, `contact.view`, `relaties.view.all` and `beheer.manage`.
+Besides `{resource}.{action}` there are five standalone permissions: `dashboard.view`, `contact.view`, `relaties.view.all`, `ledenverloop.view` and `beheer.manage`. `ledenverloop.view` gates `/admin/ledenverloop` on its own; `relaties.view` does not imply it, because the page lists association-wide joiners and leavers. Names on that page go through `RelatieLink`, so without `relaties.view.all` they render as plain text.
 
 `relaties.view` and `relaties.view.all` are **not** the same thing, and conflating them was a live authorization bug. `relaties.view` means "my own record"; `relaties.view.all` means "everyone's". `RelatieController` clamps to the user's own relatie whenever `relaties.view.all` is missing. `beheer.manage` gates the whole `/admin` authentication group (roles, users, the type→role mapping, links, activity log, OAuth clients, both sync pages) plus the dashboard alerts and job statuses.
 

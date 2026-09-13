@@ -39,6 +39,10 @@ class RolesAndPermissionsSeeder extends Seeder
         // OAuth clients and the sync pages. Replaces the role:admin middleware.
         Permission::findOrCreate('beheer.manage');
 
+        // The member changes page (/admin/ledenverloop): association-wide
+        // joiners and leavers, so not implied by relaties.view.
+        Permission::findOrCreate('ledenverloop.view');
+
         // Admin: all permissions
         Role::findOrCreate('admin')
             ->syncPermissions(Permission::all());
@@ -50,6 +54,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'contact.view',
                 'relaties.view',
                 'relaties.view.all',
+                'ledenverloop.view',
                 'onderdelen.view',
                 'instrumenten.view',
                 'instrumentsoorten.view',

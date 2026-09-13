@@ -127,6 +127,18 @@ test('bestuur can view ledenverloop page', function () {
     $response->assertOk();
 });
 
+test('user with relaties.view but without ledenverloop.view gets 403', function () {
+    $user = User::factory()->create()->assignRole('minimal');
+
+    $this->actingAs($user)->get('/admin/ledenverloop')->assertForbidden();
+});
+
+test('ledenverloop.view alone grants access', function () {
+    $user = User::factory()->create()->givePermissionTo('ledenverloop.view');
+
+    $this->actingAs($user)->get('/admin/ledenverloop')->assertOk();
+});
+
 test('guest is redirected to login', function () {
     $response = $this->get('/admin/ledenverloop');
 

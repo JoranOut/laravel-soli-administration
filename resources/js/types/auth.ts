@@ -22,6 +22,7 @@ export type StandalonePermission =
     | 'dashboard.view'
     | 'contact.view'
     | 'relaties.view.all'
+    | 'ledenverloop.view'
     | 'beheer.manage';
 export type Permission = `${CrudResource}.${CrudAction}` | StandalonePermission;
 export type Role =
