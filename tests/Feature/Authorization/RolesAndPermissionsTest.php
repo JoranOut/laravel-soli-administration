@@ -22,7 +22,7 @@ test('seeder creates all expected permissions', function () {
     expect(Permission::findByName('relaties.view.all'))->not->toBeNull();
     expect(Permission::findByName('beheer.manage'))->not->toBeNull();
 
-    expect(Permission::count())->toBe(24);
+    expect(Permission::count())->toBe(25);
 });
 
 test('seeder creates all expected roles', function () {
@@ -44,7 +44,7 @@ test('contactpersoon role only reaches the contact page', function () {
 test('admin role has all permissions', function () {
     $admin = Role::findByName('admin');
 
-    expect($admin->permissions->count())->toBe(24);
+    expect($admin->permissions->count())->toBe(25);
 });
 
 test('bestuur role has view-only permissions', function () {
@@ -56,6 +56,7 @@ test('bestuur role has view-only permissions', function () {
         'contact.view',
         'relaties.view',
         'relaties.view.all',
+        'ledenverloop.view',
         'onderdelen.view',
         'instrumenten.view',
         'instrumentsoorten.view',
@@ -69,7 +70,7 @@ test('ledenadministratie role has all permissions except users', function () {
     $permissionNames = $ledenadmin->permissions->pluck('name')->toArray();
 
     $expected = [
-        'dashboard.view', 'contact.view',
+        'dashboard.view', 'contact.view', 'ledenverloop.view',
         'relaties.view', 'relaties.view.all', 'relaties.create', 'relaties.edit', 'relaties.delete',
         'onderdelen.view', 'onderdelen.create', 'onderdelen.edit', 'onderdelen.delete',
         'instrumenten.view', 'instrumenten.create', 'instrumenten.edit', 'instrumenten.delete',
@@ -105,6 +106,6 @@ test('seeder is idempotent', function () {
     // Run seeder again
     $this->seed(RolesAndPermissionsSeeder::class);
 
-    expect(Permission::count())->toBe(24);
+    expect(Permission::count())->toBe(25);
     expect(Role::count())->toBe(5);
 });

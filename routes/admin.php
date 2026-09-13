@@ -54,10 +54,11 @@ Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(funct
     Route::get('admin/relatie-types', fn () => \App\Models\RelatieType::all(['id', 'naam']))->name('admin.relatie-types.index');
 });
 
-Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(function () {
-    // Ledenverloop
+Route::middleware(['auth', 'verified', 'permission:ledenverloop.view'])->group(function () {
     Route::get('admin/ledenverloop', [LedenverloopController::class, 'index'])->name('admin.ledenverloop.index');
+});
 
+Route::middleware(['auth', 'verified', 'permission:relaties.view'])->group(function () {
     // Relaties
     Route::get('admin/relaties', [RelatieController::class, 'index'])->name('admin.relaties.index');
     Route::get('admin/relaties/create', [RelatieController::class, 'create'])->name('admin.relaties.create')

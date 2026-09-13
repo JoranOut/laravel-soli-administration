@@ -121,7 +121,9 @@ export function AppSidebar() {
             children: typeChildren,
             allLabel: t('All relations'),
         });
+    }
 
+    if (can('ledenverloop.view')) {
         dataNavItems.push({
             title: t('Member changes'),
             href: '/admin/ledenverloop',
