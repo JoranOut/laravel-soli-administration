@@ -34,11 +34,11 @@ test('seeder creates all expected roles', function () {
     expect(Role::count())->toBe(5);
 });
 
-test('contactpersoon role only reaches the contact page', function () {
+test('contactpersoon role sees contact, own record, sections and member changes', function () {
     $contactpersoon = Role::findByName('contactpersoon');
 
     expect($contactpersoon->permissions->pluck('name')->sort()->values()->toArray())
-        ->toBe(['contact.view', 'relaties.view']);
+        ->toBe(['contact.view', 'ledenverloop.view', 'onderdelen.view', 'relaties.view']);
 });
 
 test('admin role has all permissions', function () {

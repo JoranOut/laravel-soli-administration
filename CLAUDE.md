@@ -50,7 +50,7 @@ WHERE p.name IN ('beheer.manage', 'relaties.view.all') AND p.guard_name = 'web';
 
 Then `php artisan permission:cache-reset` — the permission cache holds for 24h and a raw `INSERT` does not clear it. The grant is direct to the user rather than to a role on purpose: it works even if the roles are misconfigured. Verified against a database with both permissions deleted.
 
-`ledenverloop.view` (2026-09-13) has the same shape: `/admin/ledenverloop` answers 403 for everyone, admin included, until the permission row exists. Run `db:seed --class=RolesAndPermissionsSeeder --force` after the deploy, or add it to the `INSERT` above. The seeder grants it to `admin`, `bestuur` and `ledenadministratie`.
+`ledenverloop.view` (2026-09-13) has the same shape: `/admin/ledenverloop` answers 403 for everyone, admin included, until the permission row exists. Run `db:seed --class=RolesAndPermissionsSeeder --force` after the deploy, or add it to the `INSERT` above. The seeder grants it to `admin`, `bestuur`, `ledenadministratie` and `contactpersoon`.
 
 From there, `/admin/roles` assigns the permissions to roles and `/admin/relatie-type-rollen` fills the mapping table. **Until the mapping table has rows, no account gets any role** — including every relatie created or SAD-imported in the meantime — so do it in the same sitting, and run `roles:sync-derived --dry-run` before letting the nightly run loose.
 
@@ -112,7 +112,7 @@ Spatie Laravel Permission. Format: `{resource}.{action}` (e.g. `relaties.view`).
 | admin | All |
 | ledenadministratie | All except users.* and beheer.manage |
 | bestuur | *.view only, plus relaties.view.all |
-| contactpersoon | contact.view + relaties.view (own record) |
+| contactpersoon | contact.view + relaties.view (own record) + onderdelen.view + ledenverloop.view |
 | minimal | relaties.view only (own record) |
 
 Besides `{resource}.{action}` there are five standalone permissions: `dashboard.view`, `contact.view`, `relaties.view.all`, `ledenverloop.view` and `beheer.manage`. `ledenverloop.view` gates `/admin/ledenverloop` on its own; `relaties.view` does not imply it, because the page lists association-wide joiners and leavers. Names on that page go through `RelatieLink`, so without `relaties.view.all` they render as plain text.
