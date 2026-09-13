@@ -70,13 +70,17 @@ class RolesAndPermissionsSeeder extends Seeder
                     ->toArray()
             );
 
-        // Contactpersoon: the contact page plus their own record. No
-        // dashboard.view: that permission routes to the statistics dashboard,
-        // not to a landing page, and would show association-wide reporting.
+        // Contactpersoon: the contact page, their own record, the sections
+        // and the member changes. No dashboard.view: that permission routes to
+        // the statistics dashboard, not to a landing page, and would show
+        // association-wide reporting. No relaties.view.all either, so names
+        // on the onderdeel and ledenverloop pages render as plain text.
         Role::findOrCreate('contactpersoon')
             ->syncPermissions([
                 'contact.view',
                 'relaties.view',
+                'onderdelen.view',
+                'ledenverloop.view',
             ]);
 
         // Minimal: view own data only (enforced at policy level). Derived from
