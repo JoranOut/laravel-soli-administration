@@ -16,6 +16,10 @@ use Illuminate\Console\Command;
  *
  * So: keep the structure and the first cell of every row (the label), replace every
  * other text node with a placeholder. Read the result before committing it.
+ *
+ * Local only. Capturing writes a file holding what was, moments earlier, one member's
+ * personal data, and a server is the wrong place to leave that lying around. Point a
+ * local .env at SAD to run this.
  */
 class CaptureSadFixture extends Command
 {
@@ -27,6 +31,15 @@ class CaptureSadFixture extends Command
 
     public function handle(SadApiClient $client): int
     {
+        if (app()->isProduction()) {
+            $this->error('sad:capture-fixture does not run on production.');
+            $this->line('Capturing leaves a file of personal data on the server, and the');
+            $this->line('fixture belongs in tests/, which is not deployed. Run it locally');
+            $this->line('with SAD_BASE_URL, SAD_USERNAME and SAD_PASSWORD in your .env.');
+
+            return self::FAILURE;
+        }
+
         if (! config('services.sad.username') || ! config('services.sad.password')) {
             $this->error('SAD_USERNAME and SAD_PASSWORD must be set to capture a fixture.');
 

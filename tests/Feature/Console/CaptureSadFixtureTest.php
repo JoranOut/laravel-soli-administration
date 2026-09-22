@@ -77,6 +77,14 @@ test('reports a label the parser would not recognise', function () {
         ->assertExitCode(0);
 });
 
+test('refuses to run on production', function () {
+    app()->detectEnvironment(fn () => 'production');
+
+    $this->artisan('sad:capture-fixture', ['lid_id' => 1])
+        ->expectsOutputToContain('does not run on production')
+        ->assertExitCode(1);
+});
+
 test('requires credentials', function () {
     config(['services.sad.username' => null]);
 
