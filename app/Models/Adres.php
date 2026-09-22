@@ -31,8 +31,12 @@ class Adres extends Model
 
     public function getVolledigAdresAttribute(): string
     {
+        // SAD delivers incomplete addresses, so any part may be missing — drop the
+        // empty ones instead of rendering ", 1985 AA Driehuis" with a dangling comma.
         $nummer = $this->huisnummer.($this->huisnummer_toevoeging ? ' '.$this->huisnummer_toevoeging : '');
+        $straat = trim("{$this->straat} {$nummer}");
+        $woonplaats = trim("{$this->postcode} {$this->plaats}");
 
-        return "{$this->straat} {$nummer}, {$this->postcode} {$this->plaats}";
+        return implode(', ', array_filter([$straat, $woonplaats]));
     }
 }

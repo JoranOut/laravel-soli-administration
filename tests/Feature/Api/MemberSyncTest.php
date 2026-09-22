@@ -999,3 +999,62 @@ test('skips pii for admin-managed members', function () {
     expect($relatie->adressen)->toHaveCount(0);
     expect($relatie->telefoons)->toHaveCount(0);
 });
+
+test('creates adres from plaats alone when adres is absent', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'postcode' => '1985 AB',
+        'plaats' => 'Driehuis',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $adres = Relatie::where('relatie_nummer', 1000)->first()->adressen()->first();
+
+    expect($adres)->not->toBeNull();
+    expect($adres->plaats)->toBe('Driehuis');
+    expect($adres->postcode)->toBe('1985 AB');
+    expect($adres->straat)->toBeNull();
+});
+
+test('creates adres without postcode instead of failing the member', function () {
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'adres' => 'Dorpsstraat 10',
+        'plaats' => 'Driehuis',
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $adres = Relatie::where('relatie_nummer', 1000)->first()->adressen()->first();
+
+    expect($adres->straat)->toBe('Dorpsstraat');
+    expect($adres->postcode)->toBeNull();
+});
+
+test('a later sync without plaats keeps the known plaats', function () {
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'adres' => 'Dorpsstraat 10',
+        'postcode' => '1985 AB',
+        'plaats' => 'Driehuis',
+    ], syncHeaders());
+
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan',
+        'achternaam' => 'Jansen',
+        'email' => 'jan@test.nl',
+        'adres' => 'Dorpsstraat 12',
+    ], syncHeaders());
+
+    $adres = Relatie::where('relatie_nummer', 1000)->first()->adressen()->first();
+
+    expect($adres->huisnummer)->toBe('12');
+    expect($adres->plaats)->toBe('Driehuis');
+});
