@@ -139,6 +139,15 @@ class SadApiClient
     }
 
     /**
+     * The raw lid_info.php page, before parsing. Only for capturing a test fixture —
+     * the response holds PII, so never log or store it unscrubbed.
+     */
+    public function getMemberPiiHtml(int $lidId): string
+    {
+        return $this->getAuthenticated("/lid_info.php?lid_id={$lidId}&wz=m");
+    }
+
+    /**
      * Fetch PII details from lid_info.php (requires authentication).
      *
      * Returns parsed PII array with keys: adres, postcode, plaats, telefoon, geboortedatum, instrument.
@@ -147,9 +156,7 @@ class SadApiClient
     public function getMemberPii(int $lidId): ?array
     {
         try {
-            $html = $this->getAuthenticated("/lid_info.php?lid_id={$lidId}&wz=m");
-
-            return SadDataParser::parsePiiHtml($html);
+            return SadDataParser::parsePiiHtml($this->getMemberPiiHtml($lidId));
         } catch (\Throwable $e) {
             Log::warning("SadApiClient: Failed to fetch PII for lid_id {$lidId}: {$e->getMessage()}");
 

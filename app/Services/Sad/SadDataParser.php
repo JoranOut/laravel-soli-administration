@@ -97,6 +97,28 @@ class SadDataParser
     }
 
     /**
+     * SAD's labels carry spacing that varies per row ("Geboorte datum", "&nbsp;Plaats").
+     * Strip every kind of whitespace so matching is on the word alone, not its layout.
+     */
+    private static function normalizeLabel(string $cell): string
+    {
+        $label = html_entity_decode(strip_tags($cell), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return strtolower(preg_replace('/[\s\x{00A0}]+/u', '', $label));
+    }
+
+    /**
+     * An empty SAD cell renders as "&nbsp;", which trim() leaves in place — decode
+     * first so a blank field is recognised as blank instead of stored as whitespace.
+     */
+    private static function normalizeValue(string $cell): string
+    {
+        $value = html_entity_decode(strip_tags($cell), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim(preg_replace('/[\s\x{00A0}]+/u', ' ', $value));
+    }
+
+    /**
      * Parse the HTML table from lid_info.php into a structured array.
      *
      * Returns array with keys: adres, postcode, plaats, telefoon, geboortedatum, instrument
@@ -122,8 +144,8 @@ class SadDataParser
                 continue;
             }
 
-            $label = strtolower(trim(strip_tags($cells[1][0])));
-            $value = trim(strip_tags($cells[1][1]));
+            $label = self::normalizeLabel($cells[1][0]);
+            $value = self::normalizeValue($cells[1][1]);
 
             if ($value === '') {
                 continue;
@@ -134,7 +156,7 @@ class SadDataParser
                 str_contains($label, 'postcode') => $result['postcode'] = $value,
                 str_contains($label, 'plaats') || str_contains($label, 'woonplaats') => $result['plaats'] = $value,
                 str_contains($label, 'telefoon') || str_contains($label, 'tel') => $result['telefoon'] = $value,
-                str_contains($label, 'geboortedatum') || str_contains($label, 'geboren') => $result['geboortedatum'] = $value,
+                str_contains($label, 'geboorte') || str_contains($label, 'geboren') => $result['geboortedatum'] = $value,
                 str_contains($label, 'instrument') => $result['instrument'] = $value,
                 default => null,
             };

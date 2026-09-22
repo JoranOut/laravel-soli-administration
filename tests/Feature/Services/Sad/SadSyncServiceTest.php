@@ -187,3 +187,70 @@ test('tracks stats and job status correctly', function () {
     expect($jobStatus->metadata['total'])->toBe(1);
     expect($jobStatus->metadata['created'])->toBe(1);
 });
+
+test('warns when a PII field is empty for every member', function () {
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('login')->once();
+
+    $members = [];
+    for ($lidId = 2000; $lidId < 2012; $lidId++) {
+        $members[$lidId] = ['lid_id' => $lidId, 'onderdeel' => 'HA', 'email' => "lid{$lidId}@test.nl"];
+
+        $mockClient->shouldReceive('getMemberDetails')->with($lidId)->andReturn([
+            'voornaam' => 'Lid',
+            'tussenvoegsel' => null,
+            'achternaam' => (string) $lidId,
+            'email' => "lid{$lidId}@test.nl",
+            'onderdeel' => 'HA',
+        ]);
+
+        // Every field parses except geboortedatum — the shape of a renamed label
+        $mockClient->shouldReceive('getMemberPii')->with($lidId)->andReturn([
+            'adres' => 'Dorpsstraat 10',
+            'postcode' => '1985 AA',
+            'plaats' => 'Driehuis',
+            'telefoon' => '0612345678',
+            'geboortedatum' => null,
+            'instrument' => 'Trompet',
+        ]);
+    }
+
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn($members);
+
+    $stats = app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    expect($stats['pii_coverage']['geboortedatum'])->toBe(0);
+    expect($stats['pii_coverage']['plaats'])->toBe(12);
+    expect($stats['warnings'])->toHaveCount(1);
+    expect($stats['warnings'][0])->toContain('No geboortedatum parsed for any of 12 members');
+
+    $jobStatus = JobStatus::where('name', 'sad-sync')->first();
+    expect($jobStatus->status)->toBe('completed_with_errors');
+});
+
+test('does not warn about an empty field on a small run', function () {
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('login')->once();
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
+        3000 => ['lid_id' => 3000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],
+    ]);
+    $mockClient->shouldReceive('getMemberDetails')->with(3000)->andReturn([
+        'voornaam' => 'Lid',
+        'tussenvoegsel' => null,
+        'achternaam' => 'Een',
+        'email' => 'lid@test.nl',
+        'onderdeel' => 'HA',
+    ]);
+    $mockClient->shouldReceive('getMemberPii')->with(3000)->andReturn([
+        'adres' => null,
+        'postcode' => null,
+        'plaats' => null,
+        'telefoon' => null,
+        'geboortedatum' => null,
+        'instrument' => null,
+    ]);
+
+    $stats = app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    expect($stats['warnings'])->toBeEmpty();
+});

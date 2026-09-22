@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Log;
 
 class SadSyncService
 {
+    /** PII fields parsed from lid_info.php, in the shape SadDataParser returns them. */
+    private const PII_FIELDS = ['geboortedatum', 'adres', 'postcode', 'plaats', 'telefoon', 'instrument'];
+
+    /** Below this many members a zero count says nothing about the parser. */
+    private const PII_COVERAGE_MIN_MEMBERS = 10;
+
     public function __construct(
         private SadApiClient $apiClient,
         private MemberSyncService $memberSyncService,
@@ -31,6 +37,8 @@ class SadSyncService
             'skipped' => 0,
             'failed' => 0,
             'deactivated' => 0,
+            'pii_members' => 0,
+            'pii_coverage' => array_fill_keys(self::PII_FIELDS, 0),
             'warnings' => [],
         ];
 
@@ -53,6 +61,8 @@ class SadSyncService
                     Log::warning("SadSyncService: Failed to sync lid_id {$lidId}: {$e->getMessage()}");
                 }
             }
+
+            $this->checkPiiCoverage($stats);
 
             // Step 4: Reconcile — deactivate members no longer in SAD
             try {
@@ -92,6 +102,38 @@ class SadSyncService
         return $stats;
     }
 
+    /**
+     * A field that comes back empty for every single member is a parsing failure, not
+     * a coincidence — lid_info.php renamed a label, or the page shape changed. Nothing
+     * else notices: an unparsed field simply never reaches the data array, so the sync
+     * reports success while quietly writing nothing. Raise it as a warning instead.
+     *
+     * A label change went unseen for months this way: SAD labels the birth date
+     * "Geboorte datum" and the parser looked for "geboortedatum", so no synced member
+     * ever got one.
+     */
+    private function checkPiiCoverage(array &$stats): void
+    {
+        if ($stats['pii_members'] < self::PII_COVERAGE_MIN_MEMBERS) {
+            return;
+        }
+
+        foreach (self::PII_FIELDS as $field) {
+            if ($stats['pii_coverage'][$field] > 0) {
+                continue;
+            }
+
+            $warning = sprintf(
+                'No %s parsed for any of %d members — check the labels on lid_info.php',
+                $field,
+                $stats['pii_members'],
+            );
+
+            $stats['warnings'][] = $warning;
+            Log::warning("SadSyncService: {$warning}");
+        }
+    }
+
     private function syncMember(int $lidId, array $member, array &$stats): void
     {
         // Fetch detailed member info
@@ -117,25 +159,15 @@ class SadSyncService
             'onderdeel_codes' => $onderdeelCodes,
         ];
 
-        // Merge PII fields if available
+        // Merge PII fields if available, counting which ones the page actually yielded
         if ($pii) {
-            if ($pii['geboortedatum'] !== null) {
-                $data['geboortedatum'] = $pii['geboortedatum'];
-            }
-            if ($pii['adres'] !== null) {
-                $data['adres'] = $pii['adres'];
-            }
-            if ($pii['postcode'] !== null) {
-                $data['postcode'] = $pii['postcode'];
-            }
-            if ($pii['plaats'] !== null) {
-                $data['plaats'] = $pii['plaats'];
-            }
-            if ($pii['telefoon'] !== null) {
-                $data['telefoon'] = $pii['telefoon'];
-            }
-            if ($pii['instrument'] !== null) {
-                $data['instrument'] = $pii['instrument'];
+            $stats['pii_members']++;
+
+            foreach (self::PII_FIELDS as $field) {
+                if (($pii[$field] ?? null) !== null) {
+                    $data[$field] = $pii[$field];
+                    $stats['pii_coverage'][$field]++;
+                }
             }
         }
 

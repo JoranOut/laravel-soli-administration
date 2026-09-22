@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class ImportSadMembers extends Command
@@ -272,13 +273,16 @@ class ImportSadMembers extends Command
                     $this->importMember($member, $onderdelen, $lidType, $stats, $dryRun);
                 } catch (\Throwable $e) {
                     $stats['errors']++;
-                    $this->newLine();
-                    $this->error(sprintf(
+                    $message = sprintf(
                         'Error importing lid_id %s (%s): %s',
                         $member['lid_id'] ?? '?',
                         $member['naam'] ?? '?',
                         $e->getMessage(),
-                    ));
+                    );
+                    $this->newLine();
+                    $this->error($message);
+                    // Console output of a long run scrolls away; keep a trace on disk
+                    Log::warning("ImportSadMembers: {$message}");
                 }
                 $bar->advance();
             }
@@ -578,6 +582,11 @@ class ImportSadMembers extends Command
             if (! $relatie->relatie_nummer) {
                 $relatie->update(['relatie_nummer' => $lidId]);
             }
+
+            // Backfill a birth date the relatie never got; never overwrite a correction
+            if (! $relatie->geboortedatum && $geboortedatum) {
+                $relatie->update(['geboortedatum' => $geboortedatum]);
+            }
         } else {
             $isNew = true;
             $stats['created']++;
@@ -616,28 +625,40 @@ class ImportSadMembers extends Command
     private function importAdres(Relatie $relatie, array $member): void
     {
         $raw = trim($member['straat'] ?? '');
-        if (! $raw) {
+        $postcode = trim($member['postcode'] ?? '') ?: null;
+        $plaats = trim($member['plaats'] ?? '') ?: null;
+
+        // Postcode and plaats are columns on the address row, so without one they have
+        // nowhere to live. Keep going on any component, not on straat alone.
+        if (! $raw && ! $postcode && ! $plaats) {
             return;
         }
 
-        [$straat, $huisnummer, $toevoeging] = $this->splitAddress($raw);
+        [$straat, $huisnummer, $toevoeging] = $raw
+            ? $this->splitAddress($raw)
+            : [null, null, null];
 
-        $exists = $relatie->adressen()
+        $existing = $relatie->adressen()
             ->where('straat', $straat)
             ->where('huisnummer', $huisnummer)
-            ->exists();
+            ->first();
 
-        if ($exists) {
-            return;
-        }
-
-        $relatie->adressen()->create([
+        $adresData = [
             'straat' => $straat,
             'huisnummer' => $huisnummer,
             'huisnummer_toevoeging' => $toevoeging,
-            'postcode' => $member['postcode'] ?? null,
-            'plaats' => $member['plaats'] ?? null,
-        ]);
+            'postcode' => $postcode,
+            'plaats' => $plaats,
+        ];
+
+        if ($existing) {
+            // Fill gaps on a known address without overwriting corrections with nulls
+            $existing->update(array_filter($adresData, fn ($v) => $v !== null));
+
+            return;
+        }
+
+        $relatie->adressen()->create($adresData);
     }
 
     private function splitAddress(string $address): array
@@ -664,8 +685,15 @@ class ImportSadMembers extends Command
         $emails = preg_split('/\s*[;,]\s*/', $raw);
 
         foreach ($emails as $email) {
-            $email = trim($email);
-            if (! $email || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $email = $this->normalizeEmail($email);
+            if (! $email) {
+                continue;
+            }
+            if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $warning = "Invalid email: '{$email}' (lid_id {$member['lid_id']})";
+                $this->warn("  {$warning}");
+                Log::warning("ImportSadMembers: {$warning}");
+
                 continue;
             }
 
@@ -673,6 +701,15 @@ class ImportSadMembers extends Command
                 $relatie->emails()->create(['email' => $email]);
             }
         }
+    }
+
+    /**
+     * SAD exports sometimes wrap an address in mail-client delimiters, e.g. ">foo@bar.nl>".
+     * Strip those before validating so the address is imported instead of silently dropped.
+     */
+    private function normalizeEmail(string $email): string
+    {
+        return trim($email, " \t\n\r\0\x0B<>\"'");
     }
 
     private function importTelefoons(Relatie $relatie, array $member): void

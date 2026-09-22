@@ -188,3 +188,45 @@ test('skips empty table cell values', function () {
     $result = SadDataParser::parsePiiHtml($html);
     expect($result['telefoon'])->toBeNull();
 });
+
+test('parses PII using the labels lid_info.php actually renders', function () {
+    // Label spelling and spacing copied from the live page; values are fictional.
+    $html = '<table>
+        <tr><td>Lid_id</td><td>9101</td></tr>
+        <tr><td>Naam</td><td>Jan Jansen</td></tr>
+        <tr><td>Adres</td><td>Dorpsstraat 10</td></tr>
+        <tr><td>Postcode</td><td>1985 AA</td></tr>
+        <tr><td>Plaats</td><td>DRIEHUIS</td></tr>
+        <tr><td>Telefoon</td><td>0612345678</td></tr>
+        <tr><td>Geboorte datum</td><td>15-03-1990</td></tr>
+        <tr><td>Leeftijd</td><td>36</td></tr>
+        <tr><td>Instrument</td><td>drum</td></tr>
+    </table>';
+
+    $result = App\Services\Sad\SadDataParser::parsePiiHtml($html);
+
+    expect($result['adres'])->toBe('Dorpsstraat 10');
+    expect($result['postcode'])->toBe('1985 AA');
+    expect($result['plaats'])->toBe('DRIEHUIS');
+    expect($result['telefoon'])->toBe('0612345678');
+    expect($result['geboortedatum'])->toBe('15-03-1990');
+    expect($result['instrument'])->toBe('drum');
+});
+
+test('matches labels regardless of spacing or nbsp', function () {
+    $html = '<table>
+        <tr><td>Geboorte&nbsp;datum</td><td>15-03-1990</td></tr>
+        <tr><td>  Woon plaats </td><td>Driehuis</td></tr>
+    </table>';
+
+    $result = App\Services\Sad\SadDataParser::parsePiiHtml($html);
+
+    expect($result['geboortedatum'])->toBe('15-03-1990');
+    expect($result['plaats'])->toBe('Driehuis');
+});
+
+test('treats an nbsp-only cell as empty', function () {
+    $html = '<table><tr><td>Plaats</td><td>&nbsp;</td></tr></table>';
+
+    expect(App\Services\Sad\SadDataParser::parsePiiHtml($html)['plaats'])->toBeNull();
+});

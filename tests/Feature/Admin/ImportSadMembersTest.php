@@ -351,3 +351,94 @@ test('dry-run flag does not persist', function () {
 
     expect(Relatie::count())->toBe(0);
 });
+
+test('import strips mail-client delimiters around an email', function () {
+    $path = tempnam(sys_get_temp_dir(), 'sad').'.json';
+    file_put_contents($path, json_encode([[
+        'lid_id' => 9101,
+        'naam' => 'Wrapped Email',
+        'vnaam' => 'Wrapped',
+        'tussen' => null,
+        'anaam' => 'Email',
+        'gebdat' => '15-03-1990',
+        'email' => '>wrapped@example.com>',
+        'lidmaatschap' => [['van' => '01-01-2010', 'tot' => null]],
+    ]]));
+
+    $this->artisan('import:sad-members', ['path' => $path])->assertExitCode(0);
+
+    $relatie = Relatie::where('relatie_nummer', 9101)->first();
+
+    expect($relatie->emails()->pluck('email')->all())->toBe(['wrapped@example.com']);
+
+    unlink($path);
+});
+
+test('import stores plaats and postcode when straat is missing', function () {
+    $path = tempnam(sys_get_temp_dir(), 'sad').'.json';
+    file_put_contents($path, json_encode([[
+        'lid_id' => 9102,
+        'naam' => 'Geen Straat',
+        'vnaam' => 'Geen',
+        'tussen' => null,
+        'anaam' => 'Straat',
+        'gebdat' => '15-03-1990',
+        'postcode' => '1985 AA',
+        'plaats' => 'Driehuis',
+        'lidmaatschap' => [['van' => '01-01-2010', 'tot' => null]],
+    ]]));
+
+    $this->artisan('import:sad-members', ['path' => $path])->assertExitCode(0);
+
+    $adres = Relatie::where('relatie_nummer', 9102)->first()->adressen()->first();
+
+    expect($adres)->not->toBeNull();
+    expect($adres->plaats)->toBe('Driehuis');
+    expect($adres->postcode)->toBe('1985 AA');
+    expect($adres->straat)->toBeNull();
+
+    unlink($path);
+});
+
+test('import stores an address when postcode is missing', function () {
+    $path = tempnam(sys_get_temp_dir(), 'sad').'.json';
+    file_put_contents($path, json_encode([[
+        'lid_id' => 9103,
+        'naam' => 'Geen Postcode',
+        'vnaam' => 'Geen',
+        'tussen' => null,
+        'anaam' => 'Postcode',
+        'gebdat' => '15-03-1990',
+        'straat' => 'Dorpsstraat 10',
+        'plaats' => 'Driehuis',
+        'email' => 'geenpostcode@example.com',
+        'lidmaatschap' => [['van' => '01-01-2010', 'tot' => null]],
+    ]]));
+
+    $this->artisan('import:sad-members', ['path' => $path])->assertExitCode(0);
+
+    $relatie = Relatie::where('relatie_nummer', 9103)->first();
+    $adres = $relatie->adressen()->first();
+
+    expect($adres->straat)->toBe('Dorpsstraat');
+    expect($adres->postcode)->toBeNull();
+
+    // The address used to throw on the NOT NULL postcode, taking the rest with it
+    expect($relatie->emails()->count())->toBe(1);
+
+    unlink($path);
+});
+
+test('re-import backfills a missing geboortedatum without overwriting a correction', function () {
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath]);
+
+    $relatie = Relatie::where('relatie_nummer', 9001)->first();
+    $relatie->update(['geboortedatum' => null]);
+
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath]);
+    expect($relatie->fresh()->geboortedatum->format('Y-m-d'))->toBe('1990-03-15');
+
+    $relatie->update(['geboortedatum' => '1991-01-01']);
+    $this->artisan('import:sad-members', ['path' => $this->fixturePath]);
+    expect($relatie->fresh()->geboortedatum->format('Y-m-d'))->toBe('1991-01-01');
+});

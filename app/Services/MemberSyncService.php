@@ -381,7 +381,7 @@ class MemberSyncService
             $this->syncGeboortedatum($relatie, $data['geboortedatum']);
         }
 
-        if (isset($data['adres'])) {
+        if (isset($data['adres']) || isset($data['postcode']) || isset($data['plaats'])) {
             $this->syncAdres($relatie, $data);
         }
 
@@ -408,25 +408,33 @@ class MemberSyncService
 
     private function syncAdres(Relatie $relatie, array $data): void
     {
-        $raw = trim($data['adres']);
-        if ($raw === '') {
+        $raw = trim($data['adres'] ?? '');
+        $postcode = trim($data['postcode'] ?? '') ?: null;
+        $plaats = trim($data['plaats'] ?? '') ?: null;
+
+        // Postcode and plaats are columns on the address row, so without one they have
+        // nowhere to live. Keep going on any component, not on the street alone.
+        if ($raw === '' && ! $postcode && ! $plaats) {
             return;
         }
 
-        [$straat, $huisnummer, $toevoeging] = SadDataParser::splitAddress($raw);
+        [$straat, $huisnummer, $toevoeging] = $raw !== ''
+            ? SadDataParser::splitAddress($raw)
+            : [null, null, null];
 
         $adresData = [
             'straat' => $straat,
             'huisnummer' => $huisnummer,
             'huisnummer_toevoeging' => $toevoeging,
-            'postcode' => $data['postcode'] ?? null,
-            'plaats' => $data['plaats'] ?? null,
+            'postcode' => $postcode,
+            'plaats' => $plaats,
         ];
 
         $existing = $relatie->adressen()->first();
 
         if ($existing) {
-            $existing->update($adresData);
+            // Fill gaps without wiping a known field when SAD omits it this run
+            $existing->update(array_filter($adresData, fn ($v) => $v !== null));
         } else {
             $relatie->adressen()->create($adresData);
         }

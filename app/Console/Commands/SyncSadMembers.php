@@ -35,6 +35,13 @@ class SyncSadMembers extends Command
             ],
         );
 
+        if ($stats['pii_members'] > 0) {
+            $this->line("PII parsed from {$stats['pii_members']} members:");
+            foreach ($stats['pii_coverage'] as $field => $count) {
+                $this->line(sprintf('  %-15s %d', $field, $count));
+            }
+        }
+
         if (! empty($stats['warnings'])) {
             $this->warn('Warnings:');
             foreach ($stats['warnings'] as $warning) {
