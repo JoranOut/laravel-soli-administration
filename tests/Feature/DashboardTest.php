@@ -141,3 +141,55 @@ test('onderdeel history includes old data for all-years toggle', function () {
     expect($oldRow)->not->toBeNull();
     expect($oldRow['Harmonie'])->toBe(1);
 });
+
+function lidWithPlaats(?string $plaats, bool $withAddress = true): Relatie
+{
+    $lid = App\Models\RelatieType::where('naam', 'lid')->firstOrFail();
+    $relatie = Relatie::factory()->create();
+    $relatie->types()->attach($lid->id, ['van' => now()->subYear()->toDateString(), 'tot' => null]);
+
+    if ($withAddress) {
+        $relatie->adressen()->create(['straat' => 'Dorpsstraat', 'huisnummer' => '1', 'plaats' => $plaats]);
+    }
+
+    return $relatie;
+}
+
+test('residence stats separate unknown places from outside Velsen', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(RelatieTypeSeeder::class);
+
+    lidWithPlaats('Driehuis');
+    lidWithPlaats('IJmuiden');
+    lidWithPlaats('Haarlem');
+    lidWithPlaats(null);               // address without a plaats
+    lidWithPlaats('   ');              // blank plaats
+    lidWithPlaats(null, withAddress: false);
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertInertia(fn ($page) => $page
+        ->where('residence_stats.inside_velsen', 2)
+        // Haarlem only — an unknown place is not a member living outside Velsen
+        ->where('residence_stats.outside_velsen', 1)
+        ->where('residence_stats.unknown_plaats', 2)
+        ->where('residence_stats.no_address', 1)
+    );
+});
+
+test('residence stats expose every place, not only the top five', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+    $this->seed(RelatieTypeSeeder::class);
+
+    foreach (['Driehuis', 'IJmuiden', 'Haarlem', 'Beverwijk', 'Heemskerk', 'Alkmaar', 'Zaandam'] as $plaats) {
+        lidWithPlaats($plaats);
+    }
+
+    $admin = User::factory()->create()->assignRole('admin');
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertInertia(fn ($page) => $page
+        ->has('residence_stats.top', 5)
+        ->has('residence_stats.all', 7)
+        ->where('residence_stats.all.0.velsen', true)
+    );
+});

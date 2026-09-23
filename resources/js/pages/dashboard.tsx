@@ -182,6 +182,7 @@ export default function Dashboard({
     ];
 
     const [showAllYears, setShowAllYears] = useState(false);
+    const [showAllPlaces, setShowAllPlaces] = useState(false);
     const [activeKey, setActiveKey] = useState<string | null>(null);
 
     const { chartConfig, chartData, chartKeys } = useMemo(() => {
@@ -508,7 +509,30 @@ export default function Dashboard({
                     {residence_stats && residence_stats.top.length > 0 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>{t('Place of residence')}</CardTitle>
+                                <div className="flex flex-row items-center justify-between">
+                                    <CardTitle>
+                                        {t('Place of residence')}
+                                    </CardTitle>
+                                    {residence_stats.all.length >
+                                        residence_stats.top.length && (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() =>
+                                                setShowAllPlaces(!showAllPlaces)
+                                            }
+                                        >
+                                            {showAllPlaces
+                                                ? t('Top 5')
+                                                : t('All :count places', {
+                                                      count: String(
+                                                          residence_stats.all
+                                                              .length,
+                                                      ),
+                                                  })}
+                                        </Button>
+                                    )}
+                                </div>
                                 <p className="text-sm text-muted-foreground">
                                     <span className="text-green-600 dark:text-green-400">
                                         {residence_stats.inside_velsen}
@@ -528,10 +552,23 @@ export default function Dashboard({
                                             color: 'var(--chart-1)',
                                         },
                                     }}
-                                    className="aspect-auto h-[200px] w-full"
+                                    className="aspect-auto w-full"
+                                    style={{
+                                        height: `${Math.max(
+                                            200,
+                                            (showAllPlaces
+                                                ? residence_stats.all.length
+                                                : residence_stats.top.length) *
+                                                36,
+                                        )}px`,
+                                    }}
                                 >
                                     <BarChart
-                                        data={residence_stats.top}
+                                        data={
+                                            showAllPlaces
+                                                ? residence_stats.all
+                                                : residence_stats.top
+                                        }
                                         layout="vertical"
                                         margin={{
                                             top: 0,

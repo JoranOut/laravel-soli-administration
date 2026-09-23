@@ -323,10 +323,19 @@ export type DashboardAlerts = {
     unlinked_relaties: number;
 };
 
+export type ResidencePlace = {
+    plaats: string;
+    count: number;
+    velsen: boolean;
+};
+
 export type ResidenceStats = {
-    top: { plaats: string; count: number }[];
+    top: ResidencePlace[];
+    all: ResidencePlace[];
     inside_velsen: number;
     outside_velsen: number;
+    unknown_plaats: number;
+    no_address: number;
 };
 
 export type InstrumentStat = {

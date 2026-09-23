@@ -615,5 +615,8 @@
     "No role": "Geen rol",
     "One role per relatie type. Several types may point to the same role.": "Eén rol per relatietype. Meerdere types mogen naar dezelfde rol wijzen.",
     "These roles stay manual and cannot be mapped:": "Deze rollen blijven handmatig en kunnen niet gekoppeld worden:",
-    "You cannot delete your own account.": "Je kunt je eigen account niet verwijderen."
+    "You cannot delete your own account.": "Je kunt je eigen account niet verwijderen.",
+
+    "Top 5": "Top 5",
+    "All :count places": "Alle :count plaatsen"
 }

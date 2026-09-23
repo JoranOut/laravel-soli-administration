@@ -185,7 +185,14 @@ class DashboardController extends Controller
         $activeLidIds = Relatie::actief()->ofType('lid')->pluck('soli_relaties.id');
 
         if ($activeLidIds->isEmpty()) {
-            return ['top' => [], 'inside_velsen' => 0, 'outside_velsen' => 0];
+            return [
+                'top' => [],
+                'all' => [],
+                'inside_velsen' => 0,
+                'outside_velsen' => 0,
+                'unknown_plaats' => 0,
+                'no_address' => 0,
+            ];
         }
 
         // Get the latest address per relatie
@@ -201,22 +208,33 @@ class DashboardController extends Controller
             ->select('a.plaats')
             ->get();
 
-        $grouped = $latestAddresses->groupBy(fn ($row) => $row->plaats ?: '');
-        $top = $grouped->map->count()
+        // A member whose plaats is unknown is not a member living outside Velsen, and a
+        // member with no address at all is dropped by the join above. Both used to
+        // disappear into the two totals; count them separately instead.
+        [$known, $unknown] = $latestAddresses->partition(
+            fn ($row) => $this->normalizePlaats($row->plaats ?? '') !== ''
+        );
+
+        $places = $known->groupBy(fn ($row) => trim($row->plaats))
+            ->map->count()
             ->sortDesc()
-            ->take(5)
-            ->map(fn ($count, $plaats) => ['plaats' => $plaats, 'count' => $count])
+            ->map(fn ($count, $plaats) => [
+                'plaats' => $plaats,
+                'count' => $count,
+                'velsen' => $this->isVelsenPlaats($this->normalizePlaats($plaats)),
+            ])
             ->values()
             ->all();
 
-        $insideVelsen = $latestAddresses->filter(
-            fn ($row) => $this->isVelsenPlaats($this->normalizePlaats($row->plaats ?? ''))
-        )->count();
+        $insideVelsen = collect($places)->where('velsen', true)->sum('count');
 
         return [
-            'top' => $top,
+            'top' => array_slice($places, 0, 5),
+            'all' => $places,
             'inside_velsen' => $insideVelsen,
-            'outside_velsen' => $latestAddresses->count() - $insideVelsen,
+            'outside_velsen' => $known->count() - $insideVelsen,
+            'unknown_plaats' => $unknown->count(),
+            'no_address' => $activeLidIds->count() - $latestAddresses->count(),
         ];
     }
 
