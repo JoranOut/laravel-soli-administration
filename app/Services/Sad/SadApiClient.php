@@ -37,15 +37,40 @@ class SadApiClient
 
         $this->cookieJar = new CookieJar;
 
+        // The form carries a hidden sess_ret that has to come back with the post, so
+        // fetch it first. Field names are l_bar.php's own: luser, pw, aktie.
+        $form = Http::withOptions(['cookies' => $this->cookieJar])
+            ->get($this->baseUrl.'/l_bar.php');
+
+        if (! $form->successful()) {
+            throw new RuntimeException("SAD login form unavailable, status {$form->status()}");
+        }
+
+        if (! preg_match('/name=[\'"]?sess_ret[\'"]?\s+value=[\'"]?([^\'">\s]+)/i', $form->body(), $m)) {
+            throw new RuntimeException('SAD login form did not contain sess_ret — the form has changed');
+        }
+
         $response = Http::withOptions(['cookies' => $this->cookieJar])
             ->asForm()
             ->post($this->baseUrl.'/l_bar.php', [
-                'user' => $this->username,
-                'pass' => $this->password,
+                'luser' => $this->username,
+                'pw' => $this->password,
+                'sess_ret' => $m[1],
+                'aktie' => 'Login',
             ]);
 
         if (! $response->successful()) {
             throw new RuntimeException("SAD login failed with status {$response->status()}");
+        }
+
+        // A rejected login answers 200 with the form again, so the status proves
+        // nothing. This is a hint, not a verdict: l_bar.php is a login *bar* and may
+        // well render the form on every page. Throwing on a false positive would stop
+        // the whole sync, including the members that do come in over the
+        // unauthenticated endpoints — so log it and let the per-member page check,
+        // which tests for the member page itself, decide what actually failed.
+        if (preg_match('/name=[\'"]?pw[\'"]?/i', $response->body())) {
+            Log::warning('SadApiClient: the login form came back after posting credentials — the session may not be authenticated');
         }
     }
 
@@ -156,7 +181,19 @@ class SadApiClient
     public function getMemberPii(int $lidId): ?array
     {
         try {
-            return SadDataParser::parsePiiHtml($this->getMemberPiiHtml($lidId));
+            $html = $this->getMemberPiiHtml($lidId);
+
+            // SAD answers an unauthenticated request with the login screen and HTTP
+            // 200, so the status says nothing. Confirm we got the member page itself:
+            // anything else — login screen, error, maintenance notice — parses as a
+            // member whose every field happens to be empty, and syncs as success.
+            if (! preg_match('/<td[^>]*>\s*lid_id\s*<\/td>/i', $html)) {
+                Log::warning("SadApiClient: lid_info.php did not return the member page for lid_id {$lidId} — session may not be authenticated");
+
+                return null;
+            }
+
+            return SadDataParser::parsePiiHtml($html);
         } catch (\Throwable $e) {
             Log::warning("SadApiClient: Failed to fetch PII for lid_id {$lidId}: {$e->getMessage()}");
 

@@ -38,6 +38,7 @@ class SadSyncService
             'failed' => 0,
             'deactivated' => 0,
             'pii_members' => 0,
+            'pii_failed' => 0,
             'pii_coverage' => array_fill_keys(self::PII_FIELDS, 0),
             'warnings' => [],
         ];
@@ -79,9 +80,15 @@ class SadSyncService
             $metadata = array_diff_key($stats, ['warnings' => true]);
 
             if ($hasWarnings) {
+                // Say how many were left out. A bare slice reads as "exactly these
+                // three failed", which sent a diagnosis two rounds down the wrong path.
+                $shown = array_slice($stats['warnings'], 0, 3);
+                $remaining = count($stats['warnings']) - count($shown);
+                $summary = implode('; ', $shown).($remaining > 0 ? " (+{$remaining} more, see the log)" : '');
+
                 $errorSummary = $stats['failed'] > 0
                     ? "{$stats['failed']} members failed to sync"
-                    : implode('; ', array_slice($stats['warnings'], 0, 3));
+                    : $summary;
                 $jobStatus->markCompletedWithErrors($errorSummary, $metadata);
                 $log->update(array_merge(['status' => 'completed_with_errors', 'completed_at' => now(), 'error_message' => $errorSummary], $metadata));
             } else {
@@ -114,6 +121,21 @@ class SadSyncService
      */
     private function checkPiiCoverage(array &$stats): void
     {
+        // No threshold: the client reports a failure only when the response was not
+        // the member page at all, and that is never normal. One is already a fault
+        // worth seeing — and it stays invisible otherwise, because a page we cannot
+        // read parses as a member whose every field is empty and syncs as success.
+        if ($stats['pii_failed'] > 0) {
+            $warning = sprintf(
+                'lid_info.php did not return the member page for %d of %d members — check the SAD session and the URL',
+                $stats['pii_failed'],
+                $stats['pii_failed'] + $stats['pii_members'],
+            );
+
+            $stats['warnings'][] = $warning;
+            Log::warning("SadSyncService: {$warning}");
+        }
+
         if ($stats['pii_members'] < self::PII_COVERAGE_MIN_MEMBERS) {
             return;
         }
@@ -124,7 +146,7 @@ class SadSyncService
             }
 
             $warning = sprintf(
-                'No %s parsed for any of %d members — check the labels on lid_info.php',
+                'No %s parsed for any of %d members — the field is not reaching us; check the labels, the URL and the session',
                 $field,
                 $stats['pii_members'],
             );
@@ -160,6 +182,10 @@ class SadSyncService
         ];
 
         // Merge PII fields if available, counting which ones the page actually yielded
+        if ($pii === null) {
+            $stats['pii_failed']++;
+        }
+
         if ($pii) {
             $stats['pii_members']++;
 

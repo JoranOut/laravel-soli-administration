@@ -230,3 +230,14 @@ test('treats an nbsp-only cell as empty', function () {
 
     expect(App\Services\Sad\SadDataParser::parsePiiHtml($html)['plaats'])->toBeNull();
 });
+
+test('a login page yields no fields at all', function () {
+    // Shape of what SAD answers an unauthenticated request with: HTTP 200, no member table
+    $html = '<html><body><form action="l_bar.php" method="post">
+        <input type="text" name="user"><input type="password" name="pass">
+        </form></body></html>';
+
+    $result = App\Services\Sad\SadDataParser::parsePiiHtml($html);
+
+    expect(array_filter($result, fn ($v) => $v !== null))->toBeEmpty();
+});

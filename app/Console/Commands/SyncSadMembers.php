@@ -32,6 +32,7 @@ class SyncSadMembers extends Command
                 ['Skipped (admin-managed)', $stats['skipped']],
                 ['Failed', $stats['failed']],
                 ['Deactivated', $stats['deactivated']],
+                ['PII unavailable', $stats['pii_failed']],
             ],
         );
 

@@ -76,7 +76,9 @@ test('full sync creates members from SAD data', function () {
     // JobStatus should be marked completed
     $jobStatus = JobStatus::where('name', 'sad-sync')->first();
     expect($jobStatus)->not->toBeNull();
-    expect($jobStatus->status)->toBe('completed');
+    // 1001 has no usable PII page, and that is a reported fault rather than silence
+    expect($jobStatus->status)->toBe('completed_with_errors');
+    expect($jobStatus->last_error)->toContain('did not return the member page for 1 of 2');
 });
 
 test('handles member detail failure gracefully', function () {
@@ -183,9 +185,11 @@ test('tracks stats and job status correctly', function () {
 
     $jobStatus = JobStatus::where('name', 'sad-sync')->first();
     expect($jobStatus)->not->toBeNull();
-    expect($jobStatus->status)->toBe('completed');
+    // The member syncs, but its PII page was unusable — reported, not swallowed
+    expect($jobStatus->status)->toBe('completed_with_errors');
     expect($jobStatus->metadata['total'])->toBe(1);
     expect($jobStatus->metadata['created'])->toBe(1);
+    expect($jobStatus->metadata['pii_failed'])->toBe(1);
 });
 
 test('warns when a PII field is empty for every member', function () {
@@ -253,4 +257,64 @@ test('does not warn about an empty field on a small run', function () {
     $stats = app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
 
     expect($stats['warnings'])->toBeEmpty();
+});
+
+test('warns when lid_info.php yields nothing for anyone', function () {
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('login')->once();
+
+    $members = [];
+    for ($lidId = 4000; $lidId < 4012; $lidId++) {
+        $members[$lidId] = ['lid_id' => $lidId, 'onderdeel' => 'HA', 'email' => "lid{$lidId}@test.nl"];
+
+        $mockClient->shouldReceive('getMemberDetails')->with($lidId)->andReturn([
+            'voornaam' => 'Lid',
+            'tussenvoegsel' => null,
+            'achternaam' => (string) $lidId,
+            'email' => "lid{$lidId}@test.nl",
+            'onderdeel' => 'HA',
+        ]);
+
+        // What a dead session looks like: the client cannot make a member page of it
+        $mockClient->shouldReceive('getMemberPii')->with($lidId)->andReturn(null);
+    }
+
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn($members);
+
+    $stats = app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    expect($stats['pii_failed'])->toBe(12);
+    expect($stats['warnings'])->toHaveCount(1);
+    expect($stats['warnings'][0])->toContain('did not return the member page for 12 of 12 members');
+
+    // The members themselves still sync — only their PII is missing
+    expect($stats['created'])->toBe(12);
+});
+
+test('the error summary says how many warnings it left out', function () {
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('login')->once();
+
+    $members = [];
+    for ($lidId = 5000; $lidId < 5012; $lidId++) {
+        $members[$lidId] = ['lid_id' => $lidId, 'onderdeel' => 'HA', 'email' => "lid{$lidId}@test.nl"];
+        $mockClient->shouldReceive('getMemberDetails')->with($lidId)->andReturn([
+            'voornaam' => 'Lid',
+            'tussenvoegsel' => null,
+            'achternaam' => (string) $lidId,
+            'email' => "lid{$lidId}@test.nl",
+            'onderdeel' => 'HA',
+        ]);
+        // Only plaats parses, so five fields warn — more than the summary shows
+        $mockClient->shouldReceive('getMemberPii')->with($lidId)->andReturn([
+            'adres' => null, 'postcode' => null, 'plaats' => 'Driehuis',
+            'telefoon' => null, 'geboortedatum' => null, 'instrument' => null,
+        ]);
+    }
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn($members);
+
+    app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    expect(JobStatus::where('name', 'sad-sync')->first()->last_error)
+        ->toContain('+2 more, see the log');
 });
