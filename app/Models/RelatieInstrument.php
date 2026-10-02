@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\HasDateRange;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -9,10 +10,14 @@ class RelatieInstrument extends Model
 {
     protected $table = 'soli_relatie_instrument';
 
+    use HasDateRange;
+
     protected $fillable = [
         'relatie_id',
         'onderdeel_id',
         'instrument_soort_id',
+        'van',
+        'tot',
     ];
 
     public function relatie(): BelongsTo

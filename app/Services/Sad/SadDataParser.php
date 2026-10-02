@@ -269,6 +269,63 @@ class SadDataParser
      *
      * Returns array with keys: adres, postcode, plaats, telefoon, geboortedatum, instrument
      */
+    /**
+     * Parse l_tinfo.php — one member's full history, in sections separated by a run
+     * of underscores. Only the dated sections are read here.
+     *
+     * This page is why the sync no longer has to guess: lid_info.php shows a single
+     * undated instrument, while this one lists every period with van and tot. The
+     * scrape that produced the original import read the same page.
+     *
+     * @return array{onderdeel: array<int, array{van: ?string, tot: ?string, naam: string}>, instrument: array<int, array{van: ?string, tot: ?string, naam: string}>}
+     */
+    public static function parseMemberHistoryHtml(string $html): array
+    {
+        return [
+            'onderdeel' => self::parseHistorySection($html, 'Onderdeel'),
+            'instrument' => self::parseHistorySection($html, 'Instrument'),
+        ];
+    }
+
+    /**
+     * @return array<int, array{van: ?string, tot: ?string, naam: string}>
+     */
+    private static function parseHistorySection(string $html, string $heading): array
+    {
+        $parts = preg_split('/'.preg_quote($heading, '/').'/', $html, 2);
+
+        if (count($parts) < 2) {
+            return [];
+        }
+
+        $section = preg_split('/_{5,}/', $parts[1], 2)[0];
+        $rows = [];
+
+        if (! preg_match_all('/<tr[^>]*>(.*?)<\/tr>/si', $section, $matches)) {
+            return $rows;
+        }
+
+        foreach ($matches[1] as $row) {
+            if (! preg_match_all('/<td[^>]*>(.*?)<\/td>/si', $row, $cells) || count($cells[1]) < 3) {
+                continue;
+            }
+
+            $naam = self::normalizeValue($cells[1][2]);
+
+            if ($naam === '') {
+                continue;
+            }
+
+            $rows[] = [
+                'van' => self::parseDate(self::normalizeValue($cells[1][0])),
+                'tot' => self::parseDate(self::normalizeValue($cells[1][1])),
+                'naam' => $naam,
+            ];
+        }
+
+        return $rows;
+    }
+
     public static function parsePiiHtml(string $html): array
     {
         $result = [

@@ -39,6 +39,7 @@ class SadSyncService
             'deactivated' => 0,
             'pii_members' => 0,
             'pii_failed' => 0,
+            'history_failed' => 0,
             'pii_coverage' => array_fill_keys(self::PII_FIELDS, 0),
             'warnings' => [],
         ];
@@ -85,6 +86,7 @@ class SadSyncService
                 'pii_coverage' => true,
                 'pii_members' => true,
                 'pii_failed' => true,
+                'history_failed' => true,
             ]);
 
             $metadata['pii'] = $this->piiVerdict($stats);
@@ -125,6 +127,16 @@ class SadSyncService
      */
     private function piiVerdict(array $stats): string
     {
+        if ($stats['history_failed'] > 0) {
+            $warning = sprintf(
+                'l_tinfo.php did not return the history page for %d members — check the SAD session and the URL',
+                $stats['history_failed'],
+            );
+
+            $stats['warnings'][] = $warning;
+            Log::warning("SadSyncService: {$warning}");
+        }
+
         if ($stats['pii_failed'] > 0) {
             return 'fail';
         }
@@ -202,6 +214,9 @@ class SadSyncService
         // Fetch PII (authenticated)
         $pii = $this->apiClient->getMemberPii($lidId);
 
+        // Full history: onderdeel and instrument periods with dates
+        $history = $this->apiClient->getMemberHistory($lidId);
+
         // Split onderdeel codes (e.g. "HABB" → ["HA", "BB"])
         $onderdeelCodes = $this->splitOnderdeelCodes($member['onderdeel']);
 
@@ -228,6 +243,12 @@ class SadSyncService
                     $stats['pii_coverage'][$field]++;
                 }
             }
+        }
+
+        if ($history !== null) {
+            $data['history'] = $history;
+        } else {
+            $stats['history_failed']++;
         }
 
         // Upsert member

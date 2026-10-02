@@ -164,6 +164,36 @@ class SadApiClient
     }
 
     /**
+     * Fetch one member's full history from l_tinfo.php.
+     *
+     * Nothing links to this page — the scrape that produced the original import knew
+     * it by name. It carries the onderdeel and instrument periods with van and tot,
+     * which lid_info.php does not.
+     *
+     * @return array{onderdeel: array<int, array{van: ?string, tot: ?string, naam: string}>, instrument: array<int, array{van: ?string, tot: ?string, naam: string}>}|null
+     */
+    public function getMemberHistory(int $lidId): ?array
+    {
+        try {
+            $html = $this->getAuthenticated("/l_tinfo.php?lid_id={$lidId}");
+
+            // Same reasoning as getMemberPii: an unauthenticated or otherwise wrong
+            // response is HTTP 200, and parses as a member with no history at all
+            if (! str_contains($html, 'Onderdeel') && ! str_contains($html, 'Instrument')) {
+                Log::warning("SadApiClient: l_tinfo.php did not return the history page for lid_id {$lidId}");
+
+                return null;
+            }
+
+            return SadDataParser::parseMemberHistoryHtml($html);
+        } catch (\Throwable $e) {
+            Log::warning("SadApiClient: Failed to fetch history for lid_id {$lidId}: {$e->getMessage()}");
+
+            return null;
+        }
+    }
+
+    /**
      * The raw lid_info.php page, before parsing. Only for capturing a test fixture —
      * the response holds PII, so never log or store it unscrubbed.
      */
