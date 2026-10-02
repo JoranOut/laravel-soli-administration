@@ -115,7 +115,7 @@ class SadApiClient
         $lines = preg_split("/\n/", $body);
 
         if (count($lines) < 6) {
-            Log::warning("SadApiClient: Insufficient data for lid_id {$lidId}");
+            Log::error("SadApiClient: site_lid.php returned too little for lid_id {$lidId} — member skipped");
 
             return null;
         }
@@ -130,7 +130,7 @@ class SadApiClient
         }
 
         if ($offset === null) {
-            Log::warning("SadApiClient: No Lidinfo header for lid_id {$lidId}");
+            Log::error("SadApiClient: no Lidinfo header for lid_id {$lidId} — member skipped");
 
             return null;
         }
@@ -143,13 +143,14 @@ class SadApiClient
         $onderdeel = $lines[$offset + 5] ?? '';
 
         if (! preg_match('/^[^ ]+ .*[^ ]{2}$/', $volnaam)) {
-            Log::warning("SadApiClient: Invalid name for lid_id {$lidId}: {$volnaam}");
+            // The value itself is personal data and has no place in a log file
+            Log::error("SadApiClient: unusable name for lid_id {$lidId} — member skipped");
 
             return null;
         }
 
         if (! str_contains($email, '@')) {
-            Log::warning("SadApiClient: Invalid email for lid_id {$lidId}: {$email}");
+            Log::error("SadApiClient: unusable email for lid_id {$lidId} — member skipped");
 
             return null;
         }
@@ -180,14 +181,14 @@ class SadApiClient
             // Same reasoning as getMemberPii: an unauthenticated or otherwise wrong
             // response is HTTP 200, and parses as a member with no history at all
             if (! str_contains($html, 'Onderdeel') && ! str_contains($html, 'Instrument')) {
-                Log::warning("SadApiClient: l_tinfo.php did not return the history page for lid_id {$lidId}");
+                Log::error("SadApiClient: l_tinfo.php did not return the history page for lid_id {$lidId}");
 
                 return null;
             }
 
             return SadDataParser::parseMemberHistoryHtml($html);
         } catch (\Throwable $e) {
-            Log::warning("SadApiClient: Failed to fetch history for lid_id {$lidId}: {$e->getMessage()}");
+            Log::error("SadApiClient: failed to fetch history for lid_id {$lidId}: {$e->getMessage()}");
 
             return null;
         }
@@ -218,14 +219,14 @@ class SadApiClient
             // anything else — login screen, error, maintenance notice — parses as a
             // member whose every field happens to be empty, and syncs as success.
             if (! preg_match('/<td[^>]*>\s*lid_id\s*<\/td>/i', $html)) {
-                Log::warning("SadApiClient: lid_info.php did not return the member page for lid_id {$lidId} — session may not be authenticated");
+                Log::error("SadApiClient: lid_info.php did not return the member page for lid_id {$lidId} — session may not be authenticated");
 
                 return null;
             }
 
             return SadDataParser::parsePiiHtml($html);
         } catch (\Throwable $e) {
-            Log::warning("SadApiClient: Failed to fetch PII for lid_id {$lidId}: {$e->getMessage()}");
+            Log::error("SadApiClient: failed to fetch PII for lid_id {$lidId}: {$e->getMessage()}");
 
             return null;
         }

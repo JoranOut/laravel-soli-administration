@@ -60,7 +60,7 @@ class SadSyncService
                     $this->syncMember($lidId, $member, $stats);
                 } catch (\Throwable $e) {
                     $stats['failed']++;
-                    Log::warning("SadSyncService: Failed to sync lid_id {$lidId}: {$e->getMessage()}");
+                    Log::error("SadSyncService: failed to sync lid_id {$lidId}: {$e->getMessage()}");
                 }
             }
 
@@ -72,7 +72,7 @@ class SadSyncService
                 $reconcileResult = $this->memberSyncService->reconcileMembers($activeLidIds);
                 $stats['deactivated'] = $reconcileResult['deactivated_count'];
             } catch (\Throwable $e) {
-                Log::warning("SadSyncService: Reconcile failed: {$e->getMessage()}");
+                Log::error("SadSyncService: reconcile failed: {$e->getMessage()}");
                 $stats['warnings'][] = "Reconcile failed: {$e->getMessage()}";
             }
 
@@ -96,7 +96,7 @@ class SadSyncService
                 // three failed", which sent a diagnosis two rounds down the wrong path.
                 $shown = array_slice($stats['warnings'], 0, 3);
                 $remaining = count($stats['warnings']) - count($shown);
-                $summary = implode('; ', $shown).($remaining > 0 ? " (+{$remaining} more, see the log)" : '');
+                $summary = implode('; ', $shown).($remaining > 0 ? " (+{$remaining} more)" : '');
 
                 $errorSummary = $stats['failed'] > 0
                     ? "{$stats['failed']} members failed to sync"
@@ -134,7 +134,7 @@ class SadSyncService
             );
 
             $stats['warnings'][] = $warning;
-            Log::warning("SadSyncService: {$warning}");
+            Log::error("SadSyncService: {$warning}");
         }
 
         if ($stats['pii_failed'] > 0) {
@@ -178,7 +178,7 @@ class SadSyncService
             );
 
             $stats['warnings'][] = $warning;
-            Log::warning("SadSyncService: {$warning}");
+            Log::error("SadSyncService: {$warning}");
         }
 
         if ($stats['pii_members'] < self::PII_COVERAGE_MIN_MEMBERS) {
@@ -197,7 +197,7 @@ class SadSyncService
             );
 
             $stats['warnings'][] = $warning;
-            Log::warning("SadSyncService: {$warning}");
+            Log::error("SadSyncService: {$warning}");
         }
     }
 
