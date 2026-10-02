@@ -19,6 +19,8 @@ beforeEach(function () {
 
 test('full sync creates members from SAD data', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
 
     $mockClient->shouldReceive('login')->once();
 
@@ -83,6 +85,8 @@ test('full sync creates members from SAD data', function () {
 
 test('handles member detail failure gracefully', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
 
     $mockClient->shouldReceive('login')->once();
 
@@ -128,6 +132,8 @@ test('reconciles members no longer in SAD', function () {
     }
 
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
 
     // Only members 2000-2004 are still active (2005 should be deactivated)
@@ -161,6 +167,8 @@ test('reconciles members no longer in SAD', function () {
 
 test('tracks stats and job status correctly', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
     $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
         1000 => ['lid_id' => 1000, 'onderdeel' => 'HA', 'email' => 'jan@test.nl'],
@@ -194,6 +202,8 @@ test('tracks stats and job status correctly', function () {
 
 test('warns when a PII field is empty for every member', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
 
     $members = [];
@@ -234,6 +244,8 @@ test('warns when a PII field is empty for every member', function () {
 
 test('does not warn about an empty field on a small run', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
     $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
         3000 => ['lid_id' => 3000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],
@@ -261,6 +273,8 @@ test('does not warn about an empty field on a small run', function () {
 
 test('warns when lid_info.php yields nothing for anyone', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
 
     $members = [];
@@ -293,6 +307,8 @@ test('warns when lid_info.php yields nothing for anyone', function () {
 
 test('the error summary says how many warnings it left out', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
 
     $members = [];
@@ -321,6 +337,8 @@ test('the error summary says how many warnings it left out', function () {
 
 test('the job status carries a pii verdict, not the per-field counts', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
     $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
         6000 => ['lid_id' => 6000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],
@@ -346,6 +364,8 @@ test('the job status carries a pii verdict, not the per-field counts', function 
 
 test('the verdict is fail when a field never arrives', function () {
     $mockClient = Mockery::mock(SadApiClient::class);
+    // Default: a readable but empty history, so these tests stay about what they test
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
     $mockClient->shouldReceive('login')->once();
     $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
         7000 => ['lid_id' => 7000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],

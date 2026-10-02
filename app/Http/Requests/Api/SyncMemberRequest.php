@@ -28,6 +28,17 @@ class SyncMemberRequest extends FormRequest
             'plaats' => ['nullable', 'string', 'max:255'],
             'telefoon' => ['nullable', 'string', 'max:255'],
             'instrument' => ['nullable', 'string', 'max:255'],
+
+            // Full history from l_tinfo.php: onderdeel and instrument periods
+            'history' => ['nullable', 'array'],
+            'history.onderdeel' => ['nullable', 'array'],
+            'history.onderdeel.*.naam' => ['required', 'string', 'max:255'],
+            'history.onderdeel.*.van' => ['nullable', 'date'],
+            'history.onderdeel.*.tot' => ['nullable', 'date'],
+            'history.instrument' => ['nullable', 'array'],
+            'history.instrument.*.naam' => ['required', 'string', 'max:255'],
+            'history.instrument.*.van' => ['nullable', 'date'],
+            'history.instrument.*.tot' => ['nullable', 'date'],
         ];
     }
 

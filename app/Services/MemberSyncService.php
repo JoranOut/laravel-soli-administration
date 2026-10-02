@@ -8,6 +8,7 @@ use App\Models\Relatie;
 use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Models\User;
+use App\Services\Sad\InstrumentPeriodResolver;
 use App\Services\Sad\SadDataParser;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -389,9 +390,12 @@ class MemberSyncService
             $this->syncTelefoons($relatie, $data['telefoon']);
         }
 
-        if (isset($data['instrument'])) {
-            $instrumentWarnings = $this->syncInstrumenten($relatie, $data['instrument']);
-            $warnings = array_merge($warnings, $instrumentWarnings);
+        // l_tinfo.php gives the full history with dates, which says everything the
+        // single undated field on lid_info.php does and more. Prefer it when present.
+        if (isset($data['history'])) {
+            $warnings = array_merge($warnings, $this->syncInstrumentPeriods($relatie, $data['history']));
+        } elseif (isset($data['instrument'])) {
+            $warnings = array_merge($warnings, $this->syncInstrumenten($relatie, $data['instrument']));
         }
 
         return ['warnings' => $warnings];
@@ -450,6 +454,70 @@ class MemberSyncService
         foreach ($numbers as $nummer) {
             $relatie->telefoons()->create(['nummer' => $nummer]);
         }
+    }
+
+    /**
+     * Lay down the instrument periods SAD describes, replacing what was there.
+     *
+     * SAD is the record of truth here: it lists onderdeel periods and instrument
+     * periods, and InstrumentPeriodResolver works out which belongs to which. The
+     * member's rows are rebuilt from that rather than merged into, because a merge
+     * cannot express an instrument that ended — which is how a member who switched
+     * instruments ended up holding both with no date to tell them apart.
+     *
+     * @param  array{onderdeel: array<int, array{van: ?string, tot: ?string, naam: string}>, instrument: array<int, array{van: ?string, tot: ?string, naam: string}>}  $history
+     * @return string[] warnings
+     */
+    private function syncInstrumentPeriods(Relatie $relatie, array $history): array
+    {
+        $warnings = [];
+        $onderdeelMap = $this->getOnderdeelMap();
+        $lookup = $this->getInstrumentSoortLookup();
+        $rows = [];
+
+        foreach (InstrumentPeriodResolver::resolve($history['onderdeel'], $history['instrument']) as $pair) {
+            $onderdeelId = $onderdeelMap[$pair['onderdeel']] ?? null;
+
+            if (! $onderdeelId) {
+                $warnings[] = "Unknown onderdeel: {$pair['onderdeel']}";
+
+                continue;
+            }
+
+            foreach (SadDataParser::instrumentNamesFor($pair['instrument']) as $naam) {
+                $soortId = SadDataParser::matchInstrumentSoort($naam, $lookup);
+
+                if (! $soortId) {
+                    $warnings[] = "Unknown instrument: {$naam}";
+
+                    continue;
+                }
+
+                // One SAD value can name two instruments, and the same pairing can
+                // arrive twice; keep one row per onderdeel, instrument and period
+                $rows[$onderdeelId.':'.$soortId.':'.$pair['van'].':'.$pair['tot']] = [
+                    'relatie_id' => $relatie->id,
+                    'onderdeel_id' => $onderdeelId,
+                    'instrument_soort_id' => $soortId,
+                    'van' => $pair['van'],
+                    'tot' => $pair['tot'],
+                ];
+            }
+        }
+
+        // Nothing usable means we cannot describe this member's instruments at all,
+        // so leave the existing rows alone rather than clearing them on a bad reading
+        if (! $rows && $history['instrument']) {
+            return $warnings;
+        }
+
+        RelatieInstrument::where('relatie_id', $relatie->id)->delete();
+
+        foreach ($rows as $row) {
+            RelatieInstrument::create($row);
+        }
+
+        return $warnings;
     }
 
     private function syncInstrumenten(Relatie $relatie, string $instrumentName): array

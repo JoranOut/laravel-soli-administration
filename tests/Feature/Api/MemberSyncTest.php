@@ -1105,3 +1105,122 @@ test('says nothing about a value that is not an instrument', function () {
         expect($response->json('warnings') ?? [])->toBeEmpty();
     }
 });
+
+// --- PII: Instrument periods from l_tinfo.php ---
+
+test('instrument periods follow the onderdeel they were assigned under', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    // Marsorkest 2025, harmonie 2027; trumpet 2025, trombone 2028.
+    // The trombone belongs to the harmonie — by 2028 that was the most recent.
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['MO', 'HA'],
+        'history' => [
+            'onderdeel' => [
+                ['van' => '2025-01-01', 'tot' => null, 'naam' => 'MO'],
+                ['van' => '2027-01-01', 'tot' => null, 'naam' => 'HA'],
+            ],
+            'instrument' => [
+                ['van' => '2025-01-01', 'tot' => null, 'naam' => 'Trompet'],
+                ['van' => '2028-01-01', 'tot' => null, 'naam' => 'Trombone'],
+            ],
+        ],
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+
+    $rows = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_instrument_soorten as s', 's.id', '=', 'soli_relatie_instrument.instrument_soort_id')
+        ->join('soli_onderdelen as o', 'o.id', '=', 'soli_relatie_instrument.onderdeel_id')
+        ->get(['o.afkorting', 's.naam', 'soli_relatie_instrument.van', 'soli_relatie_instrument.tot'])
+        ->map(fn ($r) => "{$r->afkorting}/{$r->naam} {$r->van}")
+        ->sort()->values()->all();
+
+    expect($rows)->toBe([
+        'HA/Trombone 2028-01-01',
+        'HA/Trompet 2027-01-01',
+        'MO/Trompet 2025-01-01',
+    ]);
+});
+
+test('an instrument that ended is closed instead of lingering', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2006-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => [
+                ['van' => '2006-01-01', 'tot' => '2012-01-01', 'naam' => 'Trompet'],
+                ['van' => '2012-01-01', 'tot' => null, 'naam' => 'Trombone'],
+            ],
+        ],
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $rows = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_instrument_soorten as s', 's.id', '=', 'soli_relatie_instrument.instrument_soort_id')
+        ->get(['s.naam', 'soli_relatie_instrument.van', 'soli_relatie_instrument.tot'])
+        ->map(fn ($r) => "{$r->naam} {$r->van}..{$r->tot}")->sort()->values()->all();
+
+    expect($rows)->toBe([
+        'Trombone 2012-01-01..',
+        'Trompet 2006-01-01..2012-01-01',
+    ]);
+});
+
+test('a later sync rewrites the periods instead of adding to them', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    $payload = fn (array $instrument) => [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2020-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => $instrument,
+        ],
+    ];
+
+    $this->putJson('/api/v1/sync/members/1000', $payload([
+        ['van' => '2020-01-01', 'tot' => null, 'naam' => 'Trompet'],
+    ]), syncHeaders());
+
+    // SAD now says the trumpet ended and a trombone took over
+    $this->putJson('/api/v1/sync/members/1000', $payload([
+        ['van' => '2020-01-01', 'tot' => '2024-01-01', 'naam' => 'Trompet'],
+        ['van' => '2024-01-01', 'tot' => null, 'naam' => 'Trombone'],
+    ]), syncHeaders());
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+
+    expect(RelatieInstrument::where('relatie_id', $relatie->id)->count())->toBe(2);
+    expect(RelatieInstrument::where('relatie_id', $relatie->id)->whereNull('tot')->count())->toBe(1);
+});
+
+test('an unreadable history leaves the existing periods alone', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2020-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => [['van' => '2020-01-01', 'tot' => null, 'naam' => 'Trompet']],
+        ],
+    ], syncHeaders());
+
+    // Every instrument unreadable: not evidence that the member stopped playing
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2020-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => [['van' => '2020-01-01', 'tot' => null, 'naam' => 'Banjo']],
+        ],
+    ], syncHeaders());
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    expect(RelatieInstrument::where('relatie_id', $relatie->id)->count())->toBe(1);
+});
