@@ -9,6 +9,7 @@ use App\Models\Relatie;
 use App\Models\RelatieInstrument;
 use App\Models\RelatieType;
 use App\Observers\GoogleContactSyncObserver;
+use App\Services\Sad\SadDataParser;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
@@ -44,117 +45,8 @@ class ImportSadMembers extends Command
      *
      * @var array<string, string|string[]>
      */
-    private const INSTRUMENT_MAP = [
-        // Klarinet
-        'bes klarin' => 'Besklarinet', 'bes klarinet' => 'Besklarinet', 'besklarinet' => 'Besklarinet',
-        'klarinet' => 'Klarinet', 'klarinet (eigen)' => 'Klarinet',
-        'klarinet / saxofoon' => ['Klarinet', 'Saxofoon'],
-        'klarinet bariton sax' => ['Klarinet', 'Baritonsaxofoon'],
-        'alt klarin' => 'Altklarinet',
-        'bas klarin' => 'Basklarinet', 'bas klarinet' => 'Basklarinet', 'basklarinet' => 'Basklarinet',
-        'bas clar' => 'Basklarinet', 'bas clarin' => 'Basklarinet',
-        'es klarin' => 'Esklarinet', 'es klarine' => 'Esklarinet', 'es klarinet' => 'Esklarinet',
-        '(contra)basklarinet' => 'Basklarinet',
-
-        // Saxofoon
-        'saxofoon' => 'Saxofoon', 'saxofoon (kinder)' => 'Saxofoon', 'saxofoon (soli)' => 'Saxofoon',
-        'saxofoon trombone' => ['Saxofoon', 'Trombone'],
-        'alt sax' => 'Altsaxofoon', 'alt saxofo' => 'Altsaxofoon', 'alt saxofoon' => 'Altsaxofoon',
-        'altsax' => 'Altsaxofoon', 'altsax (eigen)' => 'Altsaxofoon', 'altsaxofoon' => 'Altsaxofoon',
-        'altsax en paradetrom' => ['Altsaxofoon', 'Paradetrom'],
-        'alt/tensax' => ['Altsaxofoon', 'Tenorsaxofoon'],
-        '14-11-2017    tenor sax en klarine' => ['Tenorsaxofoon', 'Klarinet'],
-        'tenor sax' => 'Tenorsaxofoon', 'tenor saxofoon' => 'Tenorsaxofoon',
-        'tenorsax' => 'Tenorsaxofoon', 'tenorsax (eigen inst' => 'Tenorsaxofoon',
-        'tenorsaxofoon' => 'Tenorsaxofoon',
-        'tenor/altsaxofoon' => ['Tenorsaxofoon', 'Altsaxofoon'],
-        'bariton saxofoon' => 'Baritonsaxofoon', 'baritonsax' => 'Baritonsaxofoon',
-        'sopraan saxofoon' => 'Sopraansaxofoon',
-
-        // Dwarsfluit
-        'fluit' => 'Dwarsfluit', 'dwarsfluit' => 'Dwarsfluit', 'eigen dwarsfluit' => 'Dwarsfluit',
-        'dwarsfl' => 'Dwarsfluit', '07-09-2018    dwarsfluit' => 'Dwarsfluit',
-        'dwarsfluit (eigen in' => 'Dwarsfluit', 'dwarsfluit nu nog el' => 'Dwarsfluit',
-        '01-10-2017    klarinet' => 'Klarinet',
-        'fluit fag' => ['Dwarsfluit', 'Fagot'],
-        'fluit/saxofoon' => ['Dwarsfluit', 'Saxofoon'],
-        'piccolo' => 'Piccolo',
-        'piccolo/fl' => ['Piccolo', 'Dwarsfluit'],
-
-        // Koper — trompet
-        'trompet' => 'Trompet', 'trompet (eigen)' => 'Trompet',
-        'trompet slagwerk' => ['Trompet', 'Slagwerk'],
-        'cornet / trompet' => ['Cornet', 'Trompet'],
-        'cornet' => 'Cornet', 'piston' => 'Trompet',
-
-        // Koper — trombone
-        'trombone' => 'Trombone',
-        'bas trombone' => 'Bastrombone', 'bastrombone' => 'Bastrombone',
-
-        // Koper — hoorn / althoorn / bugel
-        'hoorn' => 'Hoorn', 'althoorn' => 'Althoorn',
-        'bugel' => 'Bugel',
-        'tuba' => 'Tuba', 'sousafoon' => 'Sousafoon',
-        'bes bas' => 'Besbas', 'besbas' => 'Besbas',
-        'bes bas trompet' => ['Besbas', 'Trompet'],
-        'es bas' => 'Esbas', 'bas' => 'Tuba',
-        'contrabas' => 'Contrabas', 'bassist' => 'Contrabas', 'bas gitaar' => 'Basgitaar',
-
-        // Koper — bariton / euphonium
-        'bariton' => 'Bariton',
-        'bariton bas' => ['Bariton', 'Tuba'],
-        'euphonium' => 'Euphonium',
-
-        // Houtblazers
-        'hobo' => 'Hobo',
-        'hobo/alt h' => ['Hobo', 'Althoorn'],
-        'fagot' => 'Fagot', 'fagot (eigen)' => 'Fagot',
-
-        // Slagwerk
-        'slagwerk' => 'Slagwerk', 'slaginstrument' => 'Slagwerk',
-        'drum' => 'Drumstel', 'drums' => 'Drumstel', 'drumstel' => 'Drumstel',
-        'overslagtr' => 'Slagwerk',
-        'slagwerk / saxofoon' => ['Slagwerk', 'Saxofoon'],
-        'mel sw' => 'Melodisch slagwerk', 'mel. slagw' => 'Melodisch slagwerk',
-        'mel sw (ha) + fagot' => ['Melodisch slagwerk', 'Fagot'],
-        'melodisch slagwerk' => 'Melodisch slagwerk', 'melodisch slagwerk e' => 'Melodisch slagwerk',
-        'paradetrom' => 'Paradetrom', 'kleine trom' => 'Kleine trom',
-        'trom' => 'Trom', 'trommel' => 'Trom', 'trio tom' => 'Trio tom', 'trio tom t' => 'Trio tom',
-        'bekken' => 'Bekken', 'pauken' => 'Pauken',
-        'marimba' => 'Marimba', 'vibrafoon' => 'Vibrafoon', 'xylofoon' => 'Xylofoon',
-        'buisklokken' => 'Buisklokken', 'bells' => 'Buisklokken',
-        'klokkenspel' => 'Klokkenspel', 'klokkenspiel' => 'Klokkenspel',
-        'tamboer maitre' => 'Tamboer-maître', 'tambourmaitre' => 'Tamboer-maître',
-
-        // Majorette / twirl
-        'majorette' => 'Majorette', 'baton' => 'Majorette', 'twirlteam' => 'Majorette',
-        'vlaggenw' => 'Vlaggenwacht', 'vlaggew' => 'Vlaggenwacht', 'vlaggewach' => 'Vlaggenwacht',
-
-        // Toetsen
-        'keyboard' => 'Keyboard', 'piano' => 'Piano', 'orgel' => 'Orgel',
-
-        // Diverse
-        'harp' => 'Harp', 'strijk' => 'Strijk',
-
-        // Overig
-        'gitaar' => 'Gitaar',
-        'zang' => 'Zang', 'zangeres' => 'Zang',
-    ];
-
     /** Raw SAD instrument name (lowercased) → relatie type name. */
-    private const TYPE_MAP = [
-        'dirigent' => 'dirigent', 'dirigent klein orkes' => 'dirigent',
-        'dirigent sa' => 'dirigent', 'dirigent samenspelkl' => 'dirigent',
-        'instructeur' => 'dirigent', 'instructeur slagwerk' => 'dirigent',
-        'instructie' => 'dirigent', 'instrukt' => 'dirigent', 'instrukteu' => 'dirigent',
-        'docent' => 'docent', 'docent klarinet' => 'docent', 'docent mos' => 'docent', 'mos' => 'docent',
-        '05-12-2021    docent dwarsfluit' => 'docent',
-        'begeleider' => 'vrijwilliger', 'begeleiding' => 'vrijwilliger', 'stofzuiger' => 'vrijwilliger',
-    ];
-
     /** Values that are neither instrument nor type — skip silently. */
-    private const SKIP_INSTRUMENTS = ['oud goud', 'geen', 'niet spelend bestuur'];
-
     public function handle(): int
     {
         $path = $this->argument('path');
@@ -903,11 +795,11 @@ class ImportSadMembers extends Command
         foreach ($instruments as $record) {
             $raw = strtolower(trim($record['instrument'] ?? ''));
 
-            if (! $raw || in_array($raw, self::SKIP_INSTRUMENTS) || isset(self::TYPE_MAP[$raw])) {
+            if (! $raw || in_array($raw, SadDataParser::SKIP_INSTRUMENTS) || isset(SadDataParser::TYPE_MAP[$raw])) {
                 continue;
             }
 
-            $mapped = self::INSTRUMENT_MAP[$raw] ?? null;
+            $mapped = SadDataParser::INSTRUMENT_MAP[$raw] ?? null;
 
             if ($mapped === null) {
                 $this->warn("  Unmapped instrument: '{$raw}' (lid_id {$member['lid_id']})");
@@ -1000,11 +892,11 @@ class ImportSadMembers extends Command
 
         foreach ($instruments as $record) {
             $raw = strtolower(trim($record['instrument'] ?? ''));
-            if (! isset(self::TYPE_MAP[$raw])) {
+            if (! isset(SadDataParser::TYPE_MAP[$raw])) {
                 continue;
             }
 
-            $typeName = self::TYPE_MAP[$raw];
+            $typeName = SadDataParser::TYPE_MAP[$raw];
             $van = $this->parseDate($record['van']);
             $tot = $this->parseDate($record['tot']);
 

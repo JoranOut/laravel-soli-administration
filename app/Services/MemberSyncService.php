@@ -456,27 +456,45 @@ class MemberSyncService
     {
         $warnings = [];
 
-        $instrumentSoortLookup = $this->getInstrumentSoortLookup();
-        $instrumentSoortId = SadDataParser::matchInstrumentSoort($instrumentName, $instrumentSoortLookup);
+        // Empty, "geen", or a role such as dirigent: nothing to record, nothing wrong
+        $names = SadDataParser::instrumentNamesFor($instrumentName);
 
-        if (! $instrumentSoortId) {
-            $warnings[] = "Unknown instrument: {$instrumentName}";
-
+        if (! $names) {
             return $warnings;
         }
 
-        // Get active onderdeel IDs for this relatie
+        $lookup = $this->getInstrumentSoortLookup();
+        $soortIds = [];
+
+        foreach ($names as $name) {
+            $soortId = SadDataParser::matchInstrumentSoort($name, $lookup);
+
+            if (! $soortId) {
+                $warnings[] = "Unknown instrument: {$name}";
+
+                continue;
+            }
+
+            $soortIds[] = $soortId;
+        }
+
+        if (! $soortIds) {
+            return $warnings;
+        }
+
         $activeOnderdeelIds = $relatie->onderdelen()
             ->wherePivotNull('tot')
             ->pluck('onderdeel_id')
             ->toArray();
 
         foreach ($activeOnderdeelIds as $onderdeelId) {
-            RelatieInstrument::firstOrCreate([
-                'relatie_id' => $relatie->id,
-                'onderdeel_id' => $onderdeelId,
-                'instrument_soort_id' => $instrumentSoortId,
-            ]);
+            foreach ($soortIds as $soortId) {
+                RelatieInstrument::firstOrCreate([
+                    'relatie_id' => $relatie->id,
+                    'onderdeel_id' => $onderdeelId,
+                    'instrument_soort_id' => $soortId,
+                ]);
+            }
         }
 
         return $warnings;

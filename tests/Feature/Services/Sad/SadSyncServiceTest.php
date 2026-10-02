@@ -189,7 +189,7 @@ test('tracks stats and job status correctly', function () {
     expect($jobStatus->status)->toBe('completed_with_errors');
     expect($jobStatus->metadata['total'])->toBe(1);
     expect($jobStatus->metadata['created'])->toBe(1);
-    expect($jobStatus->metadata['pii_failed'])->toBe(1);
+    expect($jobStatus->metadata['pii'])->toBe('fail');
 });
 
 test('warns when a PII field is empty for every member', function () {
@@ -317,4 +317,49 @@ test('the error summary says how many warnings it left out', function () {
 
     expect(JobStatus::where('name', 'sad-sync')->first()->last_error)
         ->toContain('+2 more, see the log');
+});
+
+test('the job status carries a pii verdict, not the per-field counts', function () {
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('login')->once();
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
+        6000 => ['lid_id' => 6000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],
+    ]);
+    $mockClient->shouldReceive('getMemberDetails')->with(6000)->andReturn([
+        'voornaam' => 'Lid', 'tussenvoegsel' => null, 'achternaam' => 'Een',
+        'email' => 'lid@test.nl', 'onderdeel' => 'HA',
+    ]);
+    $mockClient->shouldReceive('getMemberPii')->with(6000)->andReturn([
+        'adres' => 'Dorpsstraat 10', 'postcode' => '1985 AA', 'plaats' => 'Driehuis',
+        'telefoon' => '0612345678', 'geboortedatum' => '15-03-1990', 'instrument' => 'Trompet',
+    ]);
+
+    app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    $metadata = JobStatus::where('name', 'sad-sync')->first()->metadata;
+
+    expect($metadata['pii'])->toBe('ok');
+    expect($metadata)->not->toHaveKey('pii_coverage');
+    expect($metadata)->not->toHaveKey('pii_members');
+    expect($metadata)->not->toHaveKey('pii_failed');
+});
+
+test('the verdict is fail when a field never arrives', function () {
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('login')->once();
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
+        7000 => ['lid_id' => 7000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],
+    ]);
+    $mockClient->shouldReceive('getMemberDetails')->with(7000)->andReturn([
+        'voornaam' => 'Lid', 'tussenvoegsel' => null, 'achternaam' => 'Een',
+        'email' => 'lid@test.nl', 'onderdeel' => 'HA',
+    ]);
+    $mockClient->shouldReceive('getMemberPii')->with(7000)->andReturn([
+        'adres' => 'Dorpsstraat 10', 'postcode' => '1985 AA', 'plaats' => 'Driehuis',
+        'telefoon' => '0612345678', 'geboortedatum' => null, 'instrument' => 'Trompet',
+    ]);
+
+    app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    expect(JobStatus::where('name', 'sad-sync')->first()->metadata['pii'])->toBe('fail');
 });

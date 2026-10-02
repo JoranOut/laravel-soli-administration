@@ -1058,3 +1058,50 @@ test('a later sync without plaats keeps the known plaats', function () {
     expect($adres->huisnummer)->toBe('12');
     expect($adres->plaats)->toBe('Driehuis');
 });
+
+// --- PII: Instrument vocabulary ---
+
+test('translates a SAD instrument name through the shared map', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    // "fluit" is what SAD writes; the library calls it Dwarsfluit
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'], 'instrument' => 'fluit',
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $dwarsfluit = InstrumentSoort::where('naam', 'Dwarsfluit')->first();
+
+    expect(RelatieInstrument::where('relatie_id', $relatie->id)
+        ->where('instrument_soort_id', $dwarsfluit->id)->exists())->toBeTrue();
+});
+
+test('records both instruments when one SAD value means two', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'], 'instrument' => 'fluit fag',
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $names = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_instrument_soorten as s', 's.id', '=', 'soli_relatie_instrument.instrument_soort_id')
+        ->pluck('s.naam')->sort()->values()->all();
+
+    expect($names)->toBe(['Dwarsfluit', 'Fagot']);
+});
+
+test('says nothing about a value that is not an instrument', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    foreach (['geen', 'dirigent', ''] as $value) {
+        $response = $this->putJson('/api/v1/sync/members/1000', [
+            'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+            'onderdeel_codes' => ['HA'], 'instrument' => $value,
+        ], syncHeaders());
+
+        expect($response->json('warnings') ?? [])->toBeEmpty();
+    }
+});
