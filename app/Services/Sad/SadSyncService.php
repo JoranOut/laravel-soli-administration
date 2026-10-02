@@ -77,7 +77,17 @@ class SadSyncService
 
             // Step 5: Update job status
             $hasWarnings = ! empty($stats['warnings']) || $stats['failed'] > 0;
-            $metadata = array_diff_key($stats, ['warnings' => true]);
+            // The per-field counts belong in the log, not on the dashboard: they
+            // render as [object Object] and say more than a status row should. Keep
+            // the verdict, which is the only part anyone acts on.
+            $metadata = array_diff_key($stats, [
+                'warnings' => true,
+                'pii_coverage' => true,
+                'pii_members' => true,
+                'pii_failed' => true,
+            ]);
+
+            $metadata['pii'] = $this->piiVerdict($stats);
 
             if ($hasWarnings) {
                 // Say how many were left out. A bare slice reads as "exactly these
@@ -107,6 +117,29 @@ class SadSyncService
         }
 
         return $stats;
+    }
+
+    /**
+     * 'ok' when every field arrived for at least one member and every page was
+     * readable, 'fail' otherwise. The detail is in the warnings and the log.
+     */
+    private function piiVerdict(array $stats): string
+    {
+        if ($stats['pii_failed'] > 0) {
+            return 'fail';
+        }
+
+        if ($stats['pii_members'] === 0) {
+            return 'fail';
+        }
+
+        foreach (self::PII_FIELDS as $field) {
+            if ($stats['pii_coverage'][$field] === 0) {
+                return 'fail';
+            }
+        }
+
+        return 'ok';
     }
 
     /**

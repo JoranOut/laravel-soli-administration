@@ -13,6 +13,125 @@ class SadDataParser
      * Handles semicolons, commas, slashes, Dutch "en", and two numbers
      * separated by a space (e.g. "0255-534403 06-11052119").
      */
+    /**
+     * SAD's own instrument vocabulary, shared by the file import and the scrape sync.
+     *
+     * It lived in ImportSadMembers alone, so the sync — which resolves an instrument
+     * by literal name — never saw it: "fluit" failed to match "Dwarsfluit" while the
+     * translation sat twenty lines away in the same project.
+     *
+     * TYPE_MAP holds values that are roles rather than instruments, SKIP_INSTRUMENTS
+     * values that mean "none at all". Neither is a fault worth warning about.
+     */
+    public const TYPE_MAP = [
+        'dirigent' => 'dirigent', 'dirigent klein orkes' => 'dirigent',
+        'dirigent sa' => 'dirigent', 'dirigent samenspelkl' => 'dirigent',
+        'instructeur' => 'dirigent', 'instructeur slagwerk' => 'dirigent',
+        'instructie' => 'dirigent', 'instrukt' => 'dirigent', 'instrukteu' => 'dirigent',
+        'docent' => 'docent', 'docent klarinet' => 'docent', 'docent mos' => 'docent', 'mos' => 'docent',
+        '05-12-2021    docent dwarsfluit' => 'docent',
+        'begeleider' => 'vrijwilliger', 'begeleiding' => 'vrijwilliger', 'stofzuiger' => 'vrijwilliger',
+    ];
+
+    public const INSTRUMENT_MAP = [
+        // Klarinet
+        'bes klarin' => 'Besklarinet', 'bes klarinet' => 'Besklarinet', 'besklarinet' => 'Besklarinet',
+        'klarinet' => 'Klarinet', 'klarinet (eigen)' => 'Klarinet',
+        'klarinet / saxofoon' => ['Klarinet', 'Saxofoon'],
+        'klarinet bariton sax' => ['Klarinet', 'Baritonsaxofoon'],
+        'alt klarin' => 'Altklarinet',
+        'bas klarin' => 'Basklarinet', 'bas klarinet' => 'Basklarinet', 'basklarinet' => 'Basklarinet',
+        'bas clar' => 'Basklarinet', 'bas clarin' => 'Basklarinet',
+        'es klarin' => 'Esklarinet', 'es klarine' => 'Esklarinet', 'es klarinet' => 'Esklarinet',
+        '(contra)basklarinet' => 'Basklarinet',
+
+        // Saxofoon
+        'saxofoon' => 'Saxofoon', 'saxofoon (kinder)' => 'Saxofoon', 'saxofoon (soli)' => 'Saxofoon',
+        'saxofoon trombone' => ['Saxofoon', 'Trombone'],
+        'alt sax' => 'Altsaxofoon', 'alt saxofo' => 'Altsaxofoon', 'alt saxofoon' => 'Altsaxofoon',
+        'altsax' => 'Altsaxofoon', 'altsax (eigen)' => 'Altsaxofoon', 'altsaxofoon' => 'Altsaxofoon',
+        'altsax en paradetrom' => ['Altsaxofoon', 'Paradetrom'],
+        'alt/tensax' => ['Altsaxofoon', 'Tenorsaxofoon'],
+        '14-11-2017    tenor sax en klarine' => ['Tenorsaxofoon', 'Klarinet'],
+        'tenor sax' => 'Tenorsaxofoon', 'tenor saxofoon' => 'Tenorsaxofoon',
+        'tenorsax' => 'Tenorsaxofoon', 'tenorsax (eigen inst' => 'Tenorsaxofoon',
+        'tenorsaxofoon' => 'Tenorsaxofoon',
+        'tenor/altsaxofoon' => ['Tenorsaxofoon', 'Altsaxofoon'],
+        'bariton saxofoon' => 'Baritonsaxofoon', 'baritonsax' => 'Baritonsaxofoon',
+        'sopraan saxofoon' => 'Sopraansaxofoon',
+
+        // Dwarsfluit
+        'fluit' => 'Dwarsfluit', 'dwarsfluit' => 'Dwarsfluit', 'eigen dwarsfluit' => 'Dwarsfluit',
+        'dwarsfl' => 'Dwarsfluit', '07-09-2018    dwarsfluit' => 'Dwarsfluit',
+        'dwarsfluit (eigen in' => 'Dwarsfluit', 'dwarsfluit nu nog el' => 'Dwarsfluit',
+        '01-10-2017    klarinet' => 'Klarinet',
+        'fluit fag' => ['Dwarsfluit', 'Fagot'],
+        'fluit/saxofoon' => ['Dwarsfluit', 'Saxofoon'],
+        'piccolo' => 'Piccolo',
+        'piccolo/fl' => ['Piccolo', 'Dwarsfluit'],
+
+        // Koper — trompet
+        'trompet' => 'Trompet', 'trompet (eigen)' => 'Trompet',
+        'trompet slagwerk' => ['Trompet', 'Slagwerk'],
+        'cornet / trompet' => ['Cornet', 'Trompet'],
+        'cornet' => 'Cornet', 'piston' => 'Trompet',
+
+        // Koper — trombone
+        'trombone' => 'Trombone',
+        'bas trombone' => 'Bastrombone', 'bastrombone' => 'Bastrombone',
+
+        // Koper — hoorn / althoorn / bugel
+        'hoorn' => 'Hoorn', 'althoorn' => 'Althoorn',
+        'bugel' => 'Bugel',
+        'tuba' => 'Tuba', 'sousafoon' => 'Sousafoon',
+        'bes bas' => 'Besbas', 'besbas' => 'Besbas',
+        'bes bas trompet' => ['Besbas', 'Trompet'],
+        'es bas' => 'Esbas', 'bas' => 'Tuba',
+        'contrabas' => 'Contrabas', 'bassist' => 'Contrabas', 'bas gitaar' => 'Basgitaar',
+
+        // Koper — bariton / euphonium
+        'bariton' => 'Bariton',
+        'bariton bas' => ['Bariton', 'Tuba'],
+        'euphonium' => 'Euphonium',
+
+        // Houtblazers
+        'hobo' => 'Hobo',
+        'hobo/alt h' => ['Hobo', 'Althoorn'],
+        'fagot' => 'Fagot', 'fagot (eigen)' => 'Fagot',
+
+        // Slagwerk
+        'slagwerk' => 'Slagwerk', 'slaginstrument' => 'Slagwerk',
+        'drum' => 'Drumstel', 'drums' => 'Drumstel', 'drumstel' => 'Drumstel',
+        'overslagtr' => 'Slagwerk',
+        'slagwerk / saxofoon' => ['Slagwerk', 'Saxofoon'],
+        'mel sw' => 'Melodisch slagwerk', 'mel. slagw' => 'Melodisch slagwerk',
+        'mel sw (ha) + fagot' => ['Melodisch slagwerk', 'Fagot'],
+        'melodisch slagwerk' => 'Melodisch slagwerk', 'melodisch slagwerk e' => 'Melodisch slagwerk',
+        'paradetrom' => 'Paradetrom', 'kleine trom' => 'Kleine trom',
+        'trom' => 'Trom', 'trommel' => 'Trom', 'trio tom' => 'Trio tom', 'trio tom t' => 'Trio tom',
+        'bekken' => 'Bekken', 'pauken' => 'Pauken',
+        'marimba' => 'Marimba', 'vibrafoon' => 'Vibrafoon', 'xylofoon' => 'Xylofoon',
+        'buisklokken' => 'Buisklokken', 'bells' => 'Buisklokken',
+        'klokkenspel' => 'Klokkenspel', 'klokkenspiel' => 'Klokkenspel',
+        'tamboer maitre' => 'Tamboer-maître', 'tambourmaitre' => 'Tamboer-maître',
+
+        // Majorette / twirl
+        'majorette' => 'Majorette', 'baton' => 'Majorette', 'twirlteam' => 'Majorette',
+        'vlaggenw' => 'Vlaggenwacht', 'vlaggew' => 'Vlaggenwacht', 'vlaggewach' => 'Vlaggenwacht',
+
+        // Toetsen
+        'keyboard' => 'Keyboard', 'piano' => 'Piano', 'orgel' => 'Orgel',
+
+        // Diverse
+        'harp' => 'Harp', 'strijk' => 'Strijk',
+
+        // Overig
+        'gitaar' => 'Gitaar',
+        'zang' => 'Zang', 'zangeres' => 'Zang',
+    ];
+
+    public const SKIP_INSTRUMENTS = ['oud goud', 'geen', 'niet spelend bestuur'];
+
     public static function splitPhoneNumbers(string $telefoon): array
     {
         $parts = preg_split('/\s*[;,\/]\s*|\s+en\s+/', $telefoon);
@@ -61,6 +180,33 @@ class SadDataParser
      *
      * Returns the instrument_soort_id or null if no match found.
      */
+    /**
+     * The instrument names a raw SAD value stands for.
+     *
+     * Empty means there is nothing to record and nothing to complain about: a blank
+     * field, a value that means "none", or a role such as dirigent. One value can
+     * stand for two instruments ("fluit fag"). An unknown value is returned as-is so
+     * the caller can still try a literal match before it warns.
+     *
+     * @return string[]
+     */
+    public static function instrumentNamesFor(string $raw): array
+    {
+        $key = strtolower(trim($raw));
+
+        if ($key === '' || in_array($key, self::SKIP_INSTRUMENTS, true) || isset(self::TYPE_MAP[$key])) {
+            return [];
+        }
+
+        $mapped = self::INSTRUMENT_MAP[$key] ?? null;
+
+        if ($mapped === null) {
+            return [trim($raw)];
+        }
+
+        return is_array($mapped) ? $mapped : [$mapped];
+    }
+
     public static function matchInstrumentSoort(string $instrumentName, array $instrumentSoortLookup): ?int
     {
         $normalized = strtolower(str_replace(' ', '', $instrumentName));
