@@ -9,6 +9,7 @@ use Database\Seeders\InstrumentSoortSeeder;
 use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -332,7 +333,7 @@ test('the error summary says how many warnings it left out', function () {
     app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
 
     expect(JobStatus::where('name', 'sad-sync')->first()->last_error)
-        ->toContain('+2 more, see the log');
+        ->toContain('+2 more');
 });
 
 test('the job status carries a pii verdict, not the per-field counts', function () {
@@ -382,4 +383,25 @@ test('the verdict is fail when a field never arrives', function () {
     app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
 
     expect(JobStatus::where('name', 'sad-sync')->first()->metadata['pii'])->toBe('fail');
+});
+
+test('a member that fails to sync is logged at a level production keeps', function () {
+    // LOG_LEVEL=error in production, so a warning never reaches the log file and the
+    // reason a member failed stops existing. These are faults, not signals.
+    Log::spy();
+
+    $mockClient = Mockery::mock(SadApiClient::class);
+    $mockClient->shouldReceive('getMemberHistory')->andReturn(['onderdeel' => [], 'instrument' => []])->byDefault();
+    $mockClient->shouldReceive('login')->once();
+    $mockClient->shouldReceive('getActiveMembers')->once()->andReturn([
+        8000 => ['lid_id' => 8000, 'onderdeel' => 'HA', 'email' => 'lid@test.nl'],
+    ]);
+    $mockClient->shouldReceive('getMemberDetails')->with(8000)->andThrow(new RuntimeException('SAD request failed'));
+
+    $stats = app(SadSyncService::class, ['apiClient' => $mockClient])->syncAll();
+
+    expect($stats['failed'])->toBe(1);
+
+    Log::shouldHaveReceived('error')
+        ->withArgs(fn ($m) => str_contains($m, 'failed to sync lid_id 8000'));
 });
