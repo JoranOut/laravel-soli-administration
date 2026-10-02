@@ -1224,3 +1224,33 @@ test('an unreadable history leaves the existing periods alone', function () {
     $relatie = Relatie::where('relatie_nummer', 1000)->first();
     expect(RelatieInstrument::where('relatie_id', $relatie->id)->count())->toBe(1);
 });
+
+test('the same instrument may return to the same onderdeel in a later period', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    // Trumpet, then trombone, then trumpet again — the old unique refused the third
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2006-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => [
+                ['van' => '2006-01-01', 'tot' => '2012-01-01', 'naam' => 'Trompet'],
+                ['van' => '2012-01-01', 'tot' => '2015-01-01', 'naam' => 'Trombone'],
+                ['van' => '2015-01-01', 'tot' => null, 'naam' => 'Trompet'],
+            ],
+        ],
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $rows = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_instrument_soorten as s', 's.id', '=', 'soli_relatie_instrument.instrument_soort_id')
+        ->get(['s.naam', 'soli_relatie_instrument.van'])
+        ->map(fn ($r) => "{$r->naam} {$r->van}")->sort()->values()->all();
+
+    expect($rows)->toBe([
+        'Trombone 2012-01-01',
+        'Trompet 2006-01-01',
+        'Trompet 2015-01-01',
+    ]);
+});
