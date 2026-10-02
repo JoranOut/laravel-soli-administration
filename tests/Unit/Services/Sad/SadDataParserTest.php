@@ -241,3 +241,31 @@ test('a login page yields no fields at all', function () {
 
     expect(array_filter($result, fn ($v) => $v !== null))->toBeEmpty();
 });
+
+test('an onderdeel period on joined codes becomes one period per code', function () {
+    // SAD writes "HAMO" for harmonie + marsorkest, on l_tinfo.php as well as site_ov.php
+    $html = '<html>Onderdeel
+        <table>
+            <tr><td>01-01-2025</td><td></td><td>HAMO</td></tr>
+            <tr><td>01-01-2020</td><td>01-01-2025</td><td>HA</td></tr>
+        </table>
+        _________________
+        Instrument
+        <table><tr><td>01-01-2020</td><td></td><td>Trompet</td></tr></table>
+        _________________';
+
+    $result = App\Services\Sad\SadDataParser::parseMemberHistoryHtml($html);
+
+    expect(collect($result['onderdeel'])->map(fn ($o) => "{$o['naam']} {$o['van']}")->all())
+        ->toBe(['HA 2025-01-01', 'MO 2025-01-01', 'HA 2020-01-01']);
+
+    expect($result['instrument'])->toHaveCount(1);
+});
+
+test('splits joined onderdeel codes and drops a trailing odd character', function () {
+    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('HAMO'))->toBe(['HA', 'MO']);
+    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('KOOLTA'))->toBe(['KO', 'OL', 'TA']);
+    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('HA'))->toBe(['HA']);
+    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('OLTAK'))->toBe(['OL', 'TA']);
+    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes(''))->toBe([]);
+});
