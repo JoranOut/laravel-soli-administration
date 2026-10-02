@@ -218,7 +218,7 @@ class SadSyncService
         $history = $this->apiClient->getMemberHistory($lidId);
 
         // Split onderdeel codes (e.g. "HABB" → ["HA", "BB"])
-        $onderdeelCodes = $this->splitOnderdeelCodes($member['onderdeel']);
+        $onderdeelCodes = SadDataParser::splitOnderdeelCodes($member['onderdeel']);
 
         // Build the data array for MemberSyncService
         $data = [
@@ -266,23 +266,5 @@ class SadSyncService
                 $stats['warnings'][] = "lid_id {$lidId}: {$warning}";
             }
         }
-    }
-
-    /**
-     * Split a combined onderdeel string into 2-character codes.
-     *
-     * E.g. "HABB" → ["HA", "BB"]
-     */
-    private function splitOnderdeelCodes(string $onderdeelStr): array
-    {
-        $codes = [];
-        for ($i = 0; $i < strlen($onderdeelStr); $i += 2) {
-            $code = substr($onderdeelStr, $i, 2);
-            if (strlen($code) === 2) {
-                $codes[] = $code;
-            }
-        }
-
-        return $codes;
     }
 }

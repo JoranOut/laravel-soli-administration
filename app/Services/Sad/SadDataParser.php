@@ -279,10 +279,44 @@ class SadDataParser
      *
      * @return array{onderdeel: array<int, array{van: ?string, tot: ?string, naam: string}>, instrument: array<int, array{van: ?string, tot: ?string, naam: string}>}
      */
+    /**
+     * SAD writes a member's onderdelen as fixed two-letter codes run together, so
+     * "HAMO" is the harmonie and the marsorkest. Both site_ov.php and l_tinfo.php do
+     * this; reading one of them as a single name produced "Unknown onderdeel: HAMO"
+     * for a third of the membership.
+     *
+     * A trailing odd character is dropped, which is what the sync has always done.
+     *
+     * @return string[]
+     */
+    public static function splitOnderdeelCodes(string $onderdeelStr): array
+    {
+        $codes = [];
+
+        for ($i = 0; $i < strlen($onderdeelStr); $i += 2) {
+            $code = substr($onderdeelStr, $i, 2);
+
+            if (strlen($code) === 2) {
+                $codes[] = $code;
+            }
+        }
+
+        return $codes;
+    }
+
     public static function parseMemberHistoryHtml(string $html): array
     {
+        $onderdelen = [];
+
+        // One row per code: a period on "HAMO" is a period on HA and one on MO
+        foreach (self::parseHistorySection($html, 'Onderdeel') as $row) {
+            foreach (self::splitOnderdeelCodes($row['naam']) as $code) {
+                $onderdelen[] = ['van' => $row['van'], 'tot' => $row['tot'], 'naam' => $code];
+            }
+        }
+
         return [
-            'onderdeel' => self::parseHistorySection($html, 'Onderdeel'),
+            'onderdeel' => $onderdelen,
             'instrument' => self::parseHistorySection($html, 'Instrument'),
         ];
     }
