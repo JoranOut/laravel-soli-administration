@@ -51,7 +51,57 @@ class InstrumentPeriodResolver
             }
         }
 
-        return $pairs;
+        return self::mergeOverlapping($pairs);
+    }
+
+    /**
+     * Collapse overlapping and touching periods of the same onderdeel and instrument.
+     *
+     * A member's membership of one onderdeel can appear as several rows in SAD —
+     * more so since a period on "HAMO" becomes one on HA and one on MO — and two of
+     * them that both start before an instrument both clip to the same van, differing
+     * only in tot. That is one stretch of playing, not two, and storing it as two
+     * rows collides on (relatie, onderdeel, instrument, van).
+     *
+     * @param  array<int, array{onderdeel: string, instrument: string, van: ?string, tot: ?string}>  $pairs
+     * @return array<int, array{onderdeel: string, instrument: string, van: ?string, tot: ?string}>
+     */
+    private static function mergeOverlapping(array $pairs): array
+    {
+        $grouped = [];
+
+        foreach ($pairs as $pair) {
+            $grouped[$pair['onderdeel']."\0".$pair['instrument']][] = $pair;
+        }
+
+        $merged = [];
+
+        foreach ($grouped as $group) {
+            // A null van sorts first: it is the open-ended start of the timeline
+            usort($group, fn ($a, $b) => [$a['van'] === null ? 0 : 1, $a['van']] <=> [$b['van'] === null ? 0 : 1, $b['van']]);
+
+            $current = array_shift($group);
+
+            foreach ($group as $next) {
+                $touches = $current['tot'] === null || $next['van'] === null || $next['van'] <= $current['tot'];
+
+                if (! $touches) {
+                    $merged[] = $current;
+                    $current = $next;
+
+                    continue;
+                }
+
+                // Keep the furthest end, with null meaning "still running"
+                $current['tot'] = ($current['tot'] === null || $next['tot'] === null)
+                    ? null
+                    : max($current['tot'], $next['tot']);
+            }
+
+            $merged[] = $current;
+        }
+
+        return $merged;
     }
 
     /**
