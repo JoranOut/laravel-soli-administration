@@ -105,3 +105,47 @@ test('a closed onderdeel keeps the instrument it had, clipped to its own end', f
         'marsorkest/trompet 2020-01-01..2024-01-01',
     ]);
 });
+
+test('two overlapping memberships of one onderdeel yield one period, not two', function () {
+    // SAD lists HA twice, and splitting "HAMO" makes this more common still. Both
+    // clip to the instrument's start, differing only in where they end.
+    $result = resolved(
+        [period('HA', '2020-01-01', '2030-01-01'), period('HA', '2020-01-01')],
+        [period('Trompet', '2025-01-01')],
+    );
+
+    expect($result)->toBe(['HA/Trompet 2025-01-01..']);
+});
+
+test('periods that touch are joined', function () {
+    $result = resolved(
+        [period('HA', '2010-01-01', '2015-01-01'), period('HA', '2015-01-01')],
+        [period('Trompet', null)],
+    );
+
+    expect($result)->toBe(['HA/Trompet 2010-01-01..']);
+});
+
+test('periods with a real gap stay apart', function () {
+    $result = resolved(
+        [period('HA', '2010-01-01', '2012-01-01'), period('HA', '2020-01-01')],
+        [period('Trompet', null)],
+    );
+
+    expect($result)->toBe([
+        'HA/Trompet 2010-01-01..2012-01-01',
+        'HA/Trompet 2020-01-01..',
+    ]);
+});
+
+test('merging does not join different instruments', function () {
+    $result = resolved(
+        [period('HA', '2020-01-01')],
+        [period('Trompet', '2020-01-01', '2024-01-01'), period('Trombone', '2024-01-01')],
+    );
+
+    expect($result)->toBe([
+        'HA/Trombone 2024-01-01..',
+        'HA/Trompet 2020-01-01..2024-01-01',
+    ]);
+});
