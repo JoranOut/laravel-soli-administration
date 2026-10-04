@@ -149,3 +149,73 @@ test('merging does not join different instruments', function () {
         'HA/Trompet 2020-01-01..2024-01-01',
     ]);
 });
+
+/**
+ * The database enforces unique (relatie_id, onderdeel_id, instrument_soort_id, van).
+ * The resolver has to honour that for any input SAD can produce, not just the shapes
+ * someone thought to write a test for — 24 members failed on exactly this, from data
+ * nobody had imagined: two memberships of one onderdeel that clip to the same start.
+ */
+test('no input produces two periods with the same onderdeel, instrument and start', function () {
+    mt_srand(20261004);
+
+    $dates = [null, '2010-01-01', '2015-06-30', '2020-01-01', '2020-01-01', '2024-12-31'];
+    $pick = fn () => $dates[mt_rand(0, count($dates) - 1)];
+
+    for ($run = 0; $run < 400; $run++) {
+        $onderdelen = [];
+        $instrumenten = [];
+
+        foreach (range(1, mt_rand(1, 4)) as $i) {
+            $onderdelen[] = period(['HA', 'MO', 'KO'][mt_rand(0, 2)], $pick(), $pick());
+        }
+
+        foreach (range(1, mt_rand(1, 4)) as $i) {
+            $instrumenten[] = period(['Trompet', 'Trombone'][mt_rand(0, 1)], $pick(), $pick());
+        }
+
+        $pairs = App\Services\Sad\InstrumentPeriodResolver::resolve($onderdelen, $instrumenten);
+
+        $keys = array_map(fn ($p) => "{$p['onderdeel']}|{$p['instrument']}|{$p['van']}", $pairs);
+
+        expect($keys)->toBe(array_unique($keys),
+            'duplicate key for: '.json_encode(['onderdeel' => $onderdelen, 'instrument' => $instrumenten]));
+    }
+});
+
+test('no input produces two overlapping periods of the same pairing', function () {
+    mt_srand(20261005);
+
+    $dates = [null, '2008-01-01', '2012-01-01', '2018-01-01', '2023-01-01'];
+    $pick = fn () => $dates[mt_rand(0, count($dates) - 1)];
+
+    for ($run = 0; $run < 400; $run++) {
+        $onderdelen = [];
+        $instrumenten = [];
+
+        foreach (range(1, mt_rand(1, 4)) as $i) {
+            $onderdelen[] = period(['HA', 'MO'][mt_rand(0, 1)], $pick(), $pick());
+        }
+
+        foreach (range(1, mt_rand(1, 3)) as $i) {
+            $instrumenten[] = period('Trompet', $pick(), $pick());
+        }
+
+        $grouped = [];
+
+        foreach (App\Services\Sad\InstrumentPeriodResolver::resolve($onderdelen, $instrumenten) as $p) {
+            $grouped[$p['onderdeel'].'|'.$p['instrument']][] = $p;
+        }
+
+        foreach ($grouped as $group) {
+            usort($group, fn ($a, $b) => [$a['van'] === null ? 0 : 1, $a['van']] <=> [$b['van'] === null ? 0 : 1, $b['van']]);
+
+            for ($i = 1; $i < count($group); $i++) {
+                $previousEnd = $group[$i - 1]['tot'];
+
+                expect($previousEnd)->not->toBeNull('an open period is followed by another');
+                expect($group[$i]['van'])->toBeGreaterThan($previousEnd);
+            }
+        }
+    }
+});
