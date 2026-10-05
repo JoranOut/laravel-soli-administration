@@ -63,10 +63,14 @@ class InstrumentPeriodResolver
      * only in tot. That is one stretch of playing, not two, and storing it as two
      * rows collides on (relatie, onderdeel, instrument, van).
      *
-     * @param  array<int, array{onderdeel: string, instrument: string, van: ?string, tot: ?string}>  $pairs
-     * @return array<int, array{onderdeel: string, instrument: string, van: ?string, tot: ?string}>
+     * Public because the caller has to merge a second time, after translating SAD's
+     * instrument names into instrument_soort ids: "fluit" and "dwarsfluit" are two
+     * names for one soort, and only the database notices they are the same.
+     *
+     * @param  array<int, array{onderdeel: int|string, instrument: int|string, van: ?string, tot: ?string}>  $pairs
+     * @return array<int, array{onderdeel: int|string, instrument: int|string, van: ?string, tot: ?string}>
      */
-    private static function mergeOverlapping(array $pairs): array
+    public static function mergeOverlapping(array $pairs): array
     {
         $grouped = [];
 
