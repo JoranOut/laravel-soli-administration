@@ -473,7 +473,7 @@ class MemberSyncService
         $warnings = [];
         $onderdeelMap = $this->getOnderdeelMap();
         $lookup = $this->getInstrumentSoortLookup();
-        $rows = [];
+        $resolved = [];
 
         foreach (InstrumentPeriodResolver::resolve($history['onderdeel'], $history['instrument']) as $pair) {
             $onderdeelId = $onderdeelMap[$pair['onderdeel']] ?? null;
@@ -493,12 +493,9 @@ class MemberSyncService
                     continue;
                 }
 
-                // One SAD value can name two instruments, and the same pairing can
-                // arrive twice; keep one row per onderdeel, instrument and period
-                $rows[$onderdeelId.':'.$soortId.':'.$pair['van'].':'.$pair['tot']] = [
-                    'relatie_id' => $relatie->id,
-                    'onderdeel_id' => $onderdeelId,
-                    'instrument_soort_id' => $soortId,
+                $resolved[] = [
+                    'onderdeel' => $onderdeelId,
+                    'instrument' => $soortId,
                     'van' => $pair['van'],
                     'tot' => $pair['tot'],
                 ];
@@ -507,14 +504,24 @@ class MemberSyncService
 
         // Nothing usable means we cannot describe this member's instruments at all,
         // so leave the existing rows alone rather than clearing them on a bad reading
-        if (! $rows && $history['instrument']) {
+        if (! $resolved && $history['instrument']) {
             return $warnings;
         }
 
+        // Merge again, now that names have become soort ids. The resolver merged by
+        // SAD's spelling, and two spellings can be one instrument: "fluit" and
+        // "dwarsfluit" are both Dwarsfluit, and "fluit fag" is Dwarsfluit and Fagot.
+        // Only here do they collide, which is where the database noticed first.
         RelatieInstrument::where('relatie_id', $relatie->id)->delete();
 
-        foreach ($rows as $row) {
-            RelatieInstrument::create($row);
+        foreach (InstrumentPeriodResolver::mergeOverlapping($resolved) as $row) {
+            RelatieInstrument::create([
+                'relatie_id' => $relatie->id,
+                'onderdeel_id' => $row['onderdeel'],
+                'instrument_soort_id' => $row['instrument'],
+                'van' => $row['van'],
+                'tot' => $row['tot'],
+            ]);
         }
 
         return $warnings;

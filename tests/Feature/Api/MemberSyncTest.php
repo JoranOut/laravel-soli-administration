@@ -1254,3 +1254,55 @@ test('the same instrument may return to the same onderdeel in a later period', f
         'Trompet 2015-01-01',
     ]);
 });
+
+test('two SAD spellings of one instrument become one period, not a collision', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    // "fluit" and "dwarsfluit" are both Dwarsfluit. The resolver groups by SAD's
+    // spelling, so these stayed apart until they hit the unique index.
+    $response = $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2010-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => [
+                ['van' => '2010-01-01', 'tot' => '2020-01-01', 'naam' => 'fluit'],
+                ['van' => '2015-01-01', 'tot' => null, 'naam' => 'dwarsfluit'],
+            ],
+        ],
+    ], syncHeaders());
+
+    $response->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $rows = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_instrument_soorten as s', 's.id', '=', 'soli_relatie_instrument.instrument_soort_id')
+        ->get(['s.naam', 'soli_relatie_instrument.van', 'soli_relatie_instrument.tot'])
+        ->map(fn ($r) => "{$r->naam} {$r->van}..{$r->tot}")->all();
+
+    expect($rows)->toBe(['Dwarsfluit 2010-01-01..']);
+});
+
+test('one SAD value naming two instruments does not collide with either of them', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    // "fluit fag" is Dwarsfluit + Fagot, overlapping a separate Dwarsfluit record
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2010-01-01', 'tot' => null, 'naam' => 'HA']],
+            'instrument' => [
+                ['van' => '2010-01-01', 'tot' => null, 'naam' => 'fluit fag'],
+                ['van' => '2012-01-01', 'tot' => null, 'naam' => 'Dwarsfluit'],
+            ],
+        ],
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $rows = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_instrument_soorten as s', 's.id', '=', 'soli_relatie_instrument.instrument_soort_id')
+        ->get(['s.naam'])->pluck('naam')->sort()->values()->all();
+
+    expect($rows)->toBe(['Dwarsfluit', 'Fagot']);
+});
