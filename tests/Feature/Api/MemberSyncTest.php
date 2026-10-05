@@ -1254,3 +1254,53 @@ test('the same instrument may return to the same onderdeel in a later period', f
         'Trompet 2015-01-01',
     ]);
 });
+
+/**
+ * The resolver's own property test asserts the unique key holds, but it asserts it in
+ * memory. The index is in the database, and that is where 24 members died. This runs
+ * generated histories all the way through, so MySQL gets the final word.
+ */
+test('any history SAD can produce is writable, index and all', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    mt_srand(20261005);
+
+    $dates = [null, '2008-01-01', '2012-06-30', '2018-01-01', '2018-01-01', '2024-01-01'];
+    $pick = fn () => $dates[mt_rand(0, count($dates) - 1)];
+    $periods = function (array $names, int $max) use ($pick) {
+        $rows = [];
+
+        foreach (range(1, mt_rand(1, $max)) as $i) {
+            $rows[] = [
+                'naam' => $names[mt_rand(0, count($names) - 1)],
+                'van' => $pick(),
+                'tot' => $pick(),
+            ];
+        }
+
+        return $rows;
+    };
+
+    foreach (range(1, 60) as $run) {
+        $response = $this->putJson('/api/v1/sync/members/'.(2000 + $run), [
+            'voornaam' => 'Jan',
+            'achternaam' => 'Jansen',
+            'email' => "jan{$run}@test.nl",
+            'onderdeel_codes' => ['HA'],
+            'history' => [
+                'onderdeel' => $periods(['HA', 'MO', 'KO'], 4),
+                'instrument' => $periods(['Trompet', 'Trombone', 'Dwarsfluit'], 3),
+            ],
+        ], syncHeaders());
+
+        expect($response->status())->toBeIn([200, 201], "run {$run} was rejected");
+    }
+
+    // And the rows that landed obey the index the database enforces
+    $keys = RelatieInstrument::get(['relatie_id', 'onderdeel_id', 'instrument_soort_id', 'van'])
+        ->map(fn ($r) => "{$r->relatie_id}|{$r->onderdeel_id}|{$r->instrument_soort_id}|{$r->van}")
+        ->all();
+
+    expect($keys)->toBe(array_unique($keys));
+    expect(count($keys))->toBeGreaterThan(0);
+});
