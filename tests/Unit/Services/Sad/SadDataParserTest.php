@@ -242,8 +242,8 @@ test('a login page yields no fields at all', function () {
     expect(array_filter($result, fn ($v) => $v !== null))->toBeEmpty();
 });
 
-test('an onderdeel period on joined codes becomes one period per code', function () {
-    // SAD writes "HAMO" for harmonie + marsorkest, on l_tinfo.php as well as site_ov.php
+test('the history parser leaves onderdeel codes joined', function () {
+    // Splitting needs the afkortingen from the database, so the caller does it
     $html = '<html>Onderdeel
         <table>
             <tr><td>01-01-2025</td><td></td><td>HAMO</td></tr>
@@ -257,15 +257,33 @@ test('an onderdeel period on joined codes becomes one period per code', function
     $result = App\Services\Sad\SadDataParser::parseMemberHistoryHtml($html);
 
     expect(collect($result['onderdeel'])->map(fn ($o) => "{$o['naam']} {$o['van']}")->all())
-        ->toBe(['HA 2025-01-01', 'MO 2025-01-01', 'HA 2020-01-01']);
+        ->toBe(['HAMO 2025-01-01', 'HA 2020-01-01']);
 
     expect($result['instrument'])->toHaveCount(1);
 });
 
-test('splits joined onderdeel codes and drops a trailing odd character', function () {
+test('splits joined onderdeel codes on the afkortingen that exist', function () {
+    // TAK is three characters. Chopping blindly in twos made "TAKKOMO" into
+    // TA, KK and OM — OM being nothing at all — and threw the K of "OLTAK" away.
+    $known = ['HA', 'KO', 'MO', 'OL', 'TA', 'TAK', 'KK', 'MA', 'SG'];
+    $split = fn (string $v) => App\Services\Sad\SadDataParser::splitOnderdeelCodes($v, $known);
+
+    expect($split('HAMO'))->toBe(['HA', 'MO']);
+    expect($split('OLTAK'))->toBe(['OL', 'TAK']);
+    expect($split('TAKKOMO'))->toBe(['TAK', 'KO', 'MO']);
+    expect($split('TAKO'))->toBe(['TA', 'KO']);          // TAK + O cannot work, so backtrack
+    expect($split('TAKOMO'))->toBe(['TA', 'KO', 'MO']);
+    expect($split('TATAK'))->toBe(['TA', 'TAK']);
+    expect($split('HA'))->toBe(['HA']);
+    expect($split(''))->toBe([]);
+});
+
+test('falls back to pairs when no afkortingen are given', function () {
+    // Worse, but better than refusing to split; this is what it did before
     expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('HAMO'))->toBe(['HA', 'MO']);
-    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('KOOLTA'))->toBe(['KO', 'OL', 'TA']);
-    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('HA'))->toBe(['HA']);
     expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('OLTAK'))->toBe(['OL', 'TA']);
-    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes(''))->toBe([]);
+});
+
+test('falls back to pairs when the string cannot be split on known codes', function () {
+    expect(App\Services\Sad\SadDataParser::splitOnderdeelCodes('XXYY', ['HA']))->toBe(['XX', 'YY']);
 });

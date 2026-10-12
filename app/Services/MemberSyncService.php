@@ -475,7 +475,17 @@ class MemberSyncService
         $lookup = $this->getInstrumentSoortLookup();
         $resolved = [];
 
-        foreach (InstrumentPeriodResolver::resolve($history['onderdeel'], $history['instrument']) as $pair) {
+        // Split the joined codes here: it needs the afkortingen from the database
+        $known = array_keys($onderdeelMap);
+        $onderdeelPeriods = [];
+
+        foreach ($history['onderdeel'] as $row) {
+            foreach (SadDataParser::splitOnderdeelCodes($row['naam'], $known) as $code) {
+                $onderdeelPeriods[] = ['van' => $row['van'], 'tot' => $row['tot'], 'naam' => $code];
+            }
+        }
+
+        foreach (InstrumentPeriodResolver::resolve($onderdeelPeriods, $history['instrument']) as $pair) {
             $onderdeelId = $onderdeelMap[$pair['onderdeel']] ?? null;
 
             if (! $onderdeelId) {

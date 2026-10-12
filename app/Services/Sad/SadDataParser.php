@@ -280,17 +280,32 @@ class SadDataParser
      * @return array{onderdeel: array<int, array{van: ?string, tot: ?string, naam: string}>, instrument: array<int, array{van: ?string, tot: ?string, naam: string}>}
      */
     /**
-     * SAD writes a member's onderdelen as fixed two-letter codes run together, so
-     * "HAMO" is the harmonie and the marsorkest. Both site_ov.php and l_tinfo.php do
-     * this; reading one of them as a single name produced "Unknown onderdeel: HAMO"
-     * for a third of the membership.
+     * SAD writes a member's onderdelen as codes run together, so "HAMO" is the
+     * harmonie and the marsorkest.
      *
-     * A trailing odd character is dropped, which is what the sync has always done.
+     * They are not all two characters: TAK is three, and chopping blindly in twos
+     * turned "TAKKOMO" into TA, KK and OM — OM being nothing at all — and "OLTAK"
+     * into OL and TA with a K thrown away. Matching the longest known afkorting
+     * first, with backtracking, splits all 2605 periods in the scrape exactly.
      *
+     * Without a list of known codes it falls back to pairs, which is what this did
+     * before and is better than refusing to split at all.
+     *
+     * @param  string[]  $known  afkortingen as the onderdelen table holds them
      * @return string[]
      */
-    public static function splitOnderdeelCodes(string $onderdeelStr): array
+    public static function splitOnderdeelCodes(string $onderdeelStr, array $known = []): array
     {
+        if ($known) {
+            usort($known, fn ($a, $b) => strlen($b) <=> strlen($a));
+
+            $split = self::matchCodes($onderdeelStr, $known);
+
+            if ($split !== null) {
+                return $split;
+            }
+        }
+
         $codes = [];
 
         for ($i = 0; $i < strlen($onderdeelStr); $i += 2) {
@@ -304,19 +319,37 @@ class SadDataParser
         return $codes;
     }
 
-    public static function parseMemberHistoryHtml(string $html): array
+    /**
+     * @param  string[]  $known  longest first
+     * @return string[]|null null when the string cannot be split cleanly
+     */
+    private static function matchCodes(string $remaining, array $known): ?array
     {
-        $onderdelen = [];
+        if ($remaining === '') {
+            return [];
+        }
 
-        // One row per code: a period on "HAMO" is a period on HA and one on MO
-        foreach (self::parseHistorySection($html, 'Onderdeel') as $row) {
-            foreach (self::splitOnderdeelCodes($row['naam']) as $code) {
-                $onderdelen[] = ['van' => $row['van'], 'tot' => $row['tot'], 'naam' => $code];
+        foreach ($known as $code) {
+            if (! str_starts_with($remaining, $code)) {
+                continue;
+            }
+
+            $rest = self::matchCodes(substr($remaining, strlen($code)), $known);
+
+            if ($rest !== null) {
+                return array_merge([$code], $rest);
             }
         }
 
+        return null;
+    }
+
+    public static function parseMemberHistoryHtml(string $html): array
+    {
+        // The codes stay joined here. Splitting them needs the list of afkortingen,
+        // which lives in the database, so the caller does it.
         return [
-            'onderdeel' => $onderdelen,
+            'onderdeel' => self::parseHistorySection($html, 'Onderdeel'),
             'instrument' => self::parseHistorySection($html, 'Instrument'),
         ];
     }

@@ -1306,3 +1306,27 @@ test('one SAD value naming two instruments does not collide with either of them'
 
     expect($rows)->toBe(['Dwarsfluit', 'Fagot']);
 });
+
+test('a three-letter onderdeel code is not chopped into two-letter pieces', function () {
+    $this->seed(InstrumentSoortSeeder::class);
+
+    // TAK exists as an afkorting. Splitting in twos made this TA + KK + OM.
+    App\Models\Onderdeel::where('afkorting', 'TAK')->exists()
+        || App\Models\Onderdeel::factory()->create(['naam' => 'TAK', 'afkorting' => 'TAK']);
+
+    $this->putJson('/api/v1/sync/members/1000', [
+        'voornaam' => 'Jan', 'achternaam' => 'Jansen', 'email' => 'jan@test.nl',
+        'onderdeel_codes' => ['HA'],
+        'history' => [
+            'onderdeel' => [['van' => '2011-01-01', 'tot' => null, 'naam' => 'TAKKOMO']],
+            'instrument' => [['van' => '2011-01-01', 'tot' => null, 'naam' => 'Trompet']],
+        ],
+    ], syncHeaders())->assertStatus(201);
+
+    $relatie = Relatie::where('relatie_nummer', 1000)->first();
+    $codes = RelatieInstrument::where('relatie_id', $relatie->id)
+        ->join('soli_onderdelen as o', 'o.id', '=', 'soli_relatie_instrument.onderdeel_id')
+        ->pluck('o.afkorting')->sort()->values()->all();
+
+    expect($codes)->toBe(['KO', 'MO', 'TAK']);
+});
