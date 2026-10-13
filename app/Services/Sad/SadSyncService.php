@@ -201,6 +201,19 @@ class SadSyncService
         }
     }
 
+    /**
+     * @return string[]
+     */
+    private function knownOnderdeelCodes(): array
+    {
+        return $this->onderdeelCodes ??= \App\Models\Onderdeel::whereNotNull('afkorting')
+            ->pluck('afkorting')
+            ->all();
+    }
+
+    /** @var string[]|null */
+    private ?array $onderdeelCodes = null;
+
     private function syncMember(int $lidId, array $member, array &$stats): void
     {
         // Fetch detailed member info
@@ -218,7 +231,7 @@ class SadSyncService
         $history = $this->apiClient->getMemberHistory($lidId);
 
         // Split onderdeel codes (e.g. "HABB" → ["HA", "BB"])
-        $onderdeelCodes = SadDataParser::splitOnderdeelCodes($member['onderdeel']);
+        $onderdeelCodes = SadDataParser::splitOnderdeelCodes($member['onderdeel'], $this->knownOnderdeelCodes());
 
         // Build the data array for MemberSyncService
         $data = [
