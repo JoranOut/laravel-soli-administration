@@ -22,8 +22,8 @@ class RelatieSinds extends Model
     protected function casts(): array
     {
         return [
-            'lid_sinds' => 'date',
-            'lid_tot' => 'date',
+            'lid_sinds' => 'date:Y-m-d',
+            'lid_tot' => 'date:Y-m-d',
         ];
     }
 

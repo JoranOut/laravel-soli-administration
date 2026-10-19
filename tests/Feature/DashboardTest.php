@@ -193,3 +193,13 @@ test('residence stats expose every place, not only the top five', function () {
         ->where('residence_stats.all.0.velsen', true)
     );
 });
+
+test('dates reach the front-end in the format a date input accepts', function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+
+    $relatie = Relatie::factory()->create(['geboortedatum' => '1962-10-16']);
+
+    // <input type="date"> rejects a full ISO timestamp and renders empty, so the
+    // date was invisible on every edit form while sitting in the database
+    expect($relatie->fresh()->toArray()['geboortedatum'])->toBe('1962-10-16');
+});

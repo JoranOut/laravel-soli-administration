@@ -22,8 +22,8 @@ class InstrumentReparatie extends Model
     {
         return [
             'kosten' => 'decimal:2',
-            'datum_in' => 'date',
-            'datum_uit' => 'date',
+            'datum_in' => 'date:Y-m-d',
+            'datum_uit' => 'date:Y-m-d',
         ];
     }
 
