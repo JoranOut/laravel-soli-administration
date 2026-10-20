@@ -25,8 +25,8 @@ class AndereVereniging extends Model
     protected function casts(): array
     {
         return [
-            'van' => 'date',
-            'tot' => 'date',
+            'van' => 'date:Y-m-d',
+            'tot' => 'date:Y-m-d',
         ];
     }
 

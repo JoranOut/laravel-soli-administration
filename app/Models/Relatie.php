@@ -32,7 +32,7 @@ class Relatie extends Model
     protected function casts(): array
     {
         return [
-            'geboortedatum' => 'date',
+            'geboortedatum' => 'date:Y-m-d',
             'actief' => 'boolean',
             'beheerd_in_admin' => 'boolean',
         ];

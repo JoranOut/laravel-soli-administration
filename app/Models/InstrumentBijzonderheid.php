@@ -18,7 +18,7 @@ class InstrumentBijzonderheid extends Model
     protected function casts(): array
     {
         return [
-            'datum' => 'date',
+            'datum' => 'date:Y-m-d',
         ];
     }
 

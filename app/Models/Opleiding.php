@@ -26,8 +26,8 @@ class Opleiding extends Model
     protected function casts(): array
     {
         return [
-            'datum_start' => 'date',
-            'datum_einde' => 'date',
+            'datum_start' => 'date:Y-m-d',
+            'datum_einde' => 'date:Y-m-d',
         ];
     }
 
