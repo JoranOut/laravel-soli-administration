@@ -3,10 +3,33 @@
   "extends": ["config:recommended"],
   "labels": ["dependencies"],
   "minimumReleaseAge": "3 days",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "PHP patch that production must run at least; the deploy refuses an older server",
+      "managerFilePatterns": ["/^\\.php-version$/"],
+      "matchStrings": ["^(?<currentValue>\\d+\\.\\d+\\.\\d+)"],
+      "depNameTemplate": "php",
+      "packageNameTemplate": "php/php-src",
+      "datasourceTemplate": "github-tags",
+      "extractVersionTemplate": "^php-(?<version>\\d+\\.\\d+\\.\\d+)$"
+    }
+  ],
   "packageRules": [
     {
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
+    },
+    {
+      "description": "Offer PHP patches on their own, so they survive the rule below",
+      "matchPackageNames": ["php/php-src"],
+      "separateMinorPatch": true
+    },
+    {
+      "description": "A PHP minor upgrade also moves Sail and the server, so it stays a manual change",
+      "matchPackageNames": ["php/php-src"],
+      "matchUpdateTypes": ["major", "minor"],
+      "enabled": false
     }
   ]
 }
