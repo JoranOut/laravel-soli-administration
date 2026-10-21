@@ -23,8 +23,10 @@ jobs:
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
+        env:
+          update: true  # pre-installed PHP is otherwise left on an old patch
         with:
-          php-version: '8.4'
+          php-version-file: .php-version
           extensions: mbstring, pdo, pdo_mysql
           tools: composer:v2
 
@@ -195,6 +197,43 @@ jobs:
             echo "Refusing to deploy."
             exit 1
           fi
+
+          # ---------------------------------------------------------------
+          # Refuse to deploy onto a PHP older than .php-version.
+          #
+          # The pin is the patch production must run at least. Renovate
+          # bumps it once a PHP release is three days old; the server is
+          # patched by hand, so this is where a lagging server shows up.
+          # A newer patch or minor passes. FPM is checked as well as the
+          # CLI because FPM serves the site; the gate assumes the FPM of
+          # the CLI's minor is the live one.
+          # ---------------------------------------------------------------
+          PATH="$PATH:/usr/sbin"
+          PHP_PIN=$(tr -d '[:space:]' < "$STAGING/.php-version")
+          CLI_PHP=$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION.".".PHP_RELEASE_VERSION;') || CLI_PHP=""
+          FPM_MINOR=${CLI_PHP%.*}
+          FPM_PHP=$("php-fpm$FPM_MINOR" -v 2>/dev/null \
+            | sed -n '1s/^PHP \([0-9]*\.[0-9]*\.[0-9]*\).*/\1/p') || FPM_PHP=""
+          PHP_PROBLEMS=""
+          for pair in "cli:$CLI_PHP" "fpm:$FPM_PHP"; do
+            SAPI=${pair%%:*}; VERSION=${pair#*:}
+            if [ -z "$VERSION" ]; then
+              PHP_PROBLEMS="$PHP_PROBLEMS  PHP $SAPI: not installed"$'\n'
+            elif [ "$(printf '%s\n' "$PHP_PIN" "$VERSION" | sort -V | head -n1)" != "$PHP_PIN" ]; then
+              PHP_PROBLEMS="$PHP_PROBLEMS  PHP $SAPI: $VERSION"$'\n'
+            fi
+          done
+          if [ -n "$FPM_PHP" ] && ! systemctl is-active --quiet "php$FPM_MINOR-fpm"; then
+            PHP_PROBLEMS="$PHP_PROBLEMS  service php$FPM_MINOR-fpm: not active"$'\n'
+          fi
+          if [ -n "$PHP_PROBLEMS" ]; then
+            echo ".php-version requires PHP $PHP_PIN or newer. This server has:"
+            printf '%s' "$PHP_PROBLEMS"
+            echo "Upgrade PHP on the server (apt upgrade 'php$FPM_MINOR-*') and redeploy."
+            echo "Refusing to deploy."
+            exit 1
+          fi
+          echo "PHP $CLI_PHP (cli) / $FPM_PHP (fpm) satisfies .php-version $PHP_PIN"
 
           # Database backup before migrations (keep last 5)
           BACKUP_DIR="$SHARED/storage/backups"

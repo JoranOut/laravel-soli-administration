@@ -54,6 +54,7 @@ EOF
 
 cat > "$WORK/bin/php" <<'EOF'
 #!/bin/bash
+if [ "$1" = "-r" ]; then echo "${CLI_PHP:-8.4.26}"; exit 0; fi
 shift                     # drop "artisan"
 CMD="$1"
 echo "  [php artisan $CMD]"
@@ -78,6 +79,18 @@ case "$*" in
 esac
 EOF
 
+for minor in 8.3 8.4 8.5; do
+  cat > "$WORK/bin/php-fpm$minor" <<'EOF'
+#!/bin/bash
+echo "PHP ${FPM_PHP:-8.4.26} (fpm-fcgi) (built: Oct 21 2026 14:00:00)"
+EOF
+done
+
+cat > "$WORK/bin/systemctl" <<'EOF'
+#!/bin/bash
+[ "${FPM_ACTIVE:-yes}" = yes ]
+EOF
+
 printf '#!/bin/bash\nexit 0\n' > "$WORK/bin/chown"
 printf '#!/bin/bash\nexit 0\n' > "$WORK/bin/chgrp"
 printf '#!/bin/bash\nexit 0\n' > "$WORK/bin/sleep"   # keeps the health-check backoff instant
@@ -94,12 +107,15 @@ setup() {
   printf 'DB_HOST=127.0.0.1\nDB_DATABASE=soli\nDB_USERNAME=soli\nDB_PASSWORD=s3cr#t\nMAIL_FROM_NAME=Soli Admin\n' \
     > "$APP/shared/.env"
   echo NEW > "$APP/staging/RELEASE"
+  echo 8.4.26 > "$APP/staging/.php-version"
   mkdir -p "$APP/current/bootstrap/cache"; echo GOOD  > "$APP/current/RELEASE"
   mkdir -p "$APP/previous";                echo OLDER > "$APP/previous/RELEASE"
 }
 
 run_deploy() {
-  sed "s#^APP_DIR=/var/www/admin.soli.nl#APP_DIR=$APP#" "$WORK/deploy_script.sh" > "$WORK/run.sh"
+  sed "s#^APP_DIR=/var/www/[^[:space:]]*\$#APP_DIR=$APP#" "$WORK/deploy_script.sh" > "$WORK/run.sh"
+  # never let a failed substitution run the script against a real /var/www
+  grep -q "^APP_DIR=$APP\$" "$WORK/run.sh" || { echo "could not point APP_DIR at the sandbox"; exit 1; }
   PATH="$WORK/bin:$PATH" bash "$WORK/run.sh" > "$WORK/out.txt" 2>&1
   echo $? > "$WORK/exit.txt"
 }
@@ -220,6 +236,44 @@ hdr "12. a successful rollback is verified, not assumed"
 setup; HEALTH_CODE=503 ROLLBACK_CODE=200 run_deploy
 check current "$(rel current)" GOOD
 says "verified the rollback" "Rollback verified"
+
+hdr "13. a server below the pinned PHP patch is refused before the backup"
+setup; CLI_PHP=8.4.25 FPM_PHP=8.4.25 run_deploy
+check exit    "$(code)"        1
+check current "$(rel current)" GOOD
+says "named the outdated version" "PHP cli: 8.4.25"
+says "refused to deploy"          "Refusing to deploy"
+if grep -q "mysqldump argv" "$WORK/out.txt"; then
+  printf '    FAIL took a backup before refusing\n'; FAIL=$((FAIL + 1))
+else
+  printf '    ok   refused before the backup\n'; PASS=$((PASS + 1))
+fi
+
+hdr "14. a server ahead of the pin deploys"
+setup; CLI_PHP=8.4.27 FPM_PHP=8.4.27 run_deploy
+check exit    "$(code)"        0
+check current "$(rel current)" NEW
+
+hdr "15. a newer minor than the pin deploys"
+setup; CLI_PHP=8.5.11 FPM_PHP=8.5.11 run_deploy
+check exit    "$(code)"        0
+check current "$(rel current)" NEW
+
+hdr "16. an older minor than the pin is refused, even with a higher patch number"
+setup; CLI_PHP=8.3.40 FPM_PHP=8.3.40 run_deploy
+check exit    "$(code)"        1
+check current "$(rel current)" GOOD
+says "named the older minor" "PHP cli: 8.3.40"
+
+hdr "17. FPM is checked separately from the CLI"
+setup; FPM_PHP=8.4.20 run_deploy
+check exit "$(code)" 1
+says "named the outdated fpm" "PHP fpm: 8.4.20"
+
+hdr "18. a stopped FPM service is refused"
+setup; FPM_ACTIVE=no run_deploy
+check exit "$(code)" 1
+says "named the service" "service php8.4-fpm: not active"
 
 printf '\n======================================\n'
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL"

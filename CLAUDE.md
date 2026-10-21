@@ -336,6 +336,14 @@ Cache warming runs **after** the swap on purpose — `config:cache` bakes absolu
 
 If a deploy ever dies without rolling back (SIGKILL, runner death), `.deploy-state` is left on the server and **the next deploy refuses to start** rather than overwriting the last known-good release. Inspect, fix, then delete the file.
 
+### PHP version
+
+`.php-version` holds the PHP patch production must run at least (`8.4.26`). The CI workflows read it through `setup-php`, which uses only the minor and installs that branch's newest patch (`update: true`; without it a pre-installed PHP stays on whatever patch the runner image shipped). `scripts/check-php-version.sh` runs in the lint job and fails when the Sail runtime in `compose.yaml`, `config.platform.php` in `composer.json` or a hard-coded `php-version:` in a workflow disagrees with the pin, or when the CI runtime is older than it.
+
+Renovate bumps the patch on its own (`github-tags` on `php/php-src`, after the usual three days) and automerges it. It never proposes a new minor: that also moves Sail and the server, so you change `.php-version`, `compose.yaml` and `config.platform.php` together by hand. `config.platform.php` only needs to stay on the pinned minor and at or below the pin. Symfony 8.1 requires `>=8.4.1`, so a bare `8.4` there fails to resolve.
+
+The server is patched by hand, and `laravel-soli-music-library` runs on the same server with the same PHP, so keep both pins equal. The deploy refuses to start, before the backup, when the CLI or the FPM of the CLI's minor is older than the pin, or when that FPM service is not active. A newer patch or minor passes. After a Renovate PHP bump merges, the next deploy fails until you run `apt upgrade 'php8.4-*'` on the server. Distro PHP (Ubuntu's own `php8.3`) backports security fixes without raising the patch number and would never pass this gate; the server has to use a package source that ships upstream patch releases, such as the ondrej PPA.
+
 ### Config
 
 - Fortify: registration disabled, 2FA enabled

@@ -17,8 +17,13 @@ jobs:
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
+        env:
+          update: true  # pre-installed PHP is otherwise left on an old patch
         with:
-          php-version: '8.4'
+          php-version-file: .php-version
+
+      - name: PHP version consistency
+        run: bash scripts/check-php-version.sh --runtime
 
       - name: Install Dependencies
         run: |
