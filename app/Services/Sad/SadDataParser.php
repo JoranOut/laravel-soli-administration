@@ -20,8 +20,9 @@ class SadDataParser
      * by literal name — never saw it: "fluit" failed to match "Dwarsfluit" while the
      * translation sat twenty lines away in the same project.
      *
-     * TYPE_MAP holds values that are roles rather than instruments, SKIP_INSTRUMENTS
-     * values that mean "none at all". Neither is a fault worth warning about.
+     * TYPE_MAP holds values that are roles, SKIP_INSTRUMENTS values that mean "none at
+     * all". Neither is a fault worth warning about. A role that names an instrument
+     * ("docent klarinet") sits in both TYPE_MAP and INSTRUMENT_MAP.
      */
     public const TYPE_MAP = [
         'dirigent' => 'dirigent', 'dirigent klein orkes' => 'dirigent',
@@ -29,14 +30,14 @@ class SadDataParser
         'instructeur' => 'dirigent', 'instructeur slagwerk' => 'dirigent',
         'instructie' => 'dirigent', 'instrukt' => 'dirigent', 'instrukteu' => 'dirigent',
         'docent' => 'docent', 'docent klarinet' => 'docent', 'docent mos' => 'docent', 'mos' => 'docent',
-        '05-12-2021    docent dwarsfluit' => 'docent',
+        'docent dwarsfluit' => 'docent', '05-12-2021    docent dwarsfluit' => 'docent',
         'begeleider' => 'vrijwilliger', 'begeleiding' => 'vrijwilliger', 'stofzuiger' => 'vrijwilliger',
     ];
 
     public const INSTRUMENT_MAP = [
         // Klarinet
         'bes klarin' => 'Besklarinet', 'bes klarinet' => 'Besklarinet', 'besklarinet' => 'Besklarinet',
-        'klarinet' => 'Klarinet', 'klarinet (eigen)' => 'Klarinet',
+        'klarinet' => 'Klarinet', 'klarinet (eigen)' => 'Klarinet', 'kl' => 'Klarinet', 'docent klarinet' => 'Klarinet',
         'klarinet / saxofoon' => ['Klarinet', 'Saxofoon'],
         'klarinet bariton sax' => ['Klarinet', 'Baritonsaxofoon'],
         'alt klarin' => 'Altklarinet',
@@ -62,7 +63,7 @@ class SadDataParser
 
         // Dwarsfluit
         'fluit' => 'Dwarsfluit', 'dwarsfluit' => 'Dwarsfluit', 'eigen dwarsfluit' => 'Dwarsfluit',
-        'dwarsfl' => 'Dwarsfluit', '07-09-2018    dwarsfluit' => 'Dwarsfluit',
+        'dwarsfl' => 'Dwarsfluit', 'docent dwarsfluit' => 'Dwarsfluit', '05-12-2021    docent dwarsfluit' => 'Dwarsfluit', '07-09-2018    dwarsfluit' => 'Dwarsfluit',
         'dwarsfluit (eigen in' => 'Dwarsfluit', 'dwarsfluit nu nog el' => 'Dwarsfluit',
         '01-10-2017    klarinet' => 'Klarinet',
         'fluit fag' => ['Dwarsfluit', 'Fagot'],
@@ -184,9 +185,10 @@ class SadDataParser
      * The instrument names a raw SAD value stands for.
      *
      * Empty means there is nothing to record and nothing to complain about: a blank
-     * field, a value that means "none", or a role such as dirigent. One value can
-     * stand for two instruments ("fluit fag"). An unknown value is returned as-is so
-     * the caller can still try a literal match before it warns.
+     * field, a value that means "none", or a role such as dirigent that names no
+     * instrument. One value can stand for two instruments ("fluit fag"). An unknown
+     * value is returned as-is so the caller can still try a literal match before it
+     * warns.
      *
      * @return string[]
      */
@@ -194,11 +196,15 @@ class SadDataParser
     {
         $key = strtolower(trim($raw));
 
-        if ($key === '' || in_array($key, self::SKIP_INSTRUMENTS, true) || isset(self::TYPE_MAP[$key])) {
+        if ($key === '' || in_array($key, self::SKIP_INSTRUMENTS, true)) {
             return [];
         }
 
         $mapped = self::INSTRUMENT_MAP[$key] ?? null;
+
+        if ($mapped === null && isset(self::TYPE_MAP[$key])) {
+            return [];
+        }
 
         if ($mapped === null) {
             return [trim($raw)];

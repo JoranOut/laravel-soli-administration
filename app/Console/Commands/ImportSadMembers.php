@@ -795,11 +795,15 @@ class ImportSadMembers extends Command
         foreach ($instruments as $record) {
             $raw = strtolower(trim($record['instrument'] ?? ''));
 
-            if (! $raw || in_array($raw, SadDataParser::SKIP_INSTRUMENTS) || isset(SadDataParser::TYPE_MAP[$raw])) {
+            if (! $raw || in_array($raw, SadDataParser::SKIP_INSTRUMENTS)) {
                 continue;
             }
 
             $mapped = SadDataParser::INSTRUMENT_MAP[$raw] ?? null;
+
+            if ($mapped === null && isset(SadDataParser::TYPE_MAP[$raw])) {
+                continue;
+            }
 
             if ($mapped === null) {
                 $this->warn("  Unmapped instrument: '{$raw}' (lid_id {$member['lid_id']})");
