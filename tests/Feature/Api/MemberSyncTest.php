@@ -12,6 +12,9 @@ use Database\Seeders\OnderdeelSeeder;
 use Database\Seeders\RelatieTypeRoleMappingSeeder;
 use Database\Seeders\RelatieTypeSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Hash;
 
 beforeEach(function () {
     $this->seed(RolesAndPermissionsSeeder::class);
@@ -258,25 +261,138 @@ test('syncs user email when sync email changes', function () {
     expect($user->email_verified_at)->toBeNull();
 });
 
-test('does not overwrite user email if new email is taken by another user', function () {
-    $otherUser = User::factory()->create(['email' => 'taken@test.nl']);
+function memberWithAccount(int $nummer, User $user): Relatie
+{
+    $relatie = Relatie::factory()->create(['relatie_nummer' => $nummer, 'user_id' => $user->id]);
+    $relatie->emails()->create(['email' => $user->email]);
 
-    $user = User::factory()->create(['email' => 'old@test.nl']);
-    $user->assignRole('minimal');
-    $relatie = Relatie::factory()->create(['relatie_nummer' => 1000, 'user_id' => $user->id]);
-    $relatie->emails()->create(['email' => 'old@test.nl']);
+    return $relatie;
+}
 
-    $response = $this->putJson('/api/v1/sync/members/1000', [
+function syncEmail(Relatie $relatie, string $email): void
+{
+    test()->putJson("/api/v1/sync/members/{$relatie->relatie_nummer}", [
         'voornaam' => $relatie->voornaam,
         'achternaam' => $relatie->achternaam,
-        'email' => 'taken@test.nl',
-    ], syncHeaders());
+        'email' => $email,
+    ], syncHeaders())->assertStatus(200);
+}
 
-    $response->assertStatus(200);
+test('replaces the old address on the relatie once the login has switched', function () {
+    Event::fake(['eloquent.deleted: '.Email::class]);
+    $relatie = memberWithAccount(1000, User::factory()->create(['email' => 'old@test.nl']));
+    $relatie->emails()->create(['email' => 'extra@test.nl']);
 
-    // User email should NOT have changed
-    $user->refresh();
-    expect($user->email)->toBe('old@test.nl');
+    syncEmail($relatie, 'new@test.nl');
+
+    expect($relatie->emails()->pluck('email')->sort()->values()->all())->toBe(['extra@test.nl', 'new@test.nl']);
+    // Model events drive the Google Contacts sync, so a mass delete would leave the old address in Google.
+    Event::assertDispatched('eloquent.deleted: '.Email::class);
+});
+
+test('joins the account that already owns the new address', function () {
+    $owner = User::factory()->create(['email' => 'family@test.nl']);
+    $parent = memberWithAccount(1001, $owner);
+    $old = User::factory()->create(['email' => 'old@test.nl']);
+    $relatie = memberWithAccount(1000, $old);
+
+    syncEmail($relatie, 'family@test.nl');
+
+    expect($relatie->fresh()->user_id)->toBe($owner->id);
+    expect($parent->fresh()->user_id)->toBe($owner->id);
+    expect(User::find($old->id))->toBeNull();
+    expect($relatie->emails()->pluck('email')->all())->toBe(['family@test.nl']);
+});
+
+test('keeps an emptied account that holds a hand-granted role', function () {
+    User::factory()->create(['email' => 'family@test.nl']);
+    $old = User::factory()->create(['email' => 'old@test.nl']);
+    $old->assignRole('admin');
+    $relatie = memberWithAccount(1000, $old);
+
+    syncEmail($relatie, 'family@test.nl');
+
+    expect($relatie->fresh()->user->email)->toBe('family@test.nl');
+    expect(User::find($old->id)?->hasRole('admin'))->toBeTrue();
+    expect($relatie->fresh()->user->hasRole('admin'))->toBeFalse();
+});
+
+test('a child with its own address leaves the family account', function () {
+    $family = User::factory()->create(['email' => 'family@test.nl', 'password' => 'family-password']);
+    $parent = memberWithAccount(1001, $family);
+    $child = memberWithAccount(1000, $family);
+
+    syncEmail($child, 'child@test.nl');
+
+    $childUser = $child->fresh()->user;
+    expect($childUser->id)->not->toBe($family->id);
+    expect($childUser->email)->toBe('child@test.nl');
+    expect($parent->fresh()->user_id)->toBe($family->id);
+    expect($family->fresh()->email)->toBe('family@test.nl');
+    expect($child->emails()->pluck('email')->all())->toBe(['child@test.nl']);
+    expect($parent->emails()->pluck('email')->all())->toBe(['family@test.nl']);
+});
+
+test('a family moving to a new address keeps its account and password', function () {
+    $family = User::factory()->create(['email' => 'family@test.nl', 'password' => 'family-password']);
+    $parent = memberWithAccount(1001, $family);
+    $child = memberWithAccount(1002, $family);
+    $baby = memberWithAccount(1000, $family);
+
+    syncEmail($parent, 'new-family@test.nl');
+    syncEmail($child, 'new-family@test.nl');
+    syncEmail($baby, 'new-family@test.nl');
+
+    expect(User::where('email', 'new-family@test.nl')->count())->toBe(1);
+    expect(collect([$parent, $child, $baby])->map(fn ($r) => $r->fresh()->user_id)->unique()->all())->toBe([$family->id]);
+
+    $family->refresh();
+    expect($family->email)->toBe('new-family@test.nl');
+    expect(Hash::check('family-password', $family->password))->toBeTrue();
+    expect(User::count())->toBe(1);
+});
+
+test('an account someone logged in to is not folded back into the family account', function () {
+    $family = User::factory()->create(['email' => 'family@test.nl']);
+    $parent = memberWithAccount(1001, $family);
+    $child = memberWithAccount(1000, $family);
+
+    syncEmail($parent, 'new-family@test.nl');
+    $split = $parent->fresh()->user;
+    $split->update(['password' => 'chosen-password']);
+    $this->post('/login', ['email' => 'new-family@test.nl', 'password' => 'chosen-password']);
+    $this->assertAuthenticatedAs($split);
+    expect($split->fresh()->split_from_user_id)->toBeNull();
+
+    syncEmail($child, 'new-family@test.nl');
+
+    expect($child->fresh()->user_id)->toBe($split->id);
+    expect(User::find($family->id))->toBeNull();
+});
+
+test('resetting the password marks a split-off account as in use', function () {
+    $family = User::factory()->create(['email' => 'family@test.nl']);
+    $parent = memberWithAccount(1001, $family);
+    memberWithAccount(1000, $family);
+
+    syncEmail($parent, 'new-family@test.nl');
+    $split = $parent->fresh()->user;
+    expect($split->split_from_user_id)->toBe($family->id);
+
+    event(new PasswordReset($split));
+
+    expect($split->fresh()->split_from_user_id)->toBeNull();
+});
+
+test('deactivating one member keeps the account the rest of the family uses', function () {
+    $family = User::factory()->create(['email' => 'family@test.nl']);
+    $parent = memberWithAccount(1001, $family);
+    memberWithAccount(1000, $family);
+
+    $this->deleteJson('/api/v1/sync/members/1000', [], syncHeaders())->assertStatus(200);
+
+    expect(User::find($family->id))->not->toBeNull();
+    expect($parent->fresh()->user_id)->toBe($family->id);
 });
 
 test('does not touch user email when sync email is unchanged', function () {

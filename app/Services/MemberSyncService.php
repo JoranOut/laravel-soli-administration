@@ -183,17 +183,22 @@ class MemberSyncService
             'actief' => true,
         ]);
 
-        // Ensure email exists on relatie
         $existingEmail = $relatie->emails()->where('email', $data['email'])->first();
         if (! $existingEmail) {
             $relatie->emails()->create(['email' => $data['email']]);
         }
 
-        // Ensure user account exists and email is in sync
+        $previousEmail = $relatie->user?->email;
+
         if (! $relatie->user_id) {
             $this->ensureUserAccount($relatie, $data);
         } else {
-            $this->syncUserEmail($relatie, $data['email']);
+            $this->switchUserAccount($relatie, $data);
+        }
+
+        // Deleting through the model fires EmailGoogleSyncObserver, which replaces the address in Google Contacts.
+        if ($previousEmail !== null && strcasecmp($previousEmail, $data['email']) !== 0) {
+            $relatie->emails()->where('email', $previousEmail)->get()->each->delete();
         }
 
         // Only assign "lid" type if the relatie has no active type at all.
@@ -237,11 +242,17 @@ class MemberSyncService
     {
         $relatie->update(['actief' => false]);
 
-        // Delete linked user account
+        // A shared family account stays for the members still behind it.
         if ($relatie->user_id) {
-            $relatie->user()->delete();
+            $user = $relatie->user;
             $relatie->user_id = null;
             $relatie->save();
+
+            if ($user && ! $user->relaties()->exists()) {
+                $user->delete();
+            } elseif ($user) {
+                app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+            }
         }
 
         // Close active "lid" type assignment
@@ -292,24 +303,84 @@ class MemberSyncService
         }
     }
 
-    private function syncUserEmail(Relatie $relatie, string $newEmail): void
+    /**
+     * Moves the relatie's login to $data['email']. One account can serve several relaties (a family
+     * sharing an address): a relatie joins the account that already owns the address, leaves a shared
+     * account for a new one when it gets its own address, and only renames an account it has to itself.
+     */
+    private function switchUserAccount(Relatie $relatie, array $data): void
     {
-        $user = $relatie->user;
+        $current = $relatie->user;
+        $newEmail = $data['email'];
 
-        if (! $user || $user->email === $newEmail) {
+        if (! $current || strcasecmp($current->email, $newEmail) === 0) {
             return;
         }
 
-        // Only update if no other user already has this email
-        if (User::where('email', $newEmail)->where('id', '!=', $user->id)->exists()) {
-            Log::warning("MemberSyncService: Cannot update user {$user->id} email to {$newEmail} — already taken by another user.");
+        $owner = User::where('email', $newEmail)->where('id', '!=', $current->id)->first();
+        $shared = $current->relaties()->where('id', '!=', $relatie->id)->exists();
+
+        if ($owner && ! $shared && $this->isUnusedSplitOf($owner, $current)) {
+            $this->foldBack($owner, $current, $newEmail);
+        } elseif ($owner) {
+            $relatie->user_id = $owner->id;
+            $relatie->save();
+            $this->releaseUser($current);
+        } elseif ($shared) {
+            $relatie->user_id = null;
+            $relatie->save();
+            $this->ensureUserAccount($relatie, $data);
+            User::whereKey($relatie->user_id)->update(['split_from_user_id' => $current->id]);
+            $this->releaseUser($current);
+        } else {
+            $current->email = $newEmail;
+            $current->email_verified_at = null;
+            $current->save();
+        }
+    }
+
+    private function isUnusedSplitOf(User $split, User $family): bool
+    {
+        return (int) $split->split_from_user_id === $family->id
+            && ! $split->hasAnyRole(DerivedRoleSyncService::NEVER_MANAGED);
+    }
+
+    /**
+     * A whole family moving to a new address first splits off an account for the first member synced.
+     * When the last member follows, the family account takes over the address and the split-off
+     * account's members, so the family keeps its password.
+     */
+    private function foldBack(User $split, User $family, string $newEmail): void
+    {
+        Relatie::where('user_id', $split->id)->update(['user_id' => $family->id]);
+        $split->delete();
+
+        $family->email = $newEmail;
+        $family->email_verified_at = null;
+        $family->save();
+    }
+
+    /**
+     * Deletes an account no relatie uses anymore. An account holding a hand-granted role (admin and
+     * the like) is kept for an administrator to sort out: moving that role along would hand it to
+     * everyone sharing the other account.
+     */
+    private function releaseUser(User $user): void
+    {
+        if ($user->relaties()->exists()) {
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
 
             return;
         }
 
-        $user->email = $newEmail;
-        $user->email_verified_at = null;
-        $user->save();
+        if ($user->hasAnyRole(DerivedRoleSyncService::NEVER_MANAGED)) {
+            app(DerivedRoleSyncService::class)->syncUser($user->load('roles'));
+            Log::warning("MemberSyncService: user {$user->id} ({$user->email}) has no relaties left but keeps a hand-granted role; not deleted.");
+
+            return;
+        }
+
+        $user->delete();
     }
 
     private function getLidType(): ?RelatieType
