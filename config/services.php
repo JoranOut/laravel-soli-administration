@@ -53,6 +53,8 @@ return [
         'workspace_domain' => env('GOOGLE_WORKSPACE_DOMAIN', 'soli.nl'),
         'admin_email' => env('GOOGLE_WORKSPACE_ADMIN_EMAIL'),
         'contacts_sync_enabled' => env('GOOGLE_CONTACTS_SYNC_ENABLED', false),
+        // Seconds a sync waits for another sync on the same account to finish
+        'contacts_sync_lock_wait' => (int) env('GOOGLE_CONTACTS_SYNC_LOCK_WAIT', 300),
     ],
 
     'sad' => [
