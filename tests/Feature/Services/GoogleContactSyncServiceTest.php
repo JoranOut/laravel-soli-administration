@@ -14,6 +14,7 @@ use App\Services\Google\GooglePeopleApiClient;
 use Google\Service\PeopleService;
 use Google\Service\PeopleService\ContactGroup;
 use Google\Service\PeopleService\Person;
+use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
     $this->mockApiClient = Mockery::mock(GooglePeopleApiClient::class);
@@ -1030,4 +1031,88 @@ test('JobStatus markCompleted clears previous errors', function () {
     $job->refresh();
     expect($job->status)->toBe('completed');
     expect($job->last_error)->toBeNull();
+});
+
+// --- per-account lock ---
+
+test('syncForUser skips an account another sync holds the lock for', function () {
+    config(['services.google.contacts_sync_lock_wait' => 0]);
+    Relatie::factory()->create();
+    Cache::lock('google-contacts-sync:'.$this->googleEmail, 60)->get();
+
+    $this->mockApiClient->shouldReceive('forUser')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncForUser($this->googleEmail);
+
+    expect($stats['created'])->toBe(0)
+        ->and($stats['errors'])->toHaveCount(1)
+        ->and($stats['errors'][0])->toContain('another sync is still running');
+});
+
+test('syncRelatieForUser skips an account another sync holds the lock for', function () {
+    config(['services.google.contacts_sync_lock_wait' => 0]);
+    $relatie = Relatie::factory()->create();
+    Cache::lock('google-contacts-sync:'.$this->googleEmail, 60)->get();
+
+    $this->mockApiClient->shouldReceive('forUser')->never();
+
+    $stats = app(GoogleContactSyncService::class)->syncRelatieForUser($relatie, $this->googleEmail);
+
+    expect($stats['errors'])->toHaveCount(1);
+});
+
+test('a dry run ignores the account lock', function () {
+    config(['services.google.contacts_sync_lock_wait' => 0]);
+    Relatie::factory()->create();
+    Cache::lock('google-contacts-sync:'.$this->googleEmail, 60)->get();
+
+    $this->mockApiClient->shouldReceive('forUser')->once()->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
+
+    $stats = app(GoogleContactSyncService::class)->syncForUser($this->googleEmail, dryRun: true);
+
+    expect($stats['created'])->toBe(1)
+        ->and($stats['errors'])->toBeEmpty();
+});
+
+test('the account lock is released after a sync, also when it throws', function () {
+    $this->mockApiClient->shouldReceive('forUser')->once()->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
+
+    app(GoogleContactSyncService::class)->syncForUser($this->googleEmail);
+
+    expect(Cache::lock('google-contacts-sync:'.$this->googleEmail, 60)->get())->toBeTrue();
+    Cache::lock('google-contacts-sync:'.$this->googleEmail)->forceRelease();
+
+    $this->mockApiClient->shouldReceive('forUser')->andThrow(new RuntimeException('API down'));
+
+    expect(fn () => app(GoogleContactSyncService::class)->syncForUser($this->googleEmail))
+        ->toThrow(RuntimeException::class);
+    expect(Cache::lock('google-contacts-sync:'.$this->googleEmail, 60)->get())->toBeTrue();
+});
+
+test('syncAll still syncs the other accounts when one is locked', function () {
+    config(['services.google.contacts_sync_lock_wait' => 0]);
+    Relatie::factory()->create();
+    $locked = 'locked@soli.nl';
+    Cache::lock('google-contacts-sync:'.$locked, 60)->get();
+
+    $createdPerson = new Person;
+    $createdPerson->setResourceName('people/c1');
+
+    $this->mockApiClient->shouldReceive('getWorkspaceUsers')->andReturn([$locked, $this->googleEmail]);
+    $this->mockApiClient->shouldReceive('forUser')->with($locked)->never();
+    $this->mockApiClient->shouldReceive('forUser')->with($this->googleEmail)->andReturn($this->mockService);
+    $this->mockApiClient->shouldReceive('listContactGroups')->andReturn([]);
+    $this->mockApiClient->shouldReceive('createContactGroup')->andReturn(new ContactGroup);
+    $this->mockApiClient->shouldReceive('listManagedContacts')->andReturn([]);
+    $this->mockApiClient->shouldReceive('buildPerson')->andReturn(new Person);
+    $this->mockApiClient->shouldReceive('batchCreateContacts')->once()->andReturn([$createdPerson]);
+
+    app(GoogleContactSyncService::class)->syncAll();
+
+    $this->assertDatabaseHas('soli_google_contact_syncs', ['google_user_email' => $this->googleEmail]);
+    $this->assertDatabaseMissing('soli_google_contact_syncs', ['google_user_email' => $locked]);
+    expect(GoogleContactSyncLog::latest('id')->first()->status)->toBe('completed_with_errors');
 });
