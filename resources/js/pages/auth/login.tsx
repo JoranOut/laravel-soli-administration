@@ -1,4 +1,5 @@
-import { Form, Head } from '@inertiajs/react';
+import { Form, Head, router } from '@inertiajs/react';
+import { useEffect, useState } from 'react';
 import InputError from '@/components/input-error';
 import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,29 @@ type Props = {
 
 export default function Login({ status, canResetPassword }: Props) {
     const { t } = useTranslation();
+    const [submitting, setSubmitting] = useState(false);
+
+    // A successful login ends in a full-page redirect (Inertia::location to
+    // the OAuth client), which takes a moment after the request finishes.
+    // Keep the spinner until the page unloads; reset it on failure or when
+    // the browser restores this page from the back/forward cache.
+    useEffect(() => {
+        const reset = () => setSubmitting(false);
+        const onPageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                reset();
+            }
+        };
+        const removeInvalid = router.on('invalid', reset);
+        const removeException = router.on('exception', reset);
+        window.addEventListener('pageshow', onPageShow);
+
+        return () => {
+            removeInvalid();
+            removeException();
+            window.removeEventListener('pageshow', onPageShow);
+        };
+    }, []);
 
     return (
         <AuthLayout
@@ -29,9 +53,12 @@ export default function Login({ status, canResetPassword }: Props) {
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
+                onStart={() => setSubmitting(true)}
+                onError={() => setSubmitting(false)}
+                onCancel={() => setSubmitting(false)}
                 className="flex flex-col gap-6"
             >
-                {({ processing, errors }) => (
+                {({ errors }) => (
                     <>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
@@ -93,10 +120,10 @@ export default function Login({ status, canResetPassword }: Props) {
                                 type="submit"
                                 className="mt-4 w-full"
                                 tabIndex={4}
-                                disabled={processing}
+                                disabled={submitting}
                                 data-test="login-button"
                             >
-                                {processing && <Spinner />}
+                                {submitting && <Spinner />}
                                 {t('Log in')}
                             </Button>
                         </div>
