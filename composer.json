@@ -11,7 +11,7 @@
     "require": {
         "php": "^8.2",
         "google/apiclient": "^2.18",
-        "inertiajs/inertia-laravel": "^2.0",
+        "inertiajs/inertia-laravel": "^3.0",
         "jeremy379/laravel-openid-connect": "^3.1",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",
