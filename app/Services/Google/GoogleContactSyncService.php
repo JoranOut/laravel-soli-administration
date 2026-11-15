@@ -10,6 +10,8 @@ use App\Models\JobStatus;
 use App\Models\Onderdeel;
 use App\Models\Relatie;
 use App\Models\RelatieType;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class GoogleContactSyncService
@@ -179,7 +181,43 @@ class GoogleContactSyncService
 
     private const BATCH_DELETE_LIMIT = 500;
 
+    // Matches the job timeout, so a lock held by a killed worker expires.
+    private const USER_LOCK_TTL = 1800;
+
     public function syncForUser(string $googleEmail, ?bool $dryRun = false): array
+    {
+        return $this->withUserLock($googleEmail, $dryRun, fn () => $this->runSyncForUser($googleEmail, (bool) $dryRun));
+    }
+
+    public function syncRelatieForUser(Relatie $relatie, string $googleEmail, ?bool $dryRun = false): array
+    {
+        return $this->withUserLock($googleEmail, $dryRun, fn () => $this->runSyncRelatieForUser($relatie, $googleEmail, (bool) $dryRun));
+    }
+
+    /**
+     * Two syncs writing to the same account at once can both create a contact
+     * for one relatie, leaving a duplicate. A sync that cannot get the lock in
+     * time skips the account; the next nightly run catches up via the hash.
+     */
+    private function withUserLock(string $googleEmail, ?bool $dryRun, \Closure $sync): array
+    {
+        if ($dryRun) {
+            return $sync();
+        }
+
+        try {
+            return Cache::lock('google-contacts-sync:'.$googleEmail, self::USER_LOCK_TTL)
+                ->block(config('services.google.contacts_sync_lock_wait'), $sync);
+        } catch (LockTimeoutException) {
+            $message = "Skipped {$googleEmail}: another sync is still running for this account";
+            $this->log($message);
+            Log::warning('Google Contacts sync skipped, account locked', ['google_user' => $googleEmail]);
+
+            return ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => [$message]];
+        }
+    }
+
+    private function runSyncForUser(string $googleEmail, bool $dryRun): array
     {
         $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
@@ -365,7 +403,7 @@ class GoogleContactSyncService
         return $stats;
     }
 
-    public function syncRelatieForUser(Relatie $relatie, string $googleEmail, ?bool $dryRun = false): array
+    private function runSyncRelatieForUser(Relatie $relatie, string $googleEmail, bool $dryRun): array
     {
         $stats = ['created' => 0, 'updated' => 0, 'deleted' => 0, 'skipped' => 0, 'failed' => 0, 'errors' => []];
 
