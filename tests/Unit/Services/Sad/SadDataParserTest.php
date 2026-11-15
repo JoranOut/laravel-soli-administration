@@ -102,6 +102,23 @@ test('returns null for unknown instrument', function () {
     expect($result)->toBeNull();
 });
 
+test('maps SAD shorthand instrument names', function (string $raw, array $expected) {
+    expect(SadDataParser::instrumentNamesFor($raw))->toBe($expected);
+})->with([
+    ['docent dwarsfluit', ['Dwarsfluit']],
+    ['Kl', ['Klarinet']],
+    ['docent klarinet', ['Klarinet']],
+]);
+
+test('records no instrument for a role that names none', function (string $raw) {
+    expect(SadDataParser::instrumentNamesFor($raw))->toBe([]);
+})->with(['docent', 'docent mos', 'dirigent']);
+
+test('keeps the docent role for a teacher whose value names an instrument', function () {
+    expect(SadDataParser::TYPE_MAP['docent dwarsfluit'])->toBe('docent')
+        ->and(SadDataParser::TYPE_MAP['docent klarinet'])->toBe('docent');
+});
+
 // --- parseDate ---
 
 test('parses valid DD-MM-YYYY date', function () {
