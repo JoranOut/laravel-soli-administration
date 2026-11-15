@@ -3,6 +3,8 @@
   "extends": ["config:recommended"],
   "labels": ["dependencies"],
   "minimumReleaseAge": "3 days",
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 0,
   "customManagers": [
     {
       "customType": "regex",
