@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Fast, no dependencies — fails before the slow setup below if the
       # deploy script's rollback handling regresses.
