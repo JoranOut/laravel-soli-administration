@@ -14,7 +14,11 @@ type ActivityEntry = {
     subject_type: string | null;
     causer: { name: string } | null;
     created_at: string;
-    properties: Record<string, unknown>;
+    attribute_changes: {
+        attributes?: Record<string, unknown>;
+        old?: Record<string, unknown>;
+    } | null;
+    properties: Record<string, unknown> | null;
 };
 
 export default function ActivityLog({

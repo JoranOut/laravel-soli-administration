@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Activity;
 use App\Models\Relatie;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -35,7 +36,7 @@ test('updating a relatie creates an activity log entry', function () {
     $relatie = Relatie::factory()->create(['voornaam' => 'Jan', 'achternaam' => 'Jansen']);
 
     // Clear any activity from factory creation
-    \Spatie\Activitylog\Models\Activity::query()->delete();
+    Activity::query()->delete();
 
     $this->actingAs($admin)->put("/admin/relaties/{$relatie->id}", [
         'voornaam' => 'Piet',
@@ -50,5 +51,7 @@ test('updating a relatie creates an activity log entry', function () {
         ->has('activities.data', 1)
         ->where('activities.data.0.event', 'updated')
         ->where('activities.data.0.causer.name', $admin->name)
+        ->where('activities.data.0.attribute_changes.attributes.voornaam', 'Piet')
+        ->where('activities.data.0.attribute_changes.old.voornaam', 'Jan')
     );
 });
