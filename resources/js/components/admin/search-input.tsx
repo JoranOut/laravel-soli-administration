@@ -1,6 +1,6 @@
 import { router } from '@inertiajs/react';
 import { Search, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -20,9 +20,12 @@ export function SearchInput({
     const [search, setSearch] = useState(value);
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    useEffect(() => {
+    const [prevValue, setPrevValue] = useState(value);
+
+    if (value !== prevValue) {
+        setPrevValue(value);
         setSearch(value);
-    }, [value]);
+    }
 
     const performSearch = (searchValue: string) => {
         const params: Record<string, string> = {};
