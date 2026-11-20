@@ -45,7 +45,9 @@ class SoliIdentityEntity implements IdentityEntityInterface
 
         if (in_array('email', $scopes)) {
             $claims['email'] = $this->user->email;
-            $claims['email_verified'] = $this->user->email_verified_at !== null;
+            // Every address comes from the member administration, so it counts as verified
+            // even when email_verified_at was never set (e.g. imported members).
+            $claims['email_verified'] = true;
         }
 
         if (in_array('roles', $scopes)) {

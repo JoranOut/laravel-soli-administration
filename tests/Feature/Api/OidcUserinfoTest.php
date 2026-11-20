@@ -82,6 +82,23 @@ test('userinfo returns email claims for email scope', function () {
     ]);
 });
 
+test('userinfo marks email verified even without email_verified_at', function () {
+    $user = User::factory()->create([
+        'email' => 'piet@soli.nl',
+        'email_verified_at' => null,
+    ]);
+
+    Passport::actingAs($user, ['openid', 'email']);
+
+    $response = $this->getJson('/api/oauth/userinfo');
+
+    $response->assertOk();
+    $response->assertJsonFragment([
+        'email' => 'piet@soli.nl',
+        'email_verified' => true,
+    ]);
+});
+
 test('userinfo returns roles for roles scope', function () {
     $user = User::factory()->create();
     $user->assignRole('admin');
