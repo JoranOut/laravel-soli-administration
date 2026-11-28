@@ -1703,16 +1703,16 @@
         },
         {
             "name": "laravel/fortify",
-            "version": "v1.43.0",
+            "version": "v1.44.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laravel/fortify.git",
-                "reference": "3db382a3d5d6a0d537de32a190ce3b945e621713"
+                "reference": "3cde89dd6d1caf22115c798b3485a567406c8c90"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laravel/fortify/zipball/3db382a3d5d6a0d537de32a190ce3b945e621713",
-                "reference": "3db382a3d5d6a0d537de32a190ce3b945e621713",
+                "url": "https://api.github.com/repos/laravel/fortify/zipball/3cde89dd6d1caf22115c798b3485a567406c8c90",
+                "reference": "3cde89dd6d1caf22115c798b3485a567406c8c90",
                 "shasum": ""
             },
             "require": {
@@ -1764,8 +1764,8 @@
                 "issues": "https://github.com/laravel/fortify/issues",
                 "source": "https://github.com/laravel/fortify"
             },
-            "time": "2026-11-14T19:58:33+00:00",
-            "published-time": "2026-11-17T15:16:01+00:00"
+            "time": "2026-11-23T14:25:47+00:00",
+            "published-time": "2026-11-24T16:23:29+00:00"
         },
         {
             "name": "laravel/framework",
@@ -8078,16 +8078,16 @@
         },
         {
             "name": "symfony/serializer",
-            "version": "v8.1.11",
+            "version": "v8.1.13",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/serializer.git",
-                "reference": "05624c94507c3acf065b6486bb626f0d741af459"
+                "reference": "64876a1e359955e31b7de07d795249e49bc4e7d0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/serializer/zipball/05624c94507c3acf065b6486bb626f0d741af459",
-                "reference": "05624c94507c3acf065b6486bb626f0d741af459",
+                "url": "https://api.github.com/repos/symfony/serializer/zipball/64876a1e359955e31b7de07d795249e49bc4e7d0",
+                "reference": "64876a1e359955e31b7de07d795249e49bc4e7d0",
                 "shasum": ""
             },
             "require": {
@@ -8153,7 +8153,7 @@
             "description": "Handles serializing and deserializing data structures, including object graphs, into array structures or other formats like XML and JSON.",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/serializer/tree/v8.1.11"
+                "source": "https://github.com/symfony/serializer/tree/v8.1.13"
             },
             "funding": [
                 {
@@ -8173,8 +8173,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-04T08:39:20+00:00",
-            "published-time": "2026-11-04T11:31:12+00:00"
+            "time": "2026-11-27T14:07:58+00:00",
+            "published-time": "2026-11-27T14:50:29+00:00"
         },
         {
             "name": "symfony/service-contracts",
@@ -9076,16 +9076,16 @@
         },
         {
             "name": "web-auth/webauthn-lib",
-            "version": "5.3.12",
+            "version": "5.3.17",
             "source": {
                 "type": "git",
                 "url": "https://github.com/web-auth/webauthn-lib.git",
-                "reference": "c7aeeb1d35e39b7d32ab5146cce4b668f271a68e"
+                "reference": "7f38dbcf07cd22ec104fa6eb720df22eb4196b47"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/web-auth/webauthn-lib/zipball/c7aeeb1d35e39b7d32ab5146cce4b668f271a68e",
-                "reference": "c7aeeb1d35e39b7d32ab5146cce4b668f271a68e",
+                "url": "https://api.github.com/repos/web-auth/webauthn-lib/zipball/7f38dbcf07cd22ec104fa6eb720df22eb4196b47",
+                "reference": "7f38dbcf07cd22ec104fa6eb720df22eb4196b47",
                 "shasum": ""
             },
             "require": {
@@ -9146,7 +9146,7 @@
                 "webauthn"
             ],
             "support": {
-                "source": "https://github.com/web-auth/webauthn-lib/tree/5.3.12"
+                "source": "https://github.com/web-auth/webauthn-lib/tree/5.3.17"
             },
             "funding": [
                 {
@@ -9158,8 +9158,8 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2026-11-03T09:21:08+00:00",
-            "published-time": "2026-11-03T09:27:24+00:00"
+            "time": "2026-11-23T18:46:47+00:00",
+            "published-time": "2026-11-24T07:58:53+00:00"
         },
         {
             "name": "webmozart/assert",
